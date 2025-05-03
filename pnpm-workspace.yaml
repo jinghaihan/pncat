@@ -1,0 +1,41 @@
+packages: []
+catalogs:
+  build:
+    unbuild: ^3.5.0
+  dev:
+    bumpp: ^10.1.0
+    simple-git-hooks: ^2.13.0
+    taze: ^19.0.4
+    typescript: ^5.8.3
+  inlined:
+    '@antfu/utils': ^9.2.0
+  lint:
+    '@antfu/eslint-config': ^4.12.0
+    eslint: ^9.25.1
+    lint-staged: ^15.5.1
+  optional:
+    '@antfu/nip': ^0.1.0
+  prod:
+    '@clack/prompts': ^0.10.1
+    ansis: ^3.17.0
+    cac: ^6.7.14
+    debug: ^4.4.0
+    deepmerge: ^4.3.1
+    execa: ^9.5.2
+    fast-npm-meta: ^0.4.2
+    find-up: ^7.0.0
+    pathe: ^2.0.3
+    pkg-types: ^2.1.0
+    pnpm-workspace-yaml: ^0.3.1
+    semver: ^7.7.1
+    tinyglobby: ^0.2.13
+    unconfig: ^7.3.2
+    yaml: ^2.7.1
+  script:
+    tsx: ^4.19.4
+  test:
+    vitest: ^3.1.2
+  types:
+    '@types/debug': ^4.1.12
+    '@types/node': ^22.15.3
+    '@types/semver': ^7.7.0
