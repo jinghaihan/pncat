@@ -49,13 +49,15 @@ export async function ensureDep(pkg: string, isDev: boolean = true) {
   }
 
   const spinner = p.spinner({ indicator: 'dots' })
+  spinner.start(`resolving ${c.cyan(pkg)} from npm...`)
+
   const { getLatestVersion } = await import('fast-npm-meta')
-  const version = await getLatestVersion(pkg)
+  const result = await getLatestVersion(pkg)
   const depsName = isDev ? 'devDependencies' : 'dependencies'
 
   pkgJson[depsName] ??= {}
-  if (version.version) {
-    const specifier = `^${version.version}`
+  if (result.version) {
+    const specifier = `^${result.version}`
     pkgJson[depsName][pkg] = specifier
     spinner.stop(c.gray(`resolved ${c.cyan(pkg)}@${c.green(specifier)}`))
   }
