@@ -1,4 +1,5 @@
-import type { CatalogOptions, CatalogRule, CommonOptions, DepType } from './types'
+import type { CatalogOptions, CommonOptions, DepType } from './types'
+import { DEFAULT_CATALOG_RULES } from './rules'
 
 export const MODE_CHOICES = ['detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
@@ -13,102 +14,6 @@ export const DEPS_FIELDS = [
   'overrides',
   'pnpm-workspace',
 ] as const
-
-export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
-  // Test Frameworks
-  {
-    name: 'test',
-    match: [
-      /^vitest$/,
-      /^jest$/,
-      /^mocha$/,
-      /^cypress$/,
-      /^playwright$/,
-    ],
-  },
-
-  // Linting Tools
-  {
-    name: 'lint',
-    match: [
-      /(^|\/)eslint(-|$)/,
-      /(^|\/)prettier(-|$)/,
-      /^stylelint$/,
-      /^commitlint$/,
-      /^lint-staged$/,
-      /^biome$/,
-    ],
-  },
-
-  // Build Tools
-  {
-    name: 'build',
-    match: [
-      /^vite$/,
-      /^webpack$/,
-      /^rollup$/,
-      /^rolldown$/,
-      /^esbuild$/,
-      /^unbuild$/,
-      /^tsup$/,
-      /^rspack$/,
-    ],
-  },
-
-  // Script Execution Tools
-  {
-    name: 'script',
-    match: [
-      /^tsx$/,
-      /^esno$/,
-    ],
-  },
-
-  // Frontend Libraries
-  {
-    name: 'frontend',
-    match: [
-      /^vue$/,
-      /^vue-router$/,
-      /^vuex$/,
-      /^pinia$/,
-      /^element-plus$/,
-      /^ant-design-vue$/,
-      /^vuetify$/,
-      /^naive-ui$/,
-      /^echarts$/,
-    ],
-  },
-
-  // Icons Libraries
-  {
-    name: 'icons',
-    match: [
-      /^@iconify\//,
-      /^iconify$/,
-      /^lucide$/,
-      /icon/,
-    ],
-  },
-
-  // Backend Libraries
-  {
-    name: 'backend',
-    match: [
-      /^express$/,
-      /^koa$/,
-    ],
-  },
-
-  // Type Definitions
-  {
-    name: 'types',
-    match: [
-      /^@types\//,
-    ],
-    depFields: ['devDependencies'], // typically in devDependencies
-  },
-]
 
 export const DEFAULT_COMMON_OPTIONS: CommonOptions = {
   cwd: '',

@@ -22,18 +22,18 @@ describe('merge catalog rules', () => {
         },
         {
           "match": [
-            /\\(\\^\\|\\\\/\\)eslint\\(-\\|\\$\\)/,
-            /\\(\\^\\|\\\\/\\)prettier\\(-\\|\\$\\)/,
-            /\\^stylelint\\$/,
-            /\\^commitlint\\$/,
+            /eslint/,
+            /prettier/,
+            /stylelint/,
+            /biome/,
+            /commitlint/,
             /\\^lint-staged\\$/,
-            /\\^biome\\$/,
           ],
           "name": "lint",
         },
         {
           "match": [
-            /\\^vite\\$/,
+            /\\(\\^\\|\\\\/\\)vite\\(-\\|\\$\\)/,
             /\\^webpack\\$/,
             /\\^rollup\\$/,
             /\\^rolldown\\$/,
@@ -120,18 +120,18 @@ describe('merge catalog rules', () => {
         },
         {
           "match": [
-            /\\(\\^\\|\\\\/\\)eslint\\(-\\|\\$\\)/,
-            /\\(\\^\\|\\\\/\\)prettier\\(-\\|\\$\\)/,
-            /\\^stylelint\\$/,
-            /\\^commitlint\\$/,
+            /eslint/,
+            /prettier/,
+            /stylelint/,
+            /biome/,
+            /commitlint/,
             /\\^lint-staged\\$/,
-            /\\^biome\\$/,
           ],
           "name": "lint",
         },
         {
           "match": [
-            /\\^vite\\$/,
+            /\\(\\^\\|\\\\/\\)vite\\(-\\|\\$\\)/,
             /\\^webpack\\$/,
             /\\^rollup\\$/,
             /\\^rolldown\\$/,
@@ -208,6 +208,6 @@ describe('merge catalog rules', () => {
           "name": "inlined",
         },
       ]
-   `)
+    `)
   })
 })

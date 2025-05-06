@@ -1,6 +1,6 @@
 import type { CatalogRule } from '../types'
 import deepmerge from 'deepmerge'
-import { DEFAULT_CATALOG_RULES } from '../constants'
+import { DEFAULT_CATALOG_RULES } from '../rules'
 
 export interface MergeOptions {
   mergeDefaults?: boolean
