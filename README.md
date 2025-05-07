@@ -170,7 +170,7 @@ Managing pnpm catalogs in monorepos currently requires significant manual effort
 
 ## License
 
-[MIT](./LICENSE) License © [jinghaihan](https://github.com/jinghaihan)
+[MIT](./LICENSE) License © [jinghaihan](https://github.com/xiihn)
 
 <!-- Badges -->
 
@@ -181,6 +181,6 @@ Managing pnpm catalogs in monorepos currently requires significant manual effort
 [bundle-src]: https://img.shields.io/bundlephobia/minzip/pncat?style=flat&colorA=080f12&colorB=1fa669&label=minzip
 [bundle-href]: https://bundlephobia.com/result?p=pncat
 [license-src]: https://img.shields.io/badge/license-MIT-blue.svg?style=flat&colorA=080f12&colorB=1fa669
-[license-href]: https://github.com/jinghaihan/pncat/LICENSE
+[license-href]: https://github.com/xiihn/pncat/LICENSE
 [jsdocs-src]: https://img.shields.io/badge/jsdocs-reference-080f12?style=flat&colorA=080f12&colorB=1fa669
 [jsdocs-href]: https://www.jsdocs.io/package/pncat
