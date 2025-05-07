@@ -30,14 +30,14 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'build',
     match: [
-      /(^|\/)vite(-|$)/,
-      /^webpack$/,
-      /^rollup$/,
-      /^rolldown$/,
-      /^esbuild$/,
-      /^unbuild$/,
-      /^tsup$/,
-      /^rspack$/,
+      /vite/,
+      /webpack/,
+      /rollup/,
+      /rolldown/,
+      /esbuild/,
+      /unbuild/,
+      /tsup/,
+      /rspack/,
     ],
   },
 
