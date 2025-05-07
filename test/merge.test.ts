@@ -11,6 +11,15 @@ describe('merge catalog rules', () => {
     ])).toMatchInlineSnapshot(`
       [
         {
+          "depFields": [
+            "devDependencies",
+          ],
+          "match": [
+            /\\^@types\\\\//,
+          ],
+          "name": "types",
+        },
+        {
           "match": [
             /\\^vitest\\$/,
             /\\^jest\\$/,
@@ -82,15 +91,6 @@ describe('merge catalog rules', () => {
           "name": "backend",
         },
         {
-          "depFields": [
-            "devDependencies",
-          ],
-          "match": [
-            /\\^@types\\\\//,
-          ],
-          "name": "types",
-        },
-        {
           "match": [
             "@antfu/utils",
           ],
@@ -108,6 +108,15 @@ describe('merge catalog rules', () => {
       },
     ])).toMatchInlineSnapshot(`
       [
+        {
+          "depFields": [
+            "devDependencies",
+          ],
+          "match": [
+            /\\^@types\\\\//,
+          ],
+          "name": "types",
+        },
         {
           "match": [
             /\\^vitest\\$/,
@@ -179,15 +188,6 @@ describe('merge catalog rules', () => {
             /\\^koa\\$/,
           ],
           "name": "backend",
-        },
-        {
-          "depFields": [
-            "devDependencies",
-          ],
-          "match": [
-            /\\^@types\\\\//,
-          ],
-          "name": "types",
         },
       ]
     `)

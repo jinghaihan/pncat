@@ -1,6 +1,15 @@
 import type { CatalogRule } from './types'
 
 export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
+  // Type Definitions
+  {
+    name: 'types',
+    match: [
+      /^@types\//,
+    ],
+    depFields: ['devDependencies'], // typically in devDependencies
+  },
+
   // Test Frameworks
   {
     name: 'test',
@@ -84,14 +93,5 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /^express$/,
       /^koa$/,
     ],
-  },
-
-  // Type Definitions
-  {
-    name: 'types',
-    match: [
-      /^@types\//,
-    ],
-    depFields: ['devDependencies'], // typically in devDependencies
   },
 ]
