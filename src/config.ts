@@ -1,11 +1,8 @@
 import type { CatalogOptions, CommonOptions } from './types'
 import process from 'node:process'
-import _debug from 'debug'
 import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
 import { DEFAULT_CATALOG_OPTIONS } from './constants'
-
-const debug = _debug('pncat:config')
 
 function normalizeConfig(options: Partial<CommonOptions>) {
   // interop
@@ -44,7 +41,6 @@ export async function resolveConfig(
   if (!config.sources.length)
     return deepmerge(defaults, options)
 
-  debug(`config file found ${config.sources[0]}`)
   const configOptions = normalizeConfig(config.config)
 
   return deepmerge(deepmerge(defaults, configOptions), options)

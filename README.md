@@ -10,87 +10,88 @@
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Enhanced pnpm catalogs management with advanced workspace dependency control.
+Advanced dependency management for pnpm workspaces with catalog support.
 
 > [!NOTE]
-> This CLI is specifically designed for [pnpm](https://pnpm.io/) workspaces with catalogs support. Inspired by [taze](https://github.com/antfu-collective/taze) and [@antfu/nip](https://github.com/antfu/nip).
+> Enhanced pnpm workspace management with intelligent dependency cataloging, inspired by [taze](https://github.com/antfu-collective/taze) and [@antfu/nip](https://github.com/antfu/nip).
 
 ```bash
 pnpm add -D pncat
 ```
 
-## Features
+## ✨ Features
 
-### Detect
+### 🔍 Detect Catalogable Dependencies
 
 ```bash
 pncat detect
 ```
-Scans your workspace to identify all dependencies that could be moved to catalogs.
+
+Scans your workspace to identify dependencies that could be moved to catalogs.
 
 ![Image](/assets/detect.png)
 
-### Migrate
-
-> [!IMPORTANT]
-> **Migration Guide for Catalog Users**
-> To upgrade to the new auto-grouped catalog system:
->
-> **Option 1 (Recommended Clean Migration):**
-> 1. Run `pncat revert` to restore dependencies to individual `package.json` files
-> 2. Run `pncat migrate` to apply the new grouped structure
->
-> **Option 2 (Force Immediate Migration):**
-> - Simply run `pnpm migrate -f` to force-convert existing catalogs to the new format
->
-> The force flag (`-f`) will bypass version checks and automatically resolve common conflicts.
+### 🚀 Smart Catalog Migration
 
 ```bash
 pncat migrate
 ```
-Automatically detects catalogable dependencies, intelligently groups them by type (e.g., lint, test, build), scope, or custom rules, and updates your `pnpm.workspace.yaml` configuration seamlessly.
+
+Automatically groups dependencies by type (lint, test, build) and updates your `pnpm.workspace.yaml`.
 
 ![Image](/assets/migrate.png)
 
-### Add
+> **Migration Guide**
+>
+> **For new users:** Simply run `pncat migrate`
+>
+> **Existing catalog users:**
+> - Recommended: `pncat revert` → `pncat migrate` (clean migration)
+> - Force update: `pnpm migrate -f` (direct conversion)
+
+### ➕ Add with Catalog Support
 
 ```bash
 pncat add vue
 ```
-Adds packages to your project while automatically managing catalog entries in `pnpm.workspace.yaml`. This feature is powered by [@antfu/nip](https://github.com/antfu/nip).
+
+Adds packages while automatically managing catalog entries (powered by [@antfu/nip](https://github.com/antfu/nip)).
 
 ![Image](/assets/add.png)
 
-### Remove
+### 🗑️ Safe Dependency Removal
 
 ```bash
 pncat remove vitest
 ```
-Removes packages from your project and intelligently cleans up `pnpm.workspace.yaml` when safe.
+
+Removes packages and cleans up `pnpm.workspace.yaml` when safe.
 
 ![Image](/assets/remove.png)
 
-### Clean
+### 🧹 Catalog Cleanup
 
 ```bash
 pncat clean
 ```
-Identifies unused catalog dependencies and removes them from `pnpm.workspace.yaml`.
+
+Identifies and removes unused catalog dependencies.
 
 ![Image](/assets/clean.png)
 
-### Revert
+### ⏪ Revert to Standard Dependencies
 
 ```bash
 pncat revert
 ```
-Moves all catalog dependencies back to individual project `package.json` files.
+
+Moves catalog dependencies back to individual `package.json` files.
 
 ![Image](/assets/revert.png)
 
-## Config file
+## ⚙️ Configuration
 
-With `pncat.config.ts` file, you can configure the same options the command has.
+Create a `pncat.config.ts` file to customize behavior:
 
 ```ts
 import { defineConfig, mergeCatalogRules } from 'pncat'
@@ -102,19 +103,7 @@ export default defineConfig({
   force: false,
   // skip prompt confirmation
   yes: false,
-  // custom catalog rules (extends default rules) or just override
-  //
-  // Usage examples:
-  // 1. Extend default rules (recommended):
-  //    mergeCatalogRules([{ name: 'group1', match: ['pkg1'] }])
-  //
-  // 2. Override all rules (skip defaults):
-  //    mergeCatalogRules({ mergeDefaults: false }, [
-  //      { name: 'custom-only', match: [/^@scope/] }
-  //    ])
-  //
-  // 3. Mixed patterns support:
-  //    match: ['exact-name', /regex-pattern/]
+  // custom catalog groups (extends defaults)
   catalogRules: mergeCatalogRules([
     {
       name: 'inlined',
@@ -140,33 +129,25 @@ export default defineConfig({
 })
 ```
 
-## Why?
+## 💡 Why pncat?
 
-Managing pnpm catalogs in monorepos currently requires significant manual effort:
-- No built-in tools for catalog dependency analysis
-- Tedious manual updates to `pnpm.workspace.yaml`
-- Risk of orphaned catalog entries
-- No easy way to visualize catalog usage
+Solving pnpm workspace pain points:
+- 🔄 Automated catalog dependency management
+- 🛡️ Built-in safety checks
+- 📊 Workspace-wide dependency analysis
+- 🧩 Streamlined catalog operations
 
-`pncat` solves these problems with:
-- Automated catalog dependency management
-- Safety checks before modifications
-- Workspace-wide analysis capabilities
-- Streamlined workflow operations
-
-## Roadmap
+## 🛣️ Roadmap
 
 ### Core Features
-- [x] `detect` - Identify catalogable dependencies
-- [x] `migrate` - Auto-update pnpm.workspace.yaml
-- [x] `add` - Smart package addition with catalog support
-- [x] `remove` - Safe package removal with catalog cleanup
-- [x] `clean` - Remove unused catalog dependencies
-- [x] `revert` - Move catalog deps back to package.json
+- [x] Catalog detection & migration
+- [x] Smart add/remove operations
+- [x] Catalog cleanup utility
+- [x] Reversion capability
 
-### Advanced Features
-- [x] Support for `pncat.config.js` global configuration
-- [x] Custom grouping presets via configuration file
+### Advanced
+- [x] Config file support
+- [x] Custom grouping rules
 
 ## License
 

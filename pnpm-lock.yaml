@@ -22,10 +22,6 @@ catalogs:
     typescript:
       specifier: ^5.8.3
       version: 5.8.3
-  inlined:
-    '@antfu/utils':
-      specifier: ^9.2.0
-      version: 9.2.0
   lint:
     '@antfu/eslint-config':
       specifier: ^4.12.0
@@ -36,7 +32,7 @@ catalogs:
     lint-staged:
       specifier: ^15.5.1
       version: 15.5.1
-  optional:
+  peer:
     '@antfu/nip':
       specifier: ^0.1.0
       version: 0.1.0
@@ -50,9 +46,6 @@ catalogs:
     cac:
       specifier: ^6.7.14
       version: 6.7.14
-    debug:
-      specifier: ^4.4.0
-      version: 4.4.0
     deepmerge:
       specifier: ^4.3.1
       version: 4.3.1
@@ -95,9 +88,6 @@ catalogs:
       specifier: ^3.1.2
       version: 3.1.2
   types:
-    '@types/debug':
-      specifier: ^4.1.12
-      version: 4.1.12
     '@types/node':
       specifier: ^22.15.3
       version: 22.15.3
@@ -109,6 +99,9 @@ importers:
 
   .:
     dependencies:
+      '@antfu/nip':
+        specifier: catalog:peer
+        version: 0.1.0
       '@clack/prompts':
         specifier: catalog:prod
         version: 0.10.1
@@ -118,9 +111,6 @@ importers:
       cac:
         specifier: catalog:prod
         version: 6.7.14
-      debug:
-        specifier: catalog:prod
-        version: 4.4.0
       deepmerge:
         specifier: catalog:prod
         version: 4.3.1
@@ -154,20 +144,10 @@ importers:
       yaml:
         specifier: catalog:prod
         version: 2.7.1
-    optionalDependencies:
-      '@antfu/nip':
-        specifier: catalog:optional
-        version: 0.1.0
     devDependencies:
       '@antfu/eslint-config':
         specifier: catalog:lint
         version: 4.12.0(@typescript-eslint/utils@8.31.1(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3))(@vue/compiler-sfc@3.5.13)(eslint@9.25.1(jiti@2.4.2))(typescript@5.8.3)(vitest@3.1.2(@types/debug@4.1.12)(@types/node@22.15.3)(jiti@2.4.2)(tsx@4.19.4)(yaml@2.7.1))
-      '@antfu/utils':
-        specifier: catalog:inlined
-        version: 9.2.0
-      '@types/debug':
-        specifier: catalog:types
-        version: 4.1.12
       '@types/node':
         specifier: catalog:types
         version: 22.15.3
@@ -266,9 +246,6 @@ packages:
   '@antfu/nip@0.1.0':
     resolution: {integrity: sha512-iNSjTsty20VIdjEeulB3zRmeZKnlnMD4ACVWWvGRgBoKLJiAGN3lBVffxtiKXGSJNHuqd+djNhjRNT3t7/6Jog==}
     hasBin: true
-
-  '@antfu/utils@9.2.0':
-    resolution: {integrity: sha512-Oq1d9BGZakE/FyoEtcNeSwM7MpDO2vUBi11RWBZXf75zPsbUVWmUs03EqkRFrcgbXyKTas0BdZWC1wcuSoqSAw==}
 
   '@babel/code-frame@7.27.1':
     resolution: {integrity: sha512-cjQ7ZlQ0Mv3b47hABuTevyTuYN4i+loJKGeV9flcCgIK37cCXRh+L1bd3iBHlynerhQ7BhCkn2BPbQUL+rGqFg==}
@@ -2937,9 +2914,6 @@ snapshots:
       find-up: 7.0.0
       package-manager-detector: 1.2.0
       pnpm-workspace-yaml: 0.3.1
-    optional: true
-
-  '@antfu/utils@9.2.0': {}
 
   '@babel/code-frame@7.27.1':
     dependencies:

@@ -1,4 +1,7 @@
-import { toArray } from '@antfu/utils'
+function toArray<T>(array?: T | Array<T>): Array<T> {
+  array = array ?? []
+  return Array.isArray(array) ? array : [array]
+}
 
 function escapeRegExp(str: string) {
   return str.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string

@@ -47,6 +47,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /unbuild/,
       /tsup/,
       /rspack/,
+      /unplugin/,
     ],
   },
 
