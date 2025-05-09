@@ -13,6 +13,9 @@ catalogs:
     bumpp:
       specifier: ^10.1.0
       version: 10.1.0
+    czg:
+      specifier: ^1.11.1
+      version: 1.11.1
     simple-git-hooks:
       specifier: ^2.13.0
       version: 2.13.0
@@ -157,6 +160,9 @@ importers:
       bumpp:
         specifier: catalog:dev
         version: 10.1.0
+      czg:
+        specifier: catalog:dev
+        version: 1.11.1
       eslint:
         specifier: catalog:lint
         version: 9.25.1(jiti@2.4.2)
@@ -1190,6 +1196,11 @@ packages:
   csso@5.0.5:
     resolution: {integrity: sha512-0LrrStPOdJj+SPCCrGhzryycLjwcgUSHBtxNA8aIDxf0GLsRh1cKYhB00Gd1lDOS4yGH69+SNn13+TWbVHETFQ==}
     engines: {node: ^10 || ^12.20.0 || ^14.13.0 || >=15.0.0, npm: '>=7.0.0'}
+
+  czg@1.11.1:
+    resolution: {integrity: sha512-2k/Dh7MiRKMUEtQO3kWVkgPmvf0wZlxyS7Svr8cpI2ScATkLuA5uWa2ukJnTXG6Pwe73vFhGO9jd9IiE3NOM5g==}
+    engines: {node: '>=v12.20.0'}
+    hasBin: true
 
   debug@3.2.7:
     resolution: {integrity: sha512-CFjzYYAi4ThfiQvizrFQevTTXHtnCqWfe7x1AhgEscTz6ZbLbfoLRLPugTQyBth6f8ZERVUSyWHFD/7Wu4t1XQ==}
@@ -3800,6 +3811,8 @@ snapshots:
   csso@5.0.5:
     dependencies:
       css-tree: 2.2.1
+
+  czg@1.11.1: {}
 
   debug@3.2.7:
     dependencies:

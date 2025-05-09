@@ -1,9 +1,5 @@
 # pncat
 
-<p align="center">
-  <img src="/assets/logo.png" alt="logo" width="300"/>
-</p>
-
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 [![bundle][bundle-src]][bundle-href]

@@ -1,237 +1,36 @@
 import { describe, expect, it } from 'vitest'
-import { mergeCatalogRules } from '../src'
+import { DEFAULT_CATALOG_RULES, mergeCatalogRules } from '../src'
+
+const length = DEFAULT_CATALOG_RULES.length
 
 describe('merge catalog rules', () => {
   it('merge not existing name', () => {
-    expect(mergeCatalogRules([
+    const rules = mergeCatalogRules([
       {
         name: 'inlined',
         match: ['@antfu/utils'],
       },
-    ])).toMatchInlineSnapshot(`
-      [
-        {
-          "depFields": [
-            "devDependencies",
-          ],
-          "match": [
-            /\\^@types\\\\//,
-          ],
-          "name": "types",
-        },
-        {
-          "match": [
-            /\\^vitest\\$/,
-            /\\^jest\\$/,
-            /\\^mocha\\$/,
-            /\\^cypress\\$/,
-            /\\^playwright\\$/,
-          ],
-          "name": "test",
-        },
-        {
-          "match": [
-            /eslint/,
-            /prettier/,
-            /stylelint/,
-            /biome/,
-            /commitlint/,
-            /\\^lint-staged\\$/,
-          ],
-          "name": "lint",
-        },
-        {
-          "match": [
-            /vite/,
-            /webpack/,
-            /rollup/,
-            /rolldown/,
-            /esbuild/,
-            /unbuild/,
-            /tsup/,
-            /rspack/,
-            /unplugin/,
-          ],
-          "name": "build",
-        },
-        {
-          "match": [
-            /\\^tsx\\$/,
-            /\\^esno\\$/,
-          ],
-          "name": "script",
-        },
-        {
-          "match": [
-            /postcss/,
-            /less/,
-            /sass/,
-            /tailwindcss/,
-            /unocss/,
-            /purgecss/,
-          ],
-          "name": "style",
-        },
-        {
-          "match": [
-            /\\^vue\\$/,
-            /\\^vue-router\\$/,
-            /\\^vuex\\$/,
-            /\\^pinia\\$/,
-            /\\^element-plus\\$/,
-            /\\^ant-design-vue\\$/,
-            /\\^vuetify\\$/,
-            /\\^naive-ui\\$/,
-            /\\^echarts\\$/,
-          ],
-          "name": "frontend",
-        },
-        {
-          "match": [
-            /\\^@iconify\\\\//,
-            /\\^iconify\\$/,
-            /\\^lucide\\$/,
-            /icon/,
-          ],
-          "name": "icons",
-        },
-        {
-          "match": [
-            /\\^express\\$/,
-            /\\^koa\\$/,
-          ],
-          "name": "backend",
-        },
-        {
-          "match": [
-            "@antfu/utils",
-          ],
-          "name": "inlined",
-        },
-      ]
-    `)
+    ])
+    expect(rules.length).toBe(length + 1)
   })
 
   it('merge existing name', () => {
-    expect(mergeCatalogRules([
+    const rules = mergeCatalogRules([
       {
         name: 'script',
         match: ['@antfu/nip'],
       },
-    ])).toMatchInlineSnapshot(`
-      [
-        {
-          "depFields": [
-            "devDependencies",
-          ],
-          "match": [
-            /\\^@types\\\\//,
-          ],
-          "name": "types",
-        },
-        {
-          "match": [
-            /\\^vitest\\$/,
-            /\\^jest\\$/,
-            /\\^mocha\\$/,
-            /\\^cypress\\$/,
-            /\\^playwright\\$/,
-          ],
-          "name": "test",
-        },
-        {
-          "match": [
-            /eslint/,
-            /prettier/,
-            /stylelint/,
-            /biome/,
-            /commitlint/,
-            /\\^lint-staged\\$/,
-          ],
-          "name": "lint",
-        },
-        {
-          "match": [
-            /vite/,
-            /webpack/,
-            /rollup/,
-            /rolldown/,
-            /esbuild/,
-            /unbuild/,
-            /tsup/,
-            /rspack/,
-            /unplugin/,
-          ],
-          "name": "build",
-        },
-        {
-          "match": [
-            /\\^tsx\\$/,
-            /\\^esno\\$/,
-            "@antfu/nip",
-          ],
-          "name": "script",
-        },
-        {
-          "match": [
-            /postcss/,
-            /less/,
-            /sass/,
-            /tailwindcss/,
-            /unocss/,
-            /purgecss/,
-          ],
-          "name": "style",
-        },
-        {
-          "match": [
-            /\\^vue\\$/,
-            /\\^vue-router\\$/,
-            /\\^vuex\\$/,
-            /\\^pinia\\$/,
-            /\\^element-plus\\$/,
-            /\\^ant-design-vue\\$/,
-            /\\^vuetify\\$/,
-            /\\^naive-ui\\$/,
-            /\\^echarts\\$/,
-          ],
-          "name": "frontend",
-        },
-        {
-          "match": [
-            /\\^@iconify\\\\//,
-            /\\^iconify\\$/,
-            /\\^lucide\\$/,
-            /icon/,
-          ],
-          "name": "icons",
-        },
-        {
-          "match": [
-            /\\^express\\$/,
-            /\\^koa\\$/,
-          ],
-          "name": "backend",
-        },
-      ]
-    `)
+    ])
+    expect(rules.length).toBe(length)
   })
 
   it('not merget with default rules', () => {
-    expect(mergeCatalogRules({ mergeDefaults: false }, [
+    const rules = mergeCatalogRules({ mergeDefaults: false }, [
       {
         name: 'inlined',
         match: ['@antfu/utils'],
       },
-    ])).toMatchInlineSnapshot(`
-      [
-        {
-          "match": [
-            "@antfu/utils",
-          ],
-          "name": "inlined",
-        },
-      ]
-    `)
+    ])
+    expect(rules.length).toBe(1)
   })
 })

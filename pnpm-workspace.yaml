@@ -4,6 +4,7 @@ catalogs:
     unbuild: ^3.5.0
   dev:
     bumpp: ^10.1.0
+    czg: ^1.11.1
     simple-git-hooks: ^2.13.0
     taze: ^19.0.4
     typescript: ^5.8.3
