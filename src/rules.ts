@@ -60,6 +60,19 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     ],
   },
 
+  // Style Libraries
+  {
+    name: 'style',
+    match: [
+      /postcss/,
+      /less/,
+      /sass/,
+      /tailwindcss/,
+      /unocss/,
+      /purgecss/,
+    ],
+  },
+
   // Frontend Libraries
   {
     name: 'frontend',

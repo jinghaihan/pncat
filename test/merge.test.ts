@@ -50,6 +50,7 @@ describe('merge catalog rules', () => {
             /unbuild/,
             /tsup/,
             /rspack/,
+            /unplugin/,
           ],
           "name": "build",
         },
@@ -59,6 +60,17 @@ describe('merge catalog rules', () => {
             /\\^esno\\$/,
           ],
           "name": "script",
+        },
+        {
+          "match": [
+            /postcss/,
+            /less/,
+            /sass/,
+            /tailwindcss/,
+            /unocss/,
+            /purgecss/,
+          ],
+          "name": "style",
         },
         {
           "match": [
@@ -148,6 +160,7 @@ describe('merge catalog rules', () => {
             /unbuild/,
             /tsup/,
             /rspack/,
+            /unplugin/,
           ],
           "name": "build",
         },
@@ -158,6 +171,17 @@ describe('merge catalog rules', () => {
             "@antfu/nip",
           ],
           "name": "script",
+        },
+        {
+          "match": [
+            /postcss/,
+            /less/,
+            /sass/,
+            /tailwindcss/,
+            /unocss/,
+            /purgecss/,
+          ],
+          "name": "style",
         },
         {
           "match": [

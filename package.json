@@ -6,13 +6,13 @@
   "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
   "author": "jinghaihan",
   "license": "MIT",
-  "homepage": "https://github.com/xiihn/pncat#readme",
+  "homepage": "https://github.com/jinghaihan/pncat#readme",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/xiihn/pncat.git"
+    "url": "git+https://github.com/jinghaihan/pncat.git"
   },
   "bugs": {
-    "url": "https://github.com/xiihn/pncat/issues"
+    "url": "https://github.com/jinghaihan/pncat/issues"
   },
   "keywords": [
     "pnpm",
