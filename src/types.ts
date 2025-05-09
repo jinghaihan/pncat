@@ -12,6 +12,7 @@ export interface CatalogRule {
   name: string
   match: string | RegExp | (string | RegExp)[]
   depFields?: DepType[]
+  priority?: number
 }
 
 export interface CommonOptions {

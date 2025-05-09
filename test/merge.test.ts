@@ -33,4 +33,36 @@ describe('merge catalog rules', () => {
     ])
     expect(rules.length).toBe(1)
   })
+
+  it('no priority', async () => {
+    const rules = mergeCatalogRules([
+      {
+        name: 'inlined',
+        match: ['@antfu/utils'],
+      },
+    ])
+    expect(rules[rules.length - 1].name).toBe('inlined')
+  })
+
+  it('min priority', async () => {
+    const rules = mergeCatalogRules([
+      {
+        name: 'inlined',
+        match: ['@antfu/utils'],
+        priority: 0,
+      },
+    ])
+    expect(rules[0].name).toBe('inlined')
+  })
+
+  it('max priority', async () => {
+    const rules = mergeCatalogRules([
+      {
+        name: 'inlined',
+        match: ['@antfu/utils'],
+        priority: 1000,
+      },
+    ])
+    expect(rules[rules.length - 1].name).toBe('inlined')
+  })
 })

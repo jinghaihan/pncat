@@ -1,111 +1,60 @@
 import type { CatalogRule } from './types'
 
 export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
-  // Type Definitions
   {
     name: 'types',
-    match: [
-      /^@types\//,
-    ],
-    depFields: ['devDependencies'], // typically in devDependencies
+    match: [/^@types\//],
+    depFields: ['devDependencies'],
+    priority: 10,
   },
-
-  // Test Frameworks
   {
     name: 'test',
-    match: [
-      /^vitest$/,
-      /^jest$/,
-      /^mocha$/,
-      /^cypress$/,
-      /^playwright$/,
-    ],
+    match: [/^vitest$/, /^jest$/, /^mocha$/, /^cypress$/, /^playwright$/],
+    priority: 20,
   },
-
-  // Linting Tools
   {
     name: 'lint',
-    match: [
-      /eslint/,
-      /prettier/,
-      /stylelint/,
-      /biome/,
-      /commitlint/,
-      /^lint-staged$/,
-    ],
+    match: [/eslint/, /prettier/, /stylelint/, /biome/, /commitlint/, /^lint-staged$/],
+    priority: 20,
   },
-
-  // Build Tools
+  {
+    name: 'i18n',
+    match: [/i18n/],
+    priority: 30,
+  },
   {
     name: 'build',
-    match: [
-      /vite/,
-      /webpack/,
-      /rollup/,
-      /rolldown/,
-      /esbuild/,
-      /unbuild/,
-      /tsup/,
-      /rspack/,
-      /unplugin/,
-    ],
+    match: [/vite/, /webpack/, /rollup/, /rolldown/, /esbuild/, /unbuild/, /tsup/, /rspack/, /unplugin/],
+    priority: 40,
   },
-
-  // Script Execution Tools
   {
     name: 'script',
-    match: [
-      /^tsx$/,
-      /^esno$/,
-    ],
+    match: [/^tsx$/, /^esno$/],
+    priority: 40,
   },
-
-  // Style Libraries
   {
     name: 'style',
-    match: [
-      /postcss/,
-      /less/,
-      /sass/,
-      /tailwindcss/,
-      /unocss/,
-      /purgecss/,
-    ],
+    match: [/postcss/, /less/, /sass/, /tailwindcss/, /unocss/, /purgecss/],
+    priority: 50,
   },
-
-  // Frontend Libraries
   {
     name: 'frontend',
-    match: [
-      /^vue$/,
-      /^vue-router$/,
-      /^vuex$/,
-      /^pinia$/,
-      /^element-plus$/,
-      /^ant-design-vue$/,
-      /^vuetify$/,
-      /^naive-ui$/,
-      /^echarts$/,
-    ],
+    match: [/^vue$/, /^vue-router$/, /^vuex$/, /^pinia$/, /^element-plus$/, /^ant-design-vue$/, /^vuetify$/, /^naive-ui$/, /^echarts$/],
+    priority: 60,
   },
-
-  // Icons Libraries
+  {
+    name: 'utils',
+    match: [/^lodash/, /^dayjs$/, /^@vueuse\//],
+    priority: 30,
+  },
   {
     name: 'icons',
-    match: [
-      /^@iconify\//,
-      /^iconify$/,
-      /^lucide$/,
-      /icon/,
-    ],
+    match: [/^@iconify\//, /^iconify$/, /^lucide$/, /icon/],
+    priority: 50,
   },
-
-  // Backend Libraries
   {
     name: 'backend',
-    match: [
-      /^express$/,
-      /^koa$/,
-    ],
+    match: [/^express$/, /^koa$/],
+    priority: 70,
   },
 ]

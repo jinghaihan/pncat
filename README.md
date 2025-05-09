@@ -104,6 +104,7 @@ export default defineConfig({
     {
       name: 'inlined',
       match: ['@antfu/utils'], // string or RegExp
+      priority: 0 // smaller numbers represent higher priority
     },
   ]),
   // allowed protocols in specifier to not be converted to catalog

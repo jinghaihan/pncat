@@ -28,9 +28,13 @@ export function mergeCatalogRules(
     ? [DEFAULT_CATALOG_RULES, ...rules]
     : [...rules]
 
-  return sources.length === 0
+  const merged = sources.length === 0
     ? []
     : deepmerge.all<CatalogRule[]>(sources, { arrayMerge })
+
+  return merged.sort((a, b) =>
+    (a.priority ?? Infinity) - (b.priority ?? Infinity),
+  )
 }
 
 function mergeByName(target: any[], source: any[]) {
