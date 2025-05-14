@@ -4,7 +4,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'types',
     match: [/^@types\//],
-    depFields: ['devDependencies'],
+    // depFields: ['devDependencies'],
     priority: 10,
   },
   {
@@ -50,6 +50,13 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'icons',
     match: [/^@iconify\//, /^iconify$/, /^lucide$/, /icon/],
+    priority: 50,
+  },
+  {
+    name: 'markdown',
+    match: [
+      /markdown-it/,
+    ],
     priority: 50,
   },
   {
