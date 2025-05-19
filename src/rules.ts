@@ -54,9 +54,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'markdown',
-    match: [
-      /markdown-it/,
-    ],
+    match: [/markdown-it/],
     priority: 50,
   },
   {

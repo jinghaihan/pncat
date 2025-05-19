@@ -33,7 +33,7 @@ export async function ensurePnpmWorkspaceYAML() {
   }
 }
 
-export async function ensureDep(pkg: string, isDev: boolean = true) {
+export async function ensurePackage(pkg: string, isDev: boolean = true) {
   const root = await findUp(['.git', 'package.json'], { cwd: process.cwd() })
     .then(r => r ? dirname(r) : process.cwd())
   const packageJSONPath = join(root, 'package.json')
