@@ -122,6 +122,17 @@ export default defineConfig({
   // disable catalog for "overrides" package.json field
   depFields: {
     packageManager: false
+  },
+  // control how specifier ranges are processed
+  specifierOptions: {
+    // whether to skip complex version ranges (e.g., "||", "-", ">=16.0.0")
+    skipComplexRanges: true,
+    // list of specific range types to skip (overrides skipComplexRanges)
+    skipRangeTypes: [],
+    // whether to allow pre-release versions (e.g., "4.0.0-beta")
+    allowPreReleases: true,
+    // whether to allow wildcard versions (e.g., "3.x", "*")
+    allowWildcards: false
   }
 })
 ```

@@ -104,9 +104,7 @@ export interface PnpmWorkspaceMeta extends BasePackageMeta {
   context: PnpmWorkspaceYaml
 }
 
-export type PackageMeta =
-  | PackageJsonMeta
-  | PnpmWorkspaceMeta
+export type PackageMeta = PackageJsonMeta | PnpmWorkspaceMeta
 
 export interface SpecifierOptions {
   /**

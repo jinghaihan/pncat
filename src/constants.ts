@@ -1,4 +1,4 @@
-import type { CatalogOptions, CommonOptions, DepType, SpecifierOptions } from './types'
+import type { CatalogOptions, CommonOptions, DepType } from './types'
 import { DEFAULT_CATALOG_RULES } from './rules'
 
 export const MODE_CHOICES = ['detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
@@ -15,12 +15,6 @@ export const DEPS_FIELDS = [
   'pnpm-workspace',
 ] as const
 
-export const DEFAULT_SPECIFIER_OPTIONS: SpecifierOptions = {
-  skipComplexRanges: true,
-  allowPreReleases: true,
-  allowWildcards: false,
-}
-
 export const DEFAULT_COMMON_OPTIONS: CommonOptions = {
   cwd: '',
   recursive: true,
@@ -34,7 +28,11 @@ export const DEFAULT_COMMON_OPTIONS: CommonOptions = {
   },
   allowedProtocols: ['workspace', 'link', 'file'],
   catalogRules: DEFAULT_CATALOG_RULES,
-  specifierOptions: DEFAULT_SPECIFIER_OPTIONS,
+  specifierOptions: {
+    skipComplexRanges: true,
+    allowPreReleases: true,
+    allowWildcards: false,
+  },
 }
 
 export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
