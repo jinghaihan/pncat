@@ -12,7 +12,7 @@ import { loadPnpmWorkspace } from './pnpm-workspace'
 export async function loadPackage(
   relative: string,
   options: CommonOptions,
-  shouldCatalog: (name: string) => boolean,
+  shouldCatalog: (name: string, specifier: string) => boolean,
 ): Promise<PackageMeta[]> {
   if (relative.endsWith('pnpm-workspace.yaml'))
     return loadPnpmWorkspace(relative, options, shouldCatalog)
@@ -22,7 +22,7 @@ export async function loadPackage(
 export async function loadPackages(options: CommonOptions): Promise<PackageMeta[]> {
   let packagesNames: string[] = []
   const cwd = resolve(options.cwd || process.cwd())
-  const filter = createDependenciesFilter(options.include, options.exclude)
+  const filter = createDependenciesFilter(options.include, options.exclude, options.specifierOptions)
 
   if (options.recursive) {
     packagesNames = await glob('**/package.json', {

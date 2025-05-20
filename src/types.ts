@@ -36,6 +36,10 @@ export interface CommonOptions {
    * Rules to group and name dependencies in the catalog output
    */
   catalogRules?: CatalogRule[]
+  /**
+   * Options to control how specifier ranges are processed
+   */
+  specifierOptions?: SpecifierOptions
 }
 
 export interface CatalogOptions extends CommonOptions {
@@ -103,3 +107,37 @@ export interface PnpmWorkspaceMeta extends BasePackageMeta {
 export type PackageMeta =
   | PackageJsonMeta
   | PnpmWorkspaceMeta
+
+export interface SpecifierOptions {
+  /**
+   * Whether to skip complex version ranges (e.g., "||", "-", ">=16.0.0")
+   * @default true
+   */
+  skipComplexRanges?: boolean
+  /**
+   * List of specific range types to skip (overrides skipComplexRanges)
+   * Example: ["||", "-", ">=", "<", "x", "*", "pre-release"]
+   */
+  skipRangeTypes?: SpecifierRangeType[]
+  /**
+   * Whether to allow pre-release versions (e.g., "4.0.0-beta")
+   * @default true
+   */
+  allowPreReleases?: boolean
+  /**
+   * Whether to allow wildcard versions (e.g., "3.x", "*")
+   * @default false
+   */
+  allowWildcards?: boolean
+}
+
+export type SpecifierRangeType =
+  | '||' // Logical OR (e.g., "^3.0.0 || ^4.0.0")
+  | '-' // Hyphen range (e.g., "1.2.3 - 2.3.4")
+  | '>=' // Greater than or equal
+  | '<=' // Less than or equal
+  | '>' // Greater than
+  | '<' // Less than
+  | 'x' // Wildcard (e.g., "3.x")
+  | '*' // Any version
+  | 'pre-release' // Beta/alpha/rc versions (e.g., "4.0.0-beta")

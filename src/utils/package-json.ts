@@ -7,7 +7,7 @@ import { parseDependencies, parseDependency } from './dependencies'
 export async function loadPackageJSON(
   relative: string,
   options: CommonOptions,
-  shouldCatalog: (name: string) => boolean,
+  shouldCatalog: (name: string, specifier: string) => boolean,
 ): Promise<PackageJsonMeta[]> {
   const filepath = resolve(options.cwd ?? '', relative)
   const raw = await readPackageJSON(filepath)
@@ -17,9 +17,9 @@ export async function loadPackageJSON(
     if (options.depFields?.[key] !== false) {
       if (key === 'packageManager') {
         if (raw.packageManager) {
-          const [name, version] = raw.packageManager.split('@')
+          const [name, specifier] = raw.packageManager.split('@')
           // `+` sign can be used to pin the hash of the package manager, we remove it to be semver compatible.
-          deps.push(parseDependency(name, `^${version.split('+')[0]}`, 'packageManager', shouldCatalog))
+          deps.push(parseDependency(name, `^${specifier.split('+')[0]}`, 'packageManager', shouldCatalog))
         }
       }
       else {

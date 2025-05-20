@@ -7,7 +7,7 @@ import { parseDependency } from './dependencies'
 export async function loadPnpmWorkspace(
   relative: string,
   options: CommonOptions,
-  shouldCatalog: (name: string) => boolean,
+  shouldCatalog: (name: string, specifier: string) => boolean,
 ): Promise<PnpmWorkspaceMeta[]> {
   const filepath = resolve(options.cwd ?? '', relative)
   const rawText = await readFile(filepath, 'utf-8')
@@ -18,7 +18,7 @@ export async function loadPnpmWorkspace(
 
   function createPnpmWorkspaceEntry(name: string, map: Record<string, string>): PnpmWorkspaceMeta {
     const deps: RawDep[] = Object.entries(map)
-      .map(([pkg, version]) => parseDependency(pkg, version, 'pnpm-workspace', shouldCatalog))
+      .map(([pkg, specifier]) => parseDependency(pkg, specifier, 'pnpm-workspace', shouldCatalog))
 
     return {
       name,

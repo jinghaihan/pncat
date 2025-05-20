@@ -39,13 +39,13 @@
   "scripts": {
     "start": "tsx ./src/cli.ts",
     "build": "unbuild",
-    "typecheck": "vue-tsc --noEmit",
+    "typecheck": "tsc",
     "test": "vitest",
     "lint": "eslint",
     "commit": "czg",
     "deps": "taze major -I",
     "release": "pnpm build && bumpp && pnpm publish --no-git-checks",
-    "catalog": "pnpm pncat",
+    "catalog": "pncat",
     "prepare": "npx simple-git-hooks",
     "bootstrap": "pnpm install",
     "preinstall": "npx only-allow pnpm"
