@@ -23,9 +23,9 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 30,
   },
   {
-    name: 'build',
-    match: [/vite/, /webpack/, /rollup/, /rolldown/, /esbuild/, /unbuild/, /tsup/, /rspack/, /unplugin/],
-    priority: 40,
+    name: 'utils',
+    match: [/^lodash/, /^dayjs$/, /^@vueuse\//],
+    priority: 30,
   },
   {
     name: 'script',
@@ -33,19 +33,9 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 40,
   },
   {
-    name: 'style',
-    match: [/postcss/, /less/, /sass/, /tailwindcss/, /unocss/, /purgecss/],
-    priority: 50,
-  },
-  {
-    name: 'frontend',
-    match: [/^vue$/, /^vue-router$/, /^vuex$/, /^pinia$/, /^element-plus$/, /^ant-design-vue$/, /^vuetify$/, /^naive-ui$/, /^echarts$/],
-    priority: 60,
-  },
-  {
-    name: 'utils',
-    match: [/^lodash/, /^dayjs$/, /^@vueuse\//],
-    priority: 30,
+    name: 'build',
+    match: [/vite/, /webpack/, /rollup/, /rolldown/, /esbuild/, /unbuild/, /tsup/, /rspack/, /unplugin/],
+    priority: 40,
   },
   {
     name: 'icons',
@@ -56,6 +46,16 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     name: 'markdown',
     match: [/markdown-it/],
     priority: 50,
+  },
+  {
+    name: 'style',
+    match: [/postcss/, /less/, /sass/, /tailwindcss/, /unocss/, /purgecss/],
+    priority: 50,
+  },
+  {
+    name: 'frontend',
+    match: [/^vue$/, /^vue-router$/, /^vuex$/, /^pinia$/, /^element-plus$/, /^ant-design-vue$/, /^vuetify$/, /^naive-ui$/, /^echarts$/],
+    priority: 60,
   },
   {
     name: 'backend',

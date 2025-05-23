@@ -9,18 +9,18 @@ catalogs:
     taze: ^19.1.0
     typescript: ^5.8.3
   lint:
-    '@antfu/eslint-config': ^4.13.1
+    '@antfu/eslint-config': ^4.13.2
     eslint: ^9.27.0
     lint-staged: ^16.0.0
   peer:
     '@antfu/nip': ^0.1.0
   prod:
-    '@clack/prompts': ^0.10.1
+    '@clack/prompts': ^0.11.0
     ansis: ^4.0.0
     cac: ^6.7.14
     deepmerge: ^4.3.1
     execa: ^9.5.3
-    fast-npm-meta: ^0.4.2
+    fast-npm-meta: ^0.4.3
     find-up: ^7.0.0
     pathe: ^2.0.3
     pkg-types: ^2.1.0
@@ -34,5 +34,5 @@ catalogs:
   test:
     vitest: ^3.1.4
   types:
-    '@types/node': ^22.15.19
+    '@types/node': ^22.15.21
     '@types/semver': ^7.7.0

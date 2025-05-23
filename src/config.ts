@@ -3,6 +3,7 @@ import process from 'node:process'
 import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
 import { DEFAULT_CATALOG_OPTIONS } from './constants'
+import { sortCatalogRules } from './utils/sort'
 
 function normalizeConfig(options: Partial<CommonOptions>) {
   // interop
@@ -15,7 +16,7 @@ function normalizeConfig(options: Partial<CommonOptions>) {
 export async function resolveConfig(
   options: Partial<CommonOptions>,
 ): Promise<CatalogOptions> {
-  const defaults = DEFAULT_CATALOG_OPTIONS
+  const defaults = { ...DEFAULT_CATALOG_OPTIONS }
   options = normalizeConfig(options)
 
   const loader = createConfigLoader<CommonOptions>({
@@ -43,5 +44,11 @@ export async function resolveConfig(
 
   const configOptions = normalizeConfig(config.config)
 
-  return deepmerge(deepmerge(defaults, configOptions), options)
+  const catalogRules = configOptions.catalogRules ?? defaults.catalogRules
+  delete configOptions.catalogRules
+
+  const merged = deepmerge(deepmerge(defaults, configOptions), options)
+  merged.catalogRules = catalogRules ? sortCatalogRules(catalogRules) : []
+
+  return merged
 }
