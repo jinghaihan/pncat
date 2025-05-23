@@ -44,11 +44,11 @@ export async function resolveConfig(
 
   const configOptions = normalizeConfig(config.config)
 
-  const catalogRules = configOptions.catalogRules ?? defaults.catalogRules
+  const catalogRules = configOptions.catalogRules ?? defaults.catalogRules ?? []
   delete configOptions.catalogRules
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
-  merged.catalogRules = catalogRules ? sortCatalogRules(catalogRules) : []
+  merged.catalogRules = sortCatalogRules(catalogRules)
 
   return merged
 }
