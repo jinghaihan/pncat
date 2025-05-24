@@ -27,10 +27,20 @@ describe('merge catalog rules', () => {
   it('not merget with default rules', () => {
     const rules = mergeCatalogRules({ mergeDefaults: false }, [
       {
-        name: 'inlined',
-        match: ['@antfu/utils'],
+        name: 'frontend',
+        match: ['vue'],
+      },
+      {
+        name: 'frontend',
+        match: ['react'],
       },
     ])
     expect(rules.length).toBe(1)
+    expect(rules[0].match).toMatchInlineSnapshot(`
+      [
+        "vue",
+        "react",
+      ]
+    `)
   })
 })

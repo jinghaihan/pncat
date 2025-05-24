@@ -9,19 +9,20 @@ catalogs:
     unbuild:
       specifier: ^3.5.0
       version: 3.5.0
-  dev:
+  cli:
+    '@antfu/nip':
+      specifier: ^0.1.0
+      version: 0.1.0
     bumpp:
       specifier: ^10.1.1
       version: 10.1.1
     czg:
       specifier: ^1.11.1
       version: 1.11.1
-    simple-git-hooks:
-      specifier: ^2.13.0
-      version: 2.13.0
     taze:
       specifier: ^19.1.0
       version: 19.1.0
+  dev:
     typescript:
       specifier: ^5.8.3
       version: 5.8.3
@@ -35,11 +36,10 @@ catalogs:
     lint-staged:
       specifier: ^16.0.0
       version: 16.0.0
-  peer:
-    '@antfu/nip':
-      specifier: ^0.1.0
-      version: 0.1.0
-  prod:
+    simple-git-hooks:
+      specifier: ^2.13.0
+      version: 2.13.0
+  node:
     '@clack/prompts':
       specifier: ^0.11.0
       version: 0.11.0
@@ -49,15 +49,9 @@ catalogs:
     cac:
       specifier: ^6.7.14
       version: 6.7.14
-    deepmerge:
-      specifier: ^4.3.1
-      version: 4.3.1
     execa:
       specifier: ^9.5.3
       version: 9.5.3
-    fast-npm-meta:
-      specifier: ^0.4.3
-      version: 0.4.3
     find-up:
       specifier: ^7.0.0
       version: 7.0.0
@@ -67,21 +61,12 @@ catalogs:
     pkg-types:
       specifier: ^2.1.0
       version: 2.1.0
-    pnpm-workspace-yaml:
-      specifier: ^0.3.1
-      version: 0.3.1
-    semver:
-      specifier: ^7.7.2
-      version: 7.7.2
     tinyglobby:
       specifier: ^0.2.13
       version: 0.2.13
     unconfig:
       specifier: ^7.3.2
       version: 7.3.2
-    yaml:
-      specifier: ^2.8.0
-      version: 2.8.0
   script:
     tsx:
       specifier: ^4.19.4
@@ -97,55 +82,71 @@ catalogs:
     '@types/semver':
       specifier: ^7.7.0
       version: 7.7.0
+  utils:
+    deepmerge:
+      specifier: ^4.3.1
+      version: 4.3.1
+    fast-npm-meta:
+      specifier: ^0.4.3
+      version: 0.4.3
+    pnpm-workspace-yaml:
+      specifier: ^0.3.1
+      version: 0.3.1
+    semver:
+      specifier: ^7.7.2
+      version: 7.7.2
+    yaml:
+      specifier: ^2.8.0
+      version: 2.8.0
 
 importers:
 
   .:
     dependencies:
       '@antfu/nip':
-        specifier: catalog:peer
+        specifier: catalog:cli
         version: 0.1.0
       '@clack/prompts':
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 0.11.0
       ansis:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 4.0.0
       cac:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 6.7.14
       deepmerge:
-        specifier: catalog:prod
+        specifier: catalog:utils
         version: 4.3.1
       execa:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 9.5.3
       fast-npm-meta:
-        specifier: catalog:prod
+        specifier: catalog:utils
         version: 0.4.3
       find-up:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 7.0.0
       pathe:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 2.0.3
       pkg-types:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 2.1.0
       pnpm-workspace-yaml:
-        specifier: catalog:prod
+        specifier: catalog:utils
         version: 0.3.1
       semver:
-        specifier: catalog:prod
+        specifier: catalog:utils
         version: 7.7.2
       tinyglobby:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 0.2.13
       unconfig:
-        specifier: catalog:prod
+        specifier: catalog:node
         version: 7.3.2
       yaml:
-        specifier: catalog:prod
+        specifier: catalog:utils
         version: 2.8.0
     devDependencies:
       '@antfu/eslint-config':
@@ -158,10 +159,10 @@ importers:
         specifier: catalog:types
         version: 7.7.0
       bumpp:
-        specifier: catalog:dev
+        specifier: catalog:cli
         version: 10.1.1
       czg:
-        specifier: catalog:dev
+        specifier: catalog:cli
         version: 1.11.1
       eslint:
         specifier: catalog:lint
@@ -173,10 +174,10 @@ importers:
         specifier: workspace:*
         version: 'link:'
       simple-git-hooks:
-        specifier: catalog:dev
+        specifier: catalog:lint
         version: 2.13.0
       taze:
-        specifier: catalog:dev
+        specifier: catalog:cli
         version: 19.1.0
       tsx:
         specifier: catalog:script
@@ -2092,9 +2093,6 @@ packages:
     resolution: {integrity: sha512-wPrq66Llhl7/4AGC6I+cqxT07LhXvWL08LNXz1fENOw0Ap4sRZZ/gZpTTJ5jpurzzzfS2W/Ge9BY3LgLjCShcw==}
     engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
-  package-manager-detector@1.2.0:
-    resolution: {integrity: sha512-PutJepsOtsqVfUsxCzgTTpyXmiAgvKptIgY4th5eq5UXXFhj5PxfQ9hnGkypMeovpAvVshFRItoFHYO18TCOqA==}
-
   package-manager-detector@1.3.0:
     resolution: {integrity: sha512-ZsEbbZORsyHuO00lY1kV3/t72yp6Ysay6Pd17ZAlNGuGwmWDLCJxFpRs0IzfXfj1o4icJOkUEioexFHzyPurSQ==}
 
@@ -2854,7 +2852,7 @@ snapshots:
     dependencies:
       ansis: 3.17.0
       fzf: 0.5.2
-      package-manager-detector: 1.2.0
+      package-manager-detector: 1.3.0
       tinyexec: 1.0.1
 
   '@antfu/nip@0.1.0':
@@ -2865,7 +2863,7 @@ snapshots:
       cac: 6.7.14
       fast-npm-meta: 0.4.3
       find-up: 7.0.0
-      package-manager-detector: 1.2.0
+      package-manager-detector: 1.3.0
       pnpm-workspace-yaml: 0.3.1
 
   '@babel/code-frame@7.27.1':
@@ -4901,8 +4899,6 @@ snapshots:
   p-locate@6.0.0:
     dependencies:
       p-limit: 4.0.0
-
-  package-manager-detector@1.2.0: {}
 
   package-manager-detector@1.3.0: {}
 
