@@ -79,6 +79,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /ansis/,
       /consola/,
       /pkg-types/,
+      /local-pkg/,
       /unconfig/,
     ],
     priority: 30,

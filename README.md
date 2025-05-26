@@ -15,9 +15,9 @@ Advanced dependency management for pnpm workspaces with catalog support.
 pnpm add -D pncat
 ```
 
-## ✨ Features
+## Features
 
-### 🔍 Detect Catalogable Dependencies
+### Detect Catalogable Dependencies
 
 ```bash
 pncat detect
@@ -27,78 +27,74 @@ Scans your workspace to identify dependencies that could be moved to catalogs.
 
 ![Image](/assets/detect.png)
 
-### 🚀 Smart Catalog Migration
+### Smart Catalog Migration
 
 ```bash
 pncat migrate
 ```
 
-Automatically groups dependencies by type (lint, test, build) and updates your `pnpm.workspace.yaml`.
+Automatically groups dependencies by rules (e.g., lint, test, utils), it updates both `pnpm.workspace.yaml` and relevant `package.json`.
+
+Default rules can be found in `src/rules.ts`. To customize theme, you can create a `pncat.config.ts` file in the root directory.
 
 ![Image](/assets/migrate.png)
 
-> **Migration Guide**
->
-> **For new users:** Simply run `pncat migrate`
->
-> **Existing catalog users:**
-> - Recommended: `pncat revert` → `pncat migrate` (clean migration)
-> - Force update: `pnpm migrate -f` (direct conversion)
+#### Migration Guide
 
-### ➕ Add with Catalog Support
+To preverse existing catalog, run `pncat migrate`, this will only migrate uncataloged dependencies.
+
+To update catalog catalog groups according to rules, run `pncat catalog -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
+
+### Add with Catalog Support
 
 ```bash
 pncat add vue
 ```
 
-Adds packages while automatically managing catalog entries (powered by [@antfu/nip](https://github.com/antfu/nip)).
+Add dependencies with prompts and catalogs support (powered by [@antfu/nip](https://github.com/antfu/nip)).
 
 ![Image](/assets/add.png)
 
-### 🗑️ Safe Dependency Removal
+### Safe Dependency Removal
 
 ```bash
 pncat remove vitest
 ```
 
-Removes packages and cleans up `pnpm.workspace.yaml` when safe.
+Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both `pnpm.workspace.yaml` and `package.json`.
 
 ![Image](/assets/remove.png)
 
-### 🧹 Catalog Cleanup
+### Catalog Cleanup
 
 ```bash
 pncat clean
 ```
 
-Identifies and removes unused catalog dependencies.
+Find unused catalog dependencies and remove them from `pnpm.workspace.yaml`.
 
 ![Image](/assets/clean.png)
 
-### ⏪ Revert to Standard Dependencies
+### Revert Cataloged Dependencies
 
 ```bash
 pncat revert
 ```
 
-Moves catalog dependencies back to individual `package.json` files.
+Reverts cataloged dependencies to `package.json`. Maybe useful for when shared dependencies during monorepo restructuring or migration.
 
 ![Image](/assets/revert.png)
 
-## ⚙️ Configuration
+## Configuration
 
-Create a `pncat.config.ts` file to customize behavior:
+Create a `pncat.config.ts` file to customize behavior.
+
+The configuration below shows the default values — you can override only what you need:
 
 ```ts
 import { defineConfig, mergeCatalogRules } from 'pncat'
 
 export default defineConfig({
-  // default execution mode
-  mode: 'detect',
-  // force cataloging according to rules, ignoring original configurations
-  force: false,
-  // skip prompt confirmation
-  yes: false,
   // custom catalog groups (extends defaults)
   catalogRules: mergeCatalogRules([
     {
@@ -107,6 +103,12 @@ export default defineConfig({
       priority: 0 // smaller numbers represent higher priority
     },
   ]),
+  // default execution mode
+  mode: 'detect',
+  // force cataloging according to rules, ignoring original configurations
+  force: false,
+  // skip prompt confirmation
+  yes: false,
   // allowed protocols in specifier to not be converted to catalog
   allowedProtocols: ['workspace', 'link', 'file'],
   // ignore paths for looking for package.json in monorepo
@@ -137,21 +139,25 @@ export default defineConfig({
 })
 ```
 
-## 💡 Why pncat?
+## Why pncat?
 
-Solving pnpm workspace pain points:
-- 🔄 Automated catalog dependency management
-- 🛡️ Built-in safety checks
-- 📊 Workspace-wide dependency analysis
-- 🧩 Streamlined catalog operations
+For monorepo repositories, it is crucial to maintain consistent dependency versions across multiple packages. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project’s structure.
 
-## 🛣️ Roadmap
+Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, we developed pncat.
+
+Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, we introduced the `clean` and `revert` commands to automate this task.
+
+Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) provided great inspiration and guidance during the development of this tool.
+
+## Roadmap
 
 ### Core Features
-- [x] Catalog detection & migration
-- [x] Smart add/remove operations
-- [x] Catalog cleanup utility
-- [x] Reversion capability
+- [x] Detect catalogable dependencies
+- [x] Migrate to catalogs
+- [x] Install dependency with catalog support
+- [x] Safely remove dependency
+- [x] Cleanup unused catalog dependencies
+- [x] Revert cataloged dependencies version to `package.json`
 
 ### Advanced
 - [x] Config file support
