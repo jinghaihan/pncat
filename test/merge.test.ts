@@ -19,9 +19,13 @@ describe('merge catalog rules', () => {
       {
         name: 'script',
         match: ['@antfu/nip'],
+        priority: 0,
       },
     ])
     expect(rules.length).toBe(length)
+
+    const rule = rules.find(rule => rule.name === 'script')
+    expect(rule?.priority).toBe(0)
   })
 
   it('not merget with default rules', () => {

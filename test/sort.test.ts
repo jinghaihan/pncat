@@ -6,9 +6,7 @@ it('sort catalog rules', () => {
   const merged = mergeCatalogRules([
     {
       name: 'vue',
-      match: [
-        'vue',
-      ],
+      match: ['vue'],
       priority: 0,
     },
     {

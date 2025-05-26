@@ -7,10 +7,7 @@ export interface MergeOptions {
   arrayMerge?: (target: any[], source: any[]) => any[]
 }
 
-export function mergeCatalogRules(
-  options: MergeOptions,
-  ...rules: CatalogRule[][]
-): CatalogRule[]
+export function mergeCatalogRules(options: MergeOptions, ...rules: CatalogRule[][]): CatalogRule[]
 export function mergeCatalogRules(...rules: CatalogRule[][]): CatalogRule[]
 
 export function mergeCatalogRules(

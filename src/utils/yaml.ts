@@ -19,11 +19,13 @@ export function highlightYAML(yamlContent: string): string {
     const currentIndent = line.search(/\S/)
     const newIndentLevel = Math.floor(currentIndent / indentSize)
 
-    const specifierMatch = line.match(/(:)\s*([~^]?\d+\.\d+\.\d+)/)
+    const specifierMatch = line.match(/(:)\s*(['"])?([~^<>=]*\d[\w.\-]*)(['"])?/)
     if (specifierMatch) {
       const beforeSpecifier = line.substring(0, specifierMatch.index! + 1)
-      const specifier = specifierMatch[2]
-      return `${c.cyan(beforeSpecifier)} ${c.green(specifier)}`
+      const openingQuote = specifierMatch[2] || ''
+      const specifier = specifierMatch[3]
+      const closingQuote = specifierMatch[4] || ''
+      return `${c.cyan(beforeSpecifier)} ${openingQuote}${c.green(specifier)}${closingQuote}`
     }
 
     indentLevel = newIndentLevel
