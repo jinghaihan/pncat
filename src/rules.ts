@@ -189,12 +189,13 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /vuetify/,
       /logicflow/,
       /vue-flow/,
+      /reka-ui/,
     ],
     priority: 60,
   },
   {
     name: 'backend',
-    match: [/express/, /koa/],
+    match: [/express/, /koa/, /drizzle/],
     priority: 70,
   },
 ]
