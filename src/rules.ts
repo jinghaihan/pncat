@@ -9,7 +9,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'monorepo',
-    match: [/lerna/, /changesets/, /nx/, /turbo/],
+    match: [/lerna/, /changesets/, /nx/, /turbo/, /shadcn-vue/],
     priority: 20,
   },
   {
@@ -65,6 +65,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /cross-env/,
       /dotenv/,
       /pathe/,
+      /enhanced-resolve/,
       /fs-extra/,
       /fast-glob/,
       /globby/,
@@ -187,9 +188,10 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /element-plus/,
       /naive-ui/,
       /vuetify/,
+      /radix-vue/,
+      /reka-ui/,
       /logicflow/,
       /vue-flow/,
-      /reka-ui/,
     ],
     priority: 60,
   },
