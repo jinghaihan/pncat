@@ -10,15 +10,15 @@ catalogs:
   dev:
     typescript: ^5.8.3
   lint:
-    '@antfu/eslint-config': ^4.13.2
-    eslint: ^9.27.0
-    lint-staged: ^16.0.0
+    '@antfu/eslint-config': ^4.13.3
+    eslint: ^9.28.0
+    lint-staged: ^16.1.0
     simple-git-hooks: ^2.13.0
   node:
     '@clack/prompts': ^0.11.0
-    ansis: ^4.0.0
+    ansis: ^4.1.0
     cac: ^6.7.14
-    execa: ^9.5.3
+    execa: ^9.6.0
     find-up: ^7.0.0
     pathe: ^2.0.3
     pkg-types: ^2.1.0
@@ -27,9 +27,9 @@ catalogs:
   script:
     tsx: ^4.19.4
   test:
-    vitest: ^3.1.4
+    vitest: ^3.2.1
   types:
-    '@types/node': ^22.15.21
+    '@types/node': ^22.15.29
     '@types/semver': ^7.7.0
   utils:
     deepmerge: ^4.3.1

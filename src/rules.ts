@@ -82,6 +82,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /pkg-types/,
       /local-pkg/,
       /unconfig/,
+      /synckit/,
     ],
     priority: 30,
   },

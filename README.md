@@ -163,6 +163,10 @@ Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizi
 - [x] Config file support
 - [x] Custom grouping rules
 
+## Related Projects
+
++ [eslint-plugin-pnpm-catalog](https://github.com/onmax/eslint-plugin-pnpm-catalog) by [@onmax](https://github.com/onmax) - ESLint plugin that enforces the use of named catalogs in pnpm workspaces
+
 ## License
 
 [MIT](./LICENSE) License © [jinghaihan](https://github.com/jinghaihan)
