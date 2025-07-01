@@ -51,6 +51,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /release-it/,
       /standard-version/,
       /pncat/,
+      /turnpress/,
       /shadcn-vue/,
     ],
     priority: 20,
@@ -84,6 +85,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /local-pkg/,
       /unconfig/,
       /synckit/,
+      /cheerio/,
     ],
     priority: 30,
   },
@@ -146,7 +148,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'markdown',
-    match: [/markdown-it/, /markdown/],
+    match: [/markdown-it/, /markdown/, /turndown/],
     priority: 50,
   },
   {

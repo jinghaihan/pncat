@@ -143,9 +143,9 @@ export default defineConfig({
 
 For monorepo repositories, it is crucial to maintain consistent dependency versions across multiple packages. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project’s structure.
 
-Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, we developed pncat.
+Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, I developed pncat.
 
-Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, we introduced the `clean` and `revert` commands to automate this task.
+Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, I introduced the `clean` and `revert` commands to automate this task.
 
 Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) provided great inspiration and guidance during the development of this tool.
 
