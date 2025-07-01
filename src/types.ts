@@ -129,13 +129,13 @@ export interface SpecifierOptions {
   allowWildcards?: boolean
 }
 
-export type SpecifierRangeType =
-  | '||' // Logical OR (e.g., "^3.0.0 || ^4.0.0")
-  | '-' // Hyphen range (e.g., "1.2.3 - 2.3.4")
-  | '>=' // Greater than or equal
-  | '<=' // Less than or equal
-  | '>' // Greater than
-  | '<' // Less than
-  | 'x' // Wildcard (e.g., "3.x")
-  | '*' // Any version
-  | 'pre-release' // Beta/alpha/rc versions (e.g., "4.0.0-beta")
+export type SpecifierRangeType
+  = | '||' // Logical OR (e.g., "^3.0.0 || ^4.0.0")
+    | '-' // Hyphen range (e.g., "1.2.3 - 2.3.4")
+    | '>=' // Greater than or equal
+    | '<=' // Less than or equal
+    | '>' // Greater than
+    | '<' // Less than
+    | 'x' // Wildcard (e.g., "3.x")
+    | '*' // Any version
+    | 'pre-release' // Beta/alpha/rc versions (e.g., "4.0.0-beta")

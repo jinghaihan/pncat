@@ -9,7 +9,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'monorepo',
-    match: [/lerna/, /changesets/, /nx/, /turbo/, /shadcn-vue/],
+    match: [/lerna/, /changesets/, /nx/, /turbo/],
     priority: 20,
   },
   {
@@ -51,6 +51,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /release-it/,
       /standard-version/,
       /pncat/,
+      /shadcn-vue/,
     ],
     priority: 20,
   },
@@ -174,6 +175,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /tippy/,
       /monaco-editor/,
       /codemirror/,
+      /xterm/,
       /sortablejs/,
       /draggable/,
       /moveable/,
