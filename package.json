@@ -44,11 +44,12 @@
     "lint": "eslint",
     "commit": "czg",
     "deps": "taze major -I",
-    "release": "pnpm build && bumpp && pnpm publish --no-git-checks",
+    "release": "bumpp && pnpm publish --no-git-checks",
     "catalog": "pncat",
     "prepare": "npx simple-git-hooks",
     "bootstrap": "pnpm install",
-    "preinstall": "npx only-allow pnpm"
+    "preinstall": "npx only-allow pnpm",
+    "prepublishOnly": "pnpm build"
   },
   "peerDependencies": {
     "@antfu/nip": "catalog:cli"
