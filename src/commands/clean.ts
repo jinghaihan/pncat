@@ -4,9 +4,9 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { execa } from 'execa'
-import { findUp } from 'find-up'
 import { Scanner } from '../api/scanner'
 import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
+import { findWorkspaceYaml } from '../utils/workspace'
 import { safeYAMLDeleteIn } from '../utils/yaml'
 
 interface DeletableCatalogs {
@@ -16,7 +16,7 @@ interface DeletableCatalogs {
 }
 
 export async function cleanCommand(options: CatalogOptions) {
-  const pnpmWorkspaceYamlPath = await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
+  const pnpmWorkspaceYamlPath = await findWorkspaceYaml()
   if (!pnpmWorkspaceYamlPath) {
     p.outro(c.red('no pnpm-workspace.yaml found, aborting'))
     process.exit(1)
@@ -92,7 +92,7 @@ export async function cleanCommand(options: CatalogOptions) {
 
         await execa('pnpm', ['install'], {
           stdio: 'inherit',
-          cwd: process.cwd(),
+          cwd: options.cwd || process.cwd(),
         })
       },
     },

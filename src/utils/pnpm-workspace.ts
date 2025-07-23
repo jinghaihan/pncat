@@ -9,7 +9,7 @@ export async function loadPnpmWorkspace(
   options: CommonOptions,
   shouldCatalog: (name: string, specifier: string) => boolean,
 ): Promise<PnpmWorkspaceMeta[]> {
-  const filepath = resolve(options.cwd ?? '', relative)
+  const filepath = resolve(options.cwd || '', relative)
   const rawText = await readFile(filepath, 'utf-8')
   const context = parsePnpmWorkspaceYaml(rawText)
   const raw = context.getDocument().toJSON()

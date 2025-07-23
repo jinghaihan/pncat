@@ -4,6 +4,7 @@ import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
 import { DEFAULT_CATALOG_OPTIONS } from './constants'
 import { sortCatalogRules } from './utils/sort'
+import { findWorkspaceRoot } from './utils/workspace'
 
 function normalizeConfig(options: Partial<CommonOptions>) {
   // interop
@@ -43,6 +44,9 @@ export async function resolveConfig(
     return deepmerge(defaults, options)
 
   const configOptions = normalizeConfig(config.config)
+
+  if (!configOptions.cwd)
+    configOptions.cwd = await findWorkspaceRoot()
 
   const catalogRules = configOptions.catalogRules ?? defaults.catalogRules ?? []
   delete configOptions.catalogRules

@@ -151,7 +151,7 @@ export async function migrateCommand(options: CatalogOptions) {
 
         await execa('pnpm', ['install'], {
           stdio: 'inherit',
-          cwd: process.cwd(),
+          cwd: options.cwd || process.cwd(),
         })
       },
     },

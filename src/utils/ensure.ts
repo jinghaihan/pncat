@@ -7,9 +7,10 @@ import { findUp } from 'find-up'
 import { dirname, join } from 'pathe'
 import { readPackageJSON, writePackageJSON } from 'pkg-types'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
+import { findWorkspaceYaml } from './workspace'
 
 export async function ensurePnpmWorkspaceYAML() {
-  let pnpmWorkspaceYamlPath = await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
+  let pnpmWorkspaceYamlPath = await findWorkspaceYaml()
   if (!pnpmWorkspaceYamlPath) {
     const root = await findUp(['.git', 'pnpm-lock.yaml'], { cwd: process.cwd() })
       .then(r => r ? dirname(r) : process.cwd())
@@ -72,7 +73,7 @@ export async function ensurePackage(pkg: string, isDev: boolean = true) {
 
   await execa('pnpm', ['install'], {
     stdio: 'inherit',
-    cwd: process.cwd(),
+    cwd: root,
   })
   p.log.success(c.green(`Setup completed`))
 }
