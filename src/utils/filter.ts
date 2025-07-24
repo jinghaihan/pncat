@@ -34,7 +34,7 @@ export function parseFilter(str?: string | string[], defaultValue = true): ((nam
   }
 }
 
-export function specifierFilter(specifier: string, options?: SpecifierOptions): boolean {
+export function specifierFilter(str: string, options?: SpecifierOptions): boolean {
   const {
     skipComplexRanges = true,
     skipRangeTypes = [],
@@ -42,28 +42,28 @@ export function specifierFilter(specifier: string, options?: SpecifierOptions): 
     allowWildcards = false,
   } = options ?? {}
 
-  if (!specifier.trim())
+  if (!str.trim())
     return false
 
   if (skipRangeTypes.length > 0) {
     for (const type of skipRangeTypes) {
-      if (type === '||' && specifier.includes('||'))
+      if (type === '||' && str.includes('||'))
         return false
-      if (type === '-' && specifier.includes(' - '))
+      if (type === '-' && str.includes(' - '))
         return false
-      if (type === '>=' && specifier.startsWith('>='))
+      if (type === '>=' && str.startsWith('>='))
         return false
-      if (type === '<=' && specifier.startsWith('<='))
+      if (type === '<=' && str.startsWith('<='))
         return false
-      if (type === '>' && specifier.startsWith('>'))
+      if (type === '>' && str.startsWith('>'))
         return false
-      if (type === '<' && specifier.startsWith('<'))
+      if (type === '<' && str.startsWith('<'))
         return false
-      if (type === 'x' && specifier.includes('x'))
+      if (type === 'x' && str.includes('x'))
         return false
-      if (type === '*' && specifier === '*')
+      if (type === '*' && str === '*')
         return false
-      if (type === 'pre-release' && specifier.includes('-'))
+      if (type === 'pre-release' && str.includes('-'))
         return false
     }
     return true
@@ -71,19 +71,19 @@ export function specifierFilter(specifier: string, options?: SpecifierOptions): 
 
   if (skipComplexRanges) {
     const isComplex
-      = specifier.includes('||')
-        || specifier.includes(' - ')
-        || /^[><=]/.test(specifier)
+      = str.includes('||')
+        || str.includes(' - ')
+        || /^[><=]/.test(str)
 
     if (isComplex)
       return false
   }
 
-  if (!allowPreReleases && specifier.includes('-')) {
+  if (!allowPreReleases && str.includes('-')) {
     return false
   }
 
-  if (!allowWildcards && (specifier.includes('x') || specifier === '*')) {
+  if (!allowWildcards && (str.includes('x') || str === '*')) {
     return false
   }
 
