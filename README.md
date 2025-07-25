@@ -139,6 +139,49 @@ export default defineConfig({
 })
 ```
 
+### Catalog Rules Configuration
+
+**Basic usage** - just specify `name`, `match`, and `priority`:
+
+```ts
+export default defineConfig({
+  catalogRules: mergeCatalogRules([
+    {
+      name: 'vue',
+      match: ['vue', 'vue-router', 'pinia'],
+      priority: 15 // smaller numbers represent higher priority
+    }
+  ])
+})
+```
+
+**Advanced usage** - add `specifierRules` for version-specific control:
+
+```ts
+export default defineConfig({
+  catalogRules: mergeCatalogRules([
+    {
+      name: 'vue',
+      match: ['vue', 'vue-router', 'pinia'],
+      priority: 15,
+      specifierRules: [
+        { specifier: '<3.0.0', suffix: 'legacy', match: ['vue'] }, // vue-legacy
+      ]
+    }
+  ])
+})
+```
+
+Fields:
+- `name`: catalog name (required)
+- `match`: packages to include, supports RegExp (required)
+- `priority`: lower = higher priority (optional)
+- `specifierRules`: version-specific rules (optional, only when needed)
+  - `specifier`: semver range like ">=3.0.0", "<2.0.0" (required)
+  - `match`: specific packages this rule applies to (optional, defaults to parent match)
+  - `name`: complete catalog name (takes priority over suffix)
+  - `suffix`: catalog suffix (e.g., "modern", "legacy")
+
 ## Why pncat?
 
 For monorepo repositories, it is crucial to maintain consistent dependency versions across multiple packages. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project’s structure.

@@ -8,11 +8,33 @@ export type DepType = typeof DEPS_FIELDS[number]
 
 export type DepFieldOptions = Partial<Record<DepType, boolean>>
 
+export interface SpecifierRule {
+  /**
+   * Semver range, e.g., ">=3.0.0", "<3.0.0"
+   */
+  specifier: string
+  /**
+   * Specific packages this version range applies to.
+   * If not specified, applies to all packages matched by the parent CatalogRule.
+   * Supports same format as CatalogRule.match: string, RegExp, or array of both.
+   */
+  match?: string | RegExp | (string | RegExp)[]
+  /**
+   * Complete catalog name, takes priority over suffix
+   */
+  name?: string
+  /**
+   * Catalog suffix, e.g., "v3", "v2"
+   */
+  suffix?: string
+}
+
 export interface CatalogRule {
   name: string
   match: string | RegExp | (string | RegExp)[]
   depFields?: DepType[]
   priority?: number
+  specifierRules?: SpecifierRule[]
 }
 
 export interface CommonOptions {

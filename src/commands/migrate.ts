@@ -61,16 +61,14 @@ export async function migrateCommand(options: CatalogOptions) {
           continue
 
         const catalog = getCatalog(dep.name)
-        let catalogName: string | null = null
-        if (catalog) {
-          catalogName = catalog.name === 'default'
-            ? getDepCatalogName(dep, options)
-            : catalog.name
+        const catalogName = getDepCatalogName(dep, options)
+
+        if (catalog?.name === catalogName || catalog?.name === 'default') {
           resolvedCatalogs[catalogName] ??= {}
           resolvedCatalogs[catalogName][dep.name] = catalog.specifier
+          continue
         }
         else {
-          catalogName = getDepCatalogName(dep, options)
           resolvedCatalogs[catalogName] ??= {}
           resolvedCatalogs[catalogName][dep.name] = dep.specifier
         }

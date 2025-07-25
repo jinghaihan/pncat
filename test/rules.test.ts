@@ -9,10 +9,10 @@ describe('getDepCatalogName', () => {
   let defaultConfig: CatalogOptions
 
   // Helper function to create RawDep with minimal required fields
-  function createDep(name: string, source: RawDep['source'] = 'dependencies'): RawDep {
+  function createDep(name: string, source: RawDep['source'] = 'dependencies', specifier: string = '^1.0.0'): RawDep {
     return {
       name,
-      specifier: '^1.0.0',
+      specifier,
       source,
       catalog: true,
     }
@@ -145,5 +145,272 @@ describe('getDepCatalogName', () => {
 
     // Other frontend packages should still match frontend
     expectCategory(['element-plus', 'naive-ui'], 'frontend', 'dependencies', config)
+  })
+
+  describe('specifier rules', () => {
+    it('should split Vue 2/3 by specifier rules using suffix', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'vue',
+            match: ['vue'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=3.0.0', suffix: 'v3' },
+              { specifier: '<3.0.0', suffix: 'v2' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^3.2.47'), config)).toBe('vue-v3')
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^2.6.14'), config)).toBe('vue-v2')
+    })
+
+    it('should split React ecosystem by specifier rules using custom names', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'react',
+            match: ['react', 'react-dom', '@types/react'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=18.0.0', name: 'react-modern' },
+              { specifier: '>=16.8.0 <18.0.0', name: 'react-hooks' },
+              { specifier: '<16.8.0', name: 'react-legacy' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('react', 'dependencies', '^18.2.0'), config)).toBe('react-modern')
+      expect(getDepCatalogName(createDep('react-dom', 'dependencies', '^17.0.2'), config)).toBe('react-hooks')
+      expect(getDepCatalogName(createDep('react', 'dependencies', '^16.7.0'), config)).toBe('react-legacy')
+      expect(getDepCatalogName(createDep('@types/react', 'devDependencies', '^18.0.0'), config)).toBe('react-modern')
+    })
+
+    it('should handle Node.js versions for tools and runtimes', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'nodejs',
+            match: ['@types/node', 'node'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=20.0.0', suffix: 'lts' },
+              { specifier: '>=18.0.0 <20.0.0', suffix: 'stable' },
+              { specifier: '<18.0.0', suffix: 'legacy' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('@types/node', 'devDependencies', '^20.10.0'), config)).toBe('nodejs-lts')
+      expect(getDepCatalogName(createDep('@types/node', 'devDependencies', '^18.17.0'), config)).toBe('nodejs-stable')
+      expect(getDepCatalogName(createDep('@types/node', 'devDependencies', '^16.18.0'), config)).toBe('nodejs-legacy')
+    })
+
+    it('should fallback to rule name when no specifier rules match', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'vue',
+            match: ['vue'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=3.0.0', suffix: 'v3' },
+              // No rule for <3.0.0
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^3.2.47'), config)).toBe('vue-v3')
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^2.6.14'), config)).toBe('vue') // fallback
+    })
+
+    it('should fallback to rule name when version cannot be extracted', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'vue',
+            match: ['vue'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=3.0.0', suffix: 'v3' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('vue', 'dependencies', 'workspace:*'), config)).toBe('vue')
+      expect(getDepCatalogName(createDep('vue', 'dependencies', 'latest'), config)).toBe('vue')
+      expect(getDepCatalogName(createDep('vue', 'dependencies', 'file:../vue'), config)).toBe('vue')
+    })
+
+    it('should handle TypeScript versions for tooling compatibility', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'typescript',
+            match: ['typescript', '@typescript-eslint/parser', '@typescript-eslint/eslint-plugin'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=5.0.0', suffix: 'modern' },
+              { specifier: '>=4.0.0 <5.0.0', suffix: 'stable' },
+              { specifier: '<4.0.0', suffix: 'legacy' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('typescript', 'devDependencies', '^5.2.0'), config)).toBe('typescript-modern')
+      expect(getDepCatalogName(createDep('@typescript-eslint/parser', 'devDependencies', '^4.33.0'), config)).toBe('typescript-stable')
+      expect(getDepCatalogName(createDep('typescript', 'devDependencies', '^3.9.0'), config)).toBe('typescript-legacy')
+    })
+
+    it('should prioritize name over suffix when both are provided', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'eslint',
+            match: ['eslint', 'eslint-config-airbnb'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=8.0.0', name: 'eslint-flat-config', suffix: 'v8' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('eslint', 'devDependencies', '^8.50.0'), config)).toBe('eslint-flat-config')
+    })
+
+    it('should handle overlapping specifier ranges with different specificity', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'webpack',
+            match: ['webpack', 'webpack-cli'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=5.0.0 <5.50.0', suffix: 'modern' }, // Non-overlapping ranges
+              { specifier: '>=5.50.0', suffix: 'latest' },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('webpack', 'devDependencies', '^5.30.0'), config)).toBe('webpack-modern')
+      expect(getDepCatalogName(createDep('webpack', 'devDependencies', '^5.80.0'), config)).toBe('webpack-latest')
+    })
+
+    it('should intelligently select most specific range from overlapping ranges', () => {
+      // Test the core intelligent matching: higher version requirements = more specific
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'vue',
+            match: ['vue'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=2.0.0', suffix: 'legacy' }, // Very broad
+              { specifier: '>=2.6.0', suffix: 'compatible' }, // More specific
+              { specifier: '>=3.0.0', suffix: 'modern' }, // Most specific for 3.x
+            ],
+          },
+        ]),
+      }
+
+      // Each version should match the most specific applicable range
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^2.5.0'), config)).toBe('vue-legacy') // Only matches >=2.0.0
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^2.6.14'), config)).toBe('vue-compatible') // Matches >=2.6.0 (more specific)
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^3.2.47'), config)).toBe('vue-modern') // Matches >=3.0.0 (most specific)
+    })
+
+    it('should prioritize bounded ranges over unbounded ranges', () => {
+      // Test that ranges with upper bounds are considered more specific
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'webpack',
+            match: ['webpack'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=4.0.0', suffix: 'stable' }, // Unbounded range
+              { specifier: '>=4.0.0 <5.0.0', suffix: 'legacy' }, // Bounded range (more specific)
+              { specifier: '>=5.0.0 <6.0.0', suffix: 'current' }, // Another bounded range
+            ],
+          },
+        ]),
+      }
+
+      // Bounded ranges should win over unbounded ranges for same minimum version
+      expect(getDepCatalogName(createDep('webpack', 'devDependencies', '^4.46.0'), config)).toBe('webpack-legacy') // Bounded range wins
+      expect(getDepCatalogName(createDep('webpack', 'devDependencies', '^5.80.0'), config)).toBe('webpack-current') // Specific bounded range
+      expect(getDepCatalogName(createDep('webpack', 'devDependencies', '^6.0.0'), config)).toBe('webpack-stable') // Only unbounded matches
+    })
+
+    it('should handle specifier rules with specific package matching', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'vue',
+            match: ['vue', 'vue-router', 'vuex', '@vue/cli'],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=3.0.0', suffix: 'v3', match: ['vue'] }, // Only applies to vue package
+              { specifier: '>=4.0.0', suffix: 'v4', match: ['vue-router', 'vuex'] }, // Applies to vue-router and vuex
+            ],
+          },
+        ]),
+      }
+
+      // Vue 3.x should get v3 suffix
+      expect(getDepCatalogName(createDep('vue', 'dependencies', '^3.2.47'), config)).toBe('vue-v3')
+
+      // Vue-router 4.x should get v4 suffix
+      expect(getDepCatalogName(createDep('vue-router', 'dependencies', '^4.1.0'), config)).toBe('vue-v4')
+      expect(getDepCatalogName(createDep('vuex', 'dependencies', '^4.0.2'), config)).toBe('vue-v4')
+
+      // Vue-router 3.x should fallback to rule name (no matching specifier rule)
+      expect(getDepCatalogName(createDep('vue-router', 'dependencies', '^3.6.5'), config)).toBe('vue')
+
+      // @vue/cli should fallback to rule name (no specifier rules apply to it)
+      expect(getDepCatalogName(createDep('@vue/cli', 'devDependencies', '^5.0.8'), config)).toBe('vue')
+    })
+
+    it('should handle specifier rules with regex matching', () => {
+      const config: CatalogOptions = {
+        ...defaultConfig,
+        catalogRules: sortCatalogRules([
+          {
+            name: 'eslint',
+            match: [/^eslint/, /^@typescript-eslint\//],
+            priority: 10,
+            specifierRules: [
+              { specifier: '>=8.0.0', suffix: 'v8', match: ['eslint'] },
+              { specifier: '>=5.0.0', suffix: 'v5', match: [/^@typescript-eslint\//] },
+            ],
+          },
+        ]),
+      }
+
+      expect(getDepCatalogName(createDep('eslint', 'devDependencies', '^8.50.0'), config)).toBe('eslint-v8')
+      expect(getDepCatalogName(createDep('@typescript-eslint/parser', 'devDependencies', '^5.60.0'), config)).toBe('eslint-v5')
+      // Other packages without matching specifier rules should fallback
+      expect(getDepCatalogName(createDep('eslint-config-airbnb', 'devDependencies', '^19.0.4'), config)).toBe('eslint')
+    })
   })
 })

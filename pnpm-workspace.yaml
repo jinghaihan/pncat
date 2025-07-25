@@ -1,7 +1,7 @@
 packages: []
 catalogs:
   build:
-    unbuild: ^3.5.0
+    unbuild: ^3.6.0
   cli:
     '@antfu/nip': ^0.1.0
     bumpp: ^10.2.0
@@ -10,8 +10,8 @@ catalogs:
   dev:
     typescript: ^5.8.3
   lint:
-    '@antfu/eslint-config': ^4.18.0
-    eslint: ^9.31.0
+    '@antfu/eslint-config': ^5.0.0
+    eslint: ^9.32.0
     lint-staged: ^16.1.2
     simple-git-hooks: ^2.13.0
   node:
