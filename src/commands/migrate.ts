@@ -66,7 +66,6 @@ export async function migrateCommand(options: CatalogOptions) {
         if (catalog?.name === catalogName || catalog?.name === 'default') {
           resolvedCatalogs[catalogName] ??= {}
           resolvedCatalogs[catalogName][dep.name] = catalog.specifier
-          continue
         }
         else {
           resolvedCatalogs[catalogName] ??= {}
