@@ -6,16 +6,21 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { execa } from 'execa'
 import { writePackageJSON } from 'pkg-types'
+import semver from 'semver'
 import { Scanner } from '../api/scanner'
 import { DEPS_FIELDS } from '../constants'
 import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
-import { getDepCatalogName } from '../utils/rule'
+import { cleanSpecifier, getDepCatalogName } from '../utils/rule'
 import { highlightYAML, safeYAMLDeleteIn } from '../utils/yaml'
 
 export async function migrateCommand(options: CatalogOptions) {
   let pnpmWorkspacePackages: PnpmWorkspaceMeta[] = []
   const resolvedCatalogs: Record<string, Record<string, string>> = {}
   const resolvedPackageJson: Record<string, PackageJson> = {}
+  // Record conflicts: Map<depName, Set<specifier>>
+  const conflictSpecifiers: Map<string, Set<string>> = new Map()
+  // Record which catalog each dependency belongs to
+  const depToCatalog: Map<string, string> = new Map()
 
   function getCatalog(depName: string) {
     const target = Object.entries(resolvedCatalogs).find(([, deps]) => deps[depName])
@@ -62,13 +67,50 @@ export async function migrateCommand(options: CatalogOptions) {
 
         const catalog = getCatalog(dep.name)
         const catalogName = getDepCatalogName(dep, options)
+        resolvedCatalogs[catalogName] ??= {}
+
+        // Record which catalog this dependency belongs to
+        depToCatalog.set(dep.name, catalogName)
 
         if (catalog?.name === catalogName || catalog?.name === 'default') {
-          resolvedCatalogs[catalogName] ??= {}
-          resolvedCatalogs[catalogName][dep.name] = catalog.specifier
+          const existingSpecifier = resolvedCatalogs[catalogName][dep.name]
+          if (!existingSpecifier) {
+            resolvedCatalogs[catalogName][dep.name] = catalog.specifier
+            continue
+          }
+
+          if (existingSpecifier === dep.specifier)
+            continue
+
+          // Record conflict if specifiers are different
+          if (!conflictSpecifiers.has(dep.name))
+            conflictSpecifiers.set(dep.name, new Set())
+
+          conflictSpecifiers.get(dep.name)!.add(existingSpecifier)
+          conflictSpecifiers.get(dep.name)!.add(dep.specifier)
+
+          // Compare versions and use the newer one
+          try {
+            const existSpec = cleanSpecifier(existingSpecifier)
+            const depSpec = cleanSpecifier(dep.specifier)
+
+            if (semver.valid(existSpec) && semver.valid(depSpec)) {
+              if (semver.gt(depSpec, existSpec))
+                resolvedCatalogs[catalogName][dep.name] = dep.specifier
+            }
+            else if (semver.coerce(existSpec) && semver.coerce(depSpec)) {
+              const existVer = semver.coerce(existSpec)!.version
+              const depVer = semver.coerce(depSpec)!.version
+              if (semver.gt(depVer, existVer))
+                resolvedCatalogs[catalogName][dep.name] = dep.specifier
+            }
+          }
+          catch {
+            // If version comparison fails, keep existing
+            p.log.warn(c.yellow(`${dep.name}: ${existingSpecifier} ${dep.specifier} (version comparison failed)`))
+          }
         }
         else {
-          resolvedCatalogs[catalogName] ??= {}
           resolvedCatalogs[catalogName][dep.name] = dep.specifier
         }
       }
@@ -105,6 +147,51 @@ export async function migrateCommand(options: CatalogOptions) {
         resolvedPackageJson[pkg.filepath] = content
       },
       afterPackagesEnd: async (_pkgs) => {
+        if (!options.yes && conflictSpecifiers.size > 0) {
+          p.log.warn(c.yellow(`📦 Found ${conflictSpecifiers.size} dependencies with version conflicts`))
+
+          for (const [depName, specifiers] of conflictSpecifiers) {
+            // Get catalog name from our mapping
+            const catalogName = depToCatalog.get(depName) || 'default'
+
+            const specifierArray = Array.from(specifiers).sort()
+            const currentSpecifier = resolvedCatalogs[catalogName][depName]
+
+            // Create choices with better formatting
+            const choices = specifierArray.map((spec) => {
+              let label = spec
+              if (spec === currentSpecifier) {
+                label += c.green(' (auto-selected)')
+              }
+
+              return {
+                label,
+                value: spec,
+              }
+            })
+
+            const result: string | symbol = await p.select({
+              message: `${c.cyan(depName)} in catalog ${c.yellow(catalogName)}:`,
+              options: choices,
+              initialValue: currentSpecifier,
+            })
+
+            if (p.isCancel(result)) {
+              p.outro(c.red('aborting'))
+              process.exit(1)
+            }
+
+            const selected = choices.find(i => i.value === result)
+            if (!selected || !result || typeof result === 'symbol') {
+              p.outro(c.red('invalid specifier'))
+              process.exit(1)
+            }
+
+            // Update the resolved catalog with user's choice
+            resolvedCatalogs[catalogName][depName] = result
+          }
+        }
+
         const { context, pnpmWorkspaceYamlPath } = await ensurePnpmWorkspaceYAML()
         const document = context.getDocument()
 

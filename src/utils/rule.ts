@@ -21,7 +21,7 @@ function extractVersionFromSpecifier(specifier: string, options: CatalogOptions)
   }
 
   // Remove common prefixes and extract version
-  const cleanSpec = specifier.replace(/^[\^~>=<]+/, '')
+  const cleanSpec = cleanSpecifier(specifier)
 
   // Try to get valid semver version
   const version = semver.valid(cleanSpec)
@@ -88,6 +88,10 @@ function calculateRangeSpecificity(range: string, _version: string): number {
   }
 
   return score
+}
+
+export function cleanSpecifier(specifier: string): string {
+  return specifier.replace(/^[\^~>=<]+/, '')
 }
 
 export function getDepCatalogName(dep: RawDep, options: CatalogOptions): string {
