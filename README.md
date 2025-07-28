@@ -11,11 +11,11 @@ Advanced dependency management for pnpm workspaces with catalog support.
 > [!NOTE]
 > Enhanced pnpm workspace management with intelligent dependency cataloging, inspired by [taze](https://github.com/antfu-collective/taze) and [@antfu/nip](https://github.com/antfu/nip).
 
-## ✨ Features
-
 ```bash
 pnpm add -D pncat
 ```
+
+## Features
 
 **🔍 Detect** - Scan workspace to identify catalogable dependencies
 
