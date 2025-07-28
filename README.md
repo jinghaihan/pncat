@@ -11,11 +11,25 @@ Advanced dependency management for pnpm workspaces with catalog support.
 > [!NOTE]
 > Enhanced pnpm workspace management with intelligent dependency cataloging, inspired by [taze](https://github.com/antfu-collective/taze) and [@antfu/nip](https://github.com/antfu/nip).
 
+## ✨ Features
+
 ```bash
 pnpm add -D pncat
 ```
 
-## Features
+**🔍 Detect** - Scan workspace to identify catalogable dependencies
+
+**🚀 Migrate** - Automatically group dependencies by rules
+
+**➕ Add** - Install dependencies with catalog support
+
+**🗑️ Remove** - Safely remove dependencies with catalog awareness
+
+**🧹 Clean** - Find and remove unused catalog dependencies
+
+**↩️ Revert** - Revert cataloged dependencies to package.json
+
+## Usage
 
 ### Detect Catalogable Dependencies
 
@@ -33,17 +47,17 @@ Scans your workspace to identify dependencies that could be moved to catalogs.
 pncat migrate
 ```
 
-Automatically groups dependencies by rules (e.g., lint, test, utils), it updates both `pnpm.workspace.yaml` and relevant `package.json`.
+Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm.workspace.yaml` and relevant `package.json`.
 
-Default rules can be found in `src/rules.ts`. To customize theme, you can create a `pncat.config.ts` file in the root directory.
+Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
 ![Image](/assets/migrate.png)
 
 #### Migration Guide
 
-To preverse existing catalog, run `pncat migrate`, this will only migrate uncataloged dependencies.
+To preserve existing catalogs, run `pncat migrate` - this will only migrate uncataloged dependencies.
 
-To update catalog catalog groups according to rules, run `pncat catalog -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
+To update catalog groups according to rules, run `pncat migrate -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
 
 ### Add with Catalog Support
 
@@ -81,114 +95,70 @@ Find unused catalog dependencies and remove them from `pnpm.workspace.yaml`.
 pncat revert
 ```
 
-Reverts cataloged dependencies to `package.json`. Maybe useful for when shared dependencies during monorepo restructuring or migration.
+Reverts cataloged dependencies to `package.json`. Useful for monorepo restructuring or migration.
 
 ![Image](/assets/revert.png)
 
 ## Configuration
 
-Create a `pncat.config.ts` file to customize behavior.
-
-The configuration below shows the default values — you can override only what you need:
+Create a `pncat.config.ts` file to customize catalog rules:
 
 ```ts
 import { defineConfig, mergeCatalogRules } from 'pncat'
 
 export default defineConfig({
-  // custom catalog groups (extends defaults)
-  catalogRules: mergeCatalogRules([
+  // To extend default rules instead, use:
+  // catalogRules: mergeCatalogRules([...])
+  catalogRules: [
     {
-      name: 'inlined',
-      match: ['@antfu/utils'], // string or RegExp
-      priority: 0 // smaller numbers represent higher priority
-    },
-  ]),
-  // default execution mode
-  mode: 'detect',
-  // force cataloging according to rules, ignoring original configurations
-  force: false,
-  // skip prompt confirmation
-  yes: false,
-  // allowed protocols in specifier to not be converted to catalog
-  allowedProtocols: ['workspace', 'link', 'file'],
-  // ignore paths for looking for package.json in monorepo
-  ignorePaths: [
-    '**/node_modules/**',
-    '**/dist/**',
-    '**/public/**',
-    '**/fixture/**',
-    '**/fixtures/**',
+      name: 'vue',
+      match: ['vue', 'vue-router', 'pinia'],
+      // smaller numbers represent higher priority
+      priority: 15,
+      // Advanced: version-specific rules
+      specifierRules: [
+        { specifier: '<3.0.0', suffix: 'legacy', match: ['vue'] }
+      ]
+    }
   ],
-  // ignore package.json that in other workspaces (with their own .git,pnpm-workspace.yaml,etc.)
-  ignoreOtherWorkspaces: true,
-  // disable catalog for "overrides" package.json field
-  depFields: {
-    packageManager: false
-  },
-  // control how specifier ranges are processed
+  // Control how version ranges are processed
   specifierOptions: {
-    // whether to skip complex version ranges (e.g., "||", "-", ">=16.0.0")
     skipComplexRanges: true,
-    // list of specific range types to skip (overrides skipComplexRanges)
-    skipRangeTypes: [],
-    // whether to allow pre-release versions (e.g., "4.0.0-beta")
     allowPreReleases: true,
-    // whether to allow wildcard versions (e.g., "3.x", "*")
     allowWildcards: false
   }
 })
 ```
 
-### Catalog Rules Configuration
-
-**Basic usage** - just specify `name`, `match`, and `priority`:
-
-```ts
-export default defineConfig({
-  catalogRules: mergeCatalogRules([
-    {
-      name: 'vue',
-      match: ['vue', 'vue-router', 'pinia'],
-      priority: 15 // smaller numbers represent higher priority
-    }
-  ])
-})
-```
-
-**Advanced usage** - add `specifierRules` for version-specific control:
-
-```ts
-export default defineConfig({
-  catalogRules: mergeCatalogRules([
-    {
-      name: 'vue',
-      match: ['vue', 'vue-router', 'pinia'],
-      priority: 15,
-      specifierRules: [
-        { specifier: '<3.0.0', suffix: 'legacy', match: ['vue'] }, // vue-legacy
-      ]
-    }
-  ])
-})
-```
-
-Fields:
+**Catalog Rules:**
 - `name`: catalog name (required)
 - `match`: packages to include, supports RegExp (required)
-- `priority`: lower = higher priority (optional)
-- `specifierRules`: version-specific rules (optional, only when needed)
+- `priority`: smaller numbers represent higher priority (optional)
+- `specifierRules`: version-specific rules (optional)
   - `specifier`: semver range like ">=3.0.0", "<2.0.0" (required)
   - `match`: specific packages this rule applies to (optional, defaults to parent match)
   - `name`: complete catalog name (takes priority over suffix)
-  - `suffix`: catalog suffix (e.g., "modern", "legacy")
+  - `suffix`: catalog suffix (e.g., "legacy", "modern")
+
+**Specifier Options (optional):**
+- `skipComplexRanges`: Skip complex ranges like "||", "-", ">=" (default: true)
+- `skipRangeTypes`: Specific range types to skip (overrides skipComplexRanges)
+  - `'||'`: Logical OR (e.g., "^3.0.0 || ^4.0.0")
+  - `'-'`: Hyphen range (e.g., "1.2.3 - 2.3.4")
+  - `'>='`, `'<='`, `'>'`, `'<'`: Comparison ranges
+  - `'x'`: Wildcard (e.g., "3.x")
+  - `'*'`: Any version
+  - `'pre-release'`: Beta/alpha/rc versions
+- `allowPreReleases`: Allow beta/alpha/rc versions (default: true)
+- `allowWildcards`: Allow wildcard versions like "3.x", "*" (default: false)
 
 ## Why pncat?
 
-For monorepo repositories, it is crucial to maintain consistent dependency versions across multiple packages. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project’s structure.
+For monorepo repositories, maintaining consistent dependency versions across multiple packages is crucial. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project's structure.
 
-Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, I developed pncat.
+Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, pncat was developed.
 
-Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, I introduced the `clean` and `revert` commands to automate this task.
+Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
 
 Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) provided great inspiration and guidance during the development of this tool.
 
@@ -205,6 +175,8 @@ Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizi
 ### Advanced
 - [x] Config file support
 - [x] Custom grouping rules
+- [x] Custom specifier processing
+- [x] Specifier conflict resolution
 
 ## Related Projects
 

@@ -151,7 +151,7 @@ export async function migrateCommand(options: CatalogOptions) {
           p.log.warn(c.yellow(`📦 Found ${conflictSpecifiers.size} dependencies with version conflicts`))
 
           for (const [depName, specifiers] of conflictSpecifiers) {
-            // Get catalog name from our mapping
+            // Get catalog name from mapping
             const catalogName = depToCatalog.get(depName) || 'default'
 
             const specifierArray = Array.from(specifiers).sort()
