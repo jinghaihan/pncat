@@ -79,6 +79,9 @@ export async function migrateCommand(options: CatalogOptions) {
             continue
           }
 
+          if (dep.specifier.startsWith('catalog:'))
+            continue
+
           if (existingSpecifier === dep.specifier)
             continue
 
