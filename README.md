@@ -39,19 +39,23 @@ pncat detect
 
 Scans your workspace to identify dependencies that could be moved to catalogs.
 
-![Image](/assets/detect.png)
+<p align='center'>
+<img src='./assets/detect-r.png' />
+</p>
 
 ### Smart Catalog Migration
 
 ```bash
-pncat migrate
+pncat migrate -f
 ```
 
 Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm.workspace.yaml` and relevant `package.json`.
 
 Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
-![Image](/assets/migrate.png)
+<p align='center'>
+<img src='./assets/migrate-r.png' />
+</p>
 
 #### Migration Guide
 
@@ -62,25 +66,26 @@ To update catalog groups according to rules, run `pncat migrate -f`, or do a cle
 ### Add with Catalog Support
 
 ```bash
-pncat add vue
+pncat add bumpp -D
 ```
 
-Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip) for source code). The command automatically matches dependencies to appropriate catalogs based on your configured rules.
+Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
 
-> [!NOTE]
-> Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
-
-![Image](/assets/add.png)
+<p align='center'>
+<img src='./assets/add-r.png' />
+</p>
 
 ### Safe Dependency Removal
 
 ```bash
-pncat remove vitest
+pncat remove bumpp
 ```
 
 Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both `pnpm.workspace.yaml` and `package.json`.
 
-![Image](/assets/remove.png)
+<p align='center'>
+<img src='./assets/remove-r.png' />
+</p>
 
 ### Catalog Cleanup
 
@@ -90,7 +95,9 @@ pncat clean
 
 Find unused catalog dependencies and remove them from `pnpm.workspace.yaml`.
 
-![Image](/assets/clean.png)
+<p align='center'>
+<img src='./assets/clean-r.png' />
+</p>
 
 ### Revert Cataloged Dependencies
 
@@ -100,7 +107,9 @@ pncat revert
 
 Reverts cataloged dependencies to `package.json`. Useful for monorepo restructuring or migration.
 
-![Image](/assets/revert.png)
+<p align='center'>
+<img src='./assets/revert-r.png' />
+</p>
 
 ## Configuration
 

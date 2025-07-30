@@ -72,6 +72,12 @@ export interface CatalogOptions extends CommonOptions {
    * @default true
    */
   yes?: boolean
+  /**
+   * Install dependencies after execution
+   *
+   * @default true
+   */
+  install?: boolean
 }
 
 export interface RawDep {

@@ -65,12 +65,14 @@ export async function revertCommand(options: CatalogOptions) {
         }))
 
         p.log.success('revert complete')
-        p.outro('running pnpm install')
 
-        await execa('pnpm', ['install'], {
-          stdio: 'inherit',
-          cwd: options.cwd || process.cwd(),
-        })
+        if (options.install) {
+          p.outro('running pnpm install')
+          await execa('pnpm', ['install'], {
+            stdio: 'inherit',
+            cwd: options.cwd || process.cwd(),
+          })
+        }
       },
     },
   )

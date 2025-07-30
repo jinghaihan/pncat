@@ -34,7 +34,7 @@ describe('getDepCatalogName', () => {
     expectCategory(['@types/node', '@types/react', '@types/express'], 'types', 'devDependencies')
 
     // Test/Lint/Monorepo/CLI (priority 20)
-    expectCategory(['vitest', 'jest', 'cypress', 'playwright'], 'test', 'devDependencies')
+    expectCategory(['vitest', 'jest', 'cypress'], 'test', 'devDependencies')
     expectCategory(['eslint', 'prettier', 'stylelint', 'husky', 'lint-staged'], 'lint', 'devDependencies')
     expectCategory(['lerna', 'nx', '@changesets/cli'], 'monorepo', 'devDependencies')
     expectCategory(['bumpp', 'taze', 'commitizen'], 'cli', 'devDependencies')

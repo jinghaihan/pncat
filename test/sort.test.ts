@@ -17,7 +17,7 @@ describe('sortCatalogRules', () => {
       },
       {
         name: 'test',
-        match: [/vitest/, /jest/, /cypress/, /playwright/],
+        match: [/vitest/, /jest/, /cypress/],
         priority: 20,
       },
       {

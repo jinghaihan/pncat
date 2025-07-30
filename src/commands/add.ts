@@ -80,12 +80,14 @@ export async function addCommand(options: CatalogOptions) {
   p.log.info('done')
 
   p.log.success('add complete')
-  p.outro('running pnpm install')
 
-  await execa('pnpm', ['install'], {
-    stdio: 'inherit',
-    cwd: options.cwd || process.cwd(),
-  })
+  if (options.install) {
+    p.outro('running pnpm install')
+    await execa('pnpm', ['install'], {
+      stdio: 'inherit',
+      cwd: options.cwd || process.cwd(),
+    })
+  }
 }
 
 async function resolveDependencies(
@@ -107,10 +109,8 @@ async function resolveDependencies(
 
   const parsed = dependencies.map(x => x.trim()).filter(Boolean).map(parseSpec)
   for (const dep of parsed) {
-    if (dep.specifier) {
+    if (dep.specifier)
       dep.specifierSource ||= 'user'
-      continue
-    }
 
     if (!dep.specifier) {
       const catalogs = workspaceYaml.getPackageCatalogs(dep.name)
