@@ -20,7 +20,8 @@ try {
     .option('--ignore-other-workspaces', 'ignore package.json that in other workspaces (with their own .git,pnpm-workspace.yaml,etc.)', { default: true })
     .option('--include, -n <deps>', 'only included dependencies will be checked for catalog')
     .option('--exclude, -x <deps>', 'exclude dependencies to be checked, will override --include options')
-    .option('--yes', 'Skip prompt confirmation')
+    .option('--yes', 'skip prompt confirmation')
+    .option('--install', 'install dependencies after execution')
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {

@@ -39,6 +39,7 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
   ...DEFAULT_COMMON_OPTIONS,
   mode: 'detect',
   yes: false,
+  install: true,
 }
 
 export const DEFAULT_IGNORE_PATHS = [

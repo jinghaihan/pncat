@@ -51,9 +51,8 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /release-it/,
       /standard-version/,
       /@antfu\/nip/,
-      /pncat/,
-      /turnpress/,
       /shadcn-vue/,
+      /pncat/,
     ],
     priority: 20,
   },
@@ -113,7 +112,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'network',
-    match: [/axios/, /fetch-event-source/, /fetch-event-stream/],
+    match: [/ws/, /axios/, /fetch-event-source/, /fetch-event-stream/],
     priority: 30,
   },
   {
