@@ -65,7 +65,10 @@ To update catalog groups according to rules, run `pncat migrate -f`, or do a cle
 pncat add vue
 ```
 
-Add dependencies with prompts and catalogs support (powered by [@antfu/nip](https://github.com/antfu/nip)).
+Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip) for source code). The command automatically matches dependencies to appropriate catalogs based on your configured rules.
+
+> [!NOTE]
+> Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
 
 ![Image](/assets/add.png)
 

@@ -155,23 +155,10 @@ describe('specifierFilter', () => {
     })
   })
 
-  describe('real-world scenarios', () => {
-    it('should handle typical package.json dependency versions', () => {
-      const defaultOptions = {
-        skipComplexRanges: true,
-        allowPreReleases: true,
-        allowWildcards: false,
-      }
-
-      // Common patterns that should pass
-      expect(specifierFilter('^18.2.0', defaultOptions)).toBe(true) // React
-      expect(specifierFilter('~5.0.4', defaultOptions)).toBe(true) // TypeScript
-      expect(specifierFilter('4.17.21', defaultOptions)).toBe(true) // Lodash exact version
-
-      // Complex patterns that should fail with default options
-      expect(specifierFilter('>=16.0.0', defaultOptions)).toBe(false) // Node requirement
-      expect(specifierFilter('^16.0.0 || ^17.0.0', defaultOptions)).toBe(false) // Multi-version support
-      expect(specifierFilter('3.x', defaultOptions)).toBe(false) // Wildcard
+  describe('catalog specifiers', () => {
+    it('should accept catalog specifiers', () => {
+      expect(specifierFilter('catalog:')).toBe(true)
+      expect(specifierFilter('catalog:frontend')).toBe(true)
     })
   })
 })

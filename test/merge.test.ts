@@ -210,4 +210,117 @@ describe('mergeCatalogRules', () => {
     const utilsRule = rules.find(r => r.name === 'utils')
     expect(utilsRule?.match).toEqual(['lodash', 'dayjs'])
   })
+
+  it('merge specifierRules correctly when merging rules with same name', () => {
+    const rules = mergeCatalogRules({ mergeDefaults: false }, [
+      {
+        name: 'react',
+        match: ['react', 'react-dom'],
+        priority: 60,
+        specifierRules: [
+          {
+            specifier: '>=18.0.0',
+            match: 'react',
+            name: 'react-v18',
+            suffix: 'v18',
+          },
+          {
+            specifier: '>=16.0.0 <18.0.0',
+            match: 'react',
+            name: 'react-v16',
+            suffix: 'v16',
+          },
+        ],
+      },
+      {
+        name: 'react',
+        match: ['react-router', 'react-query'],
+        specifierRules: [
+          {
+            specifier: '>=6.0.0',
+            match: 'react-router',
+            name: 'react-router-v6',
+            suffix: 'v6',
+          },
+        ],
+      },
+    ])
+
+    const reactRule = rules.find(r => r.name === 'react')
+    expect(reactRule).toBeDefined()
+    expect(reactRule?.match).toEqual(['react', 'react-dom', 'react-router', 'react-query'])
+    expect(reactRule?.priority).toBe(60)
+    expect(reactRule?.specifierRules).toHaveLength(3)
+
+    // Check that specifierRules are merged correctly
+    const specifierRules = reactRule?.specifierRules
+    expect(specifierRules).toContainEqual({
+      specifier: '>=18.0.0',
+      match: 'react',
+      name: 'react-v18',
+      suffix: 'v18',
+    })
+    expect(specifierRules).toContainEqual({
+      specifier: '>=16.0.0 <18.0.0',
+      match: 'react',
+      name: 'react-v16',
+      suffix: 'v16',
+    })
+    expect(specifierRules).toContainEqual({
+      specifier: '>=6.0.0',
+      match: 'react-router',
+      name: 'react-router-v6',
+      suffix: 'v6',
+    })
+  })
+
+  it('merge specifierRules with complex match patterns', () => {
+    const rules = mergeCatalogRules({ mergeDefaults: false }, [
+      {
+        name: 'typescript',
+        match: ['typescript', '@types/node'],
+        specifierRules: [
+          {
+            specifier: '>=5.0.0',
+            match: /^typescript/,
+            name: 'typescript-v5',
+            suffix: 'v5',
+          },
+          {
+            specifier: '>=4.0.0 <5.0.0',
+            match: ['typescript', '@types/node'],
+            name: 'typescript-v4',
+            suffix: 'v4',
+          },
+        ],
+      },
+      {
+        name: 'typescript',
+        match: ['@types/react', '@types/react-dom'],
+        specifierRules: [
+          {
+            specifier: '>=18.0.0',
+            match: /@types\/react/,
+            name: 'react-types-v18',
+            suffix: 'v18',
+          },
+        ],
+      },
+    ])
+
+    const tsRule = rules.find(r => r.name === 'typescript')
+    expect(tsRule?.specifierRules).toHaveLength(3)
+
+    // Check regex pattern is preserved
+    const regexRule = tsRule?.specifierRules?.find(r => r.name === 'typescript-v5')
+    expect(regexRule?.match).toEqual(/^typescript/)
+
+    // Check array pattern is preserved
+    const arrayRule = tsRule?.specifierRules?.find(r => r.name === 'typescript-v4')
+    expect(arrayRule?.match).toEqual(['typescript', '@types/node'])
+
+    // Check new rule is added
+    const reactTypesRule = tsRule?.specifierRules?.find(r => r.name === 'react-types-v18')
+    expect(reactTypesRule?.match).toEqual(/@types\/react/)
+  })
 })

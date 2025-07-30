@@ -1,94 +1,165 @@
-import type { CatalogOptions } from '../types'
+import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
+import type { CatalogOptions, ParsedSpec } from '../types'
+import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { execa } from 'execa'
-import { ensurePackage } from '../utils/ensure'
+import { join } from 'pathe'
+import { readPackageJSON, writePackageJSON } from 'pkg-types'
+import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
+import { parseSpec } from '../utils/parse'
 import { getDepCatalogName } from '../utils/rule'
 
-interface AddCommandConfig {
-  dependency: string
+interface ParsedDependencies {
+  dependencies: ParsedSpec[]
   isDev: boolean
-  hasCatalogFlag: boolean
-  processedArgs: string[]
 }
 
 export async function addCommand(options: CatalogOptions) {
-  // Ensure @antfu/nip is available and import it
-  await ensurePackage('@antfu/nip')
-  await import('@antfu/nip')
-
   // Get command line arguments (skip node and script name)
-  const rawArgs = process.argv.slice(3)
-  if (rawArgs.length === 0) {
+  const args = process.argv.slice(3)
+  if (args.length === 0) {
     p.outro(c.red('no arguments provided, aborting'))
     process.exit(1)
   }
 
-  // Process and validate arguments
-  const config = processArguments(rawArgs)
+  const targetPackageJSON = join(process.cwd(), 'package.json')
+  if (!targetPackageJSON) {
+    p.outro(c.red('no package.json found, aborting'))
+    process.exit(1)
+  }
+  const pkgJson = await readPackageJSON(targetPackageJSON)
 
-  // Determine catalog name if not already specified
-  if (!config.hasCatalogFlag) {
-    const catalogName = determineCatalogName(config.dependency, config.isDev, options)
-    config.processedArgs.push('--catalog', catalogName)
+  const { context: workspaceYaml, pnpmWorkspaceYamlPath } = await ensurePnpmWorkspaceYAML()
+
+  // Process and validate arguments
+  const config = await resolveDependencies(workspaceYaml, args, options)
+
+  const contents: string[] = []
+  for (const dep of config.dependencies) {
+    const padEnd = Math.max(0, 20 - dep.name.length - (dep.specifier?.length || 0))
+    const padCatalog = Math.max(0, 20 - (dep.catalog?.length ? (dep.catalog.length + ' catalog:'.length) : 0))
+    contents.push([
+      `${c.cyan(dep.name)}@${c.green(dep.specifier)} ${' '.repeat(padEnd)}`,
+      dep.catalog ? c.yellow` catalog:${dep.catalog}` : '',
+      ' '.repeat(padCatalog),
+      dep.specifierSource ? c.gray(` (from ${dep.specifierSource})`) : '',
+    ].join(' '))
+  }
+  p.note(c.reset(contents.join('\n')), `install packages to ${c.dim(pnpmWorkspaceYamlPath)}`)
+
+  if (!options.yes) {
+    const result = await p.confirm({
+      message: c.green`looks good?`,
+    })
+    if (!result || p.isCancel(result)) {
+      p.outro(c.red('aborting'))
+      process.exit(1)
+    }
   }
 
-  // Normalize dev dependency flags for nip
-  const normalizedArgs = normalizeDevFlags(config.processedArgs, config.isDev)
+  for (const dep of config.dependencies) {
+    if (dep.catalog)
+      workspaceYaml.setPackage(dep.catalog, dep.name, dep.specifier || '^0.0.0')
+  }
 
-  // Execute nip command with processed arguments
-  await execa('nip', normalizedArgs, {
-    stdio: 'inherit',
-  })
+  const depsName = config.isDev ? 'devDependencies' : 'dependencies'
+  const depNameOppsite = config.isDev ? 'dependencies' : 'devDependencies'
+  const deps = pkgJson[depsName] ||= {}
+  for (const pkg of config.dependencies) {
+    deps[pkg.name] = pkg.catalog ? (`catalog:${pkg.catalog}`) : pkg.specifier || '^0.0.0'
+    if (pkgJson[depNameOppsite]?.[pkg.name])
+      delete pkgJson[depNameOppsite][pkg.name]
+  }
+
+  p.log.info('writing pnpm-workspace.yaml')
+  await writeFile(pnpmWorkspaceYamlPath, workspaceYaml.toString(), 'utf-8')
+  p.log.info('writing package.json')
+  await writePackageJSON(targetPackageJSON, pkgJson)
+  p.log.info('done')
 
   p.log.success('add complete')
+  p.outro('running pnpm install')
+
+  await execa('pnpm', ['install'], {
+    stdio: 'inherit',
+    cwd: options.cwd || process.cwd(),
+  })
 }
 
-function processArguments(args: string[]): AddCommandConfig {
+async function resolveDependencies(
+  workspaceYaml: PnpmWorkspaceYaml,
+  args: string[],
+  options: CatalogOptions,
+): Promise<ParsedDependencies> {
   const isDev = ['--save-dev', '-D'].some(flag => args.includes(flag))
-  const hasCatalogFlag = args.includes('--catalog')
 
   // Extract dependency name (first non-flag argument)
-  const dependency = args.find(arg => !arg.startsWith('-'))
+  const dependencies = args.filter(arg => !arg.startsWith('-'))
 
-  if (!dependency) {
+  if (!dependencies.length) {
     p.outro(c.red('no dependency provided, aborting'))
     process.exit(1)
   }
 
+  const workspaceJson = workspaceYaml.toJSON()
+
+  const parsed = dependencies.map(x => x.trim()).filter(Boolean).map(parseSpec)
+  for (const dep of parsed) {
+    if (dep.specifier) {
+      dep.specifierSource ||= 'user'
+      continue
+    }
+
+    if (!dep.specifier) {
+      const catalogs = workspaceYaml.getPackageCatalogs(dep.name)
+      if (catalogs[0]) {
+        dep.catalog = catalogs[0]
+        dep.specifierSource ||= 'catalog'
+      }
+    }
+
+    if (dep.catalog && !dep.specifier) {
+      const spec = dep.catalog === 'default' ? workspaceJson?.catalog?.[dep.name] : workspaceJson?.catalogs?.[dep.catalog]?.[dep.name]
+      if (spec) {
+        dep.specifier = spec
+        dep.specifierSource ||= 'catalog'
+      }
+    }
+
+    if (!dep.specifier) {
+      const spinner = p.spinner({ indicator: 'dots' })
+      spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
+      const { getLatestVersion } = await import('fast-npm-meta')
+      const version = await getLatestVersion(dep.name)
+      if (version.version) {
+        dep.specifier = `^${version.version}`
+        dep.specifierSource ||= 'npm'
+        spinner.stop(c.gray`resolved ${c.cyan(dep.name)}@${c.green(dep.specifier)}`)
+      }
+      else {
+        spinner.stop(`failed to resolve ${c.cyan(dep.name)} from npm`)
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      }
+    }
+
+    if (!dep.catalog)
+      dep.catalog = determineCatalogName(dep.name, dep.specifier, isDev, options)
+  }
+
   return {
-    dependency,
+    dependencies: parsed,
     isDev,
-    hasCatalogFlag,
-    processedArgs: [...args],
   }
 }
 
-function determineCatalogName(dependency: string, isDev: boolean, options: CatalogOptions): string {
+function determineCatalogName(name: string, specifier: string, isDev: boolean, options: CatalogOptions): string {
   return getDepCatalogName({
-    name: dependency,
-    specifier: '',
+    name,
+    specifier,
     source: isDev ? 'devDependencies' : 'dependencies',
     catalog: true,
   }, options)
-}
-
-function normalizeDevFlags(args: string[], isDev: boolean): string[] {
-  if (!isDev)
-    return args
-
-  const normalizedArgs = [...args]
-
-  // Replace --save-dev with -d for nip compatibility
-  const saveDevIndex = normalizedArgs.indexOf('--save-dev')
-  if (saveDevIndex !== -1)
-    normalizedArgs[saveDevIndex] = '-d'
-
-  // Replace -D with -d for nip compatibility
-  const devIndex = normalizedArgs.indexOf('-D')
-  if (devIndex !== -1)
-    normalizedArgs[devIndex] = '-d'
-
-  return normalizedArgs
 }

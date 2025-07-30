@@ -45,6 +45,9 @@ export function specifierFilter(str: string, options?: SpecifierOptions): boolea
   if (!str.trim())
     return false
 
+  if (str.startsWith('catalog:'))
+    return true
+
   if (skipRangeTypes.length > 0) {
     for (const type of skipRangeTypes) {
       if (type === '||' && str.includes('||'))

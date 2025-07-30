@@ -144,7 +144,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'syntax',
-    match: [/shiki/, /prismjs/, /highlight\.js/],
+    match: [/shiki/, /prismjs/, /highlight\.js/, /mermaid/, /katex/],
     priority: 50,
   },
   {

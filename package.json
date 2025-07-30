@@ -37,7 +37,7 @@
     "dist"
   ],
   "scripts": {
-    "start": "tsx ./src/cli.ts",
+    "pncat": "tsx ./src/cli.ts",
     "build": "unbuild",
     "typecheck": "tsc",
     "test": "vitest",
@@ -50,9 +50,6 @@
     "bootstrap": "pnpm install",
     "preinstall": "npx only-allow pnpm",
     "prepublishOnly": "pnpm build"
-  },
-  "peerDependencies": {
-    "@antfu/nip": "catalog:cli"
   },
   "dependencies": {
     "@clack/prompts": "catalog:node",

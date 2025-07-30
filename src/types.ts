@@ -161,3 +161,10 @@ export type SpecifierRangeType
     | 'x' // Wildcard (e.g., "3.x")
     | '*' // Any version
     | 'pre-release' // Beta/alpha/rc versions (e.g., "4.0.0-beta")
+
+export interface ParsedSpec {
+  name: string
+  specifier?: string
+  catalog?: string
+  specifierSource?: 'user' | 'catalog' | 'workspace' | 'npm'
+}
