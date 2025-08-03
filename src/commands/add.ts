@@ -5,9 +5,10 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { execa } from 'execa'
-import { join } from 'pathe'
+import { join, resolve } from 'pathe'
 import { readPackageJSON, writePackageJSON } from 'pkg-types'
 import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
+import { findPackagePaths } from '../utils/packages'
 import { parseSpec } from '../utils/parse'
 import { getDepCatalogName } from '../utils/rule'
 
@@ -29,8 +30,8 @@ export async function addCommand(options: CatalogOptions) {
     p.outro(c.red('no package.json found, aborting'))
     process.exit(1)
   }
-  const pkgJson = await readPackageJSON(targetPackageJSON)
 
+  const pkgJson = await readPackageJSON(targetPackageJSON)
   const { context: workspaceYaml, pnpmWorkspaceYamlPath } = await ensurePnpmWorkspaceYAML()
 
   // Process and validate arguments
@@ -106,8 +107,22 @@ async function resolveDependencies(
   }
 
   const workspaceJson = workspaceYaml.toJSON()
-
   const parsed = dependencies.map(x => x.trim()).filter(Boolean).map(parseSpec)
+
+  // find all workspace packages
+  const workspacePackages: string[] = []
+  if (options.recursive) {
+    const paths = await findPackagePaths(options)
+    await Promise.all(
+      paths.map(async (relative) => {
+        const filepath = resolve(options.cwd || '', relative)
+        const pkg = await readPackageJSON(filepath)
+        if (pkg.name)
+          workspacePackages.push(pkg.name)
+      }),
+    )
+  }
+
   for (const dep of parsed) {
     if (dep.specifier)
       dep.specifierSource ||= 'user'
@@ -129,6 +144,13 @@ async function resolveDependencies(
     }
 
     if (!dep.specifier) {
+      // if the dependency is a workspace package, use the workspace: protocol
+      if (workspacePackages.includes(dep.name)) {
+        dep.specifier = 'workspace:*'
+        dep.specifierSource ||= 'workspace'
+        continue
+      }
+
       const spinner = p.spinner({ indicator: 'dots' })
       spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
       const { getLatestVersion } = await import('fast-npm-meta')
@@ -155,7 +177,10 @@ async function resolveDependencies(
   }
 }
 
-function determineCatalogName(name: string, specifier: string, isDev: boolean, options: CatalogOptions): string {
+function determineCatalogName(name: string, specifier: string, isDev: boolean, options: CatalogOptions): string | undefined {
+  if (specifier.startsWith('workspace:'))
+    return
+
   return getDepCatalogName({
     name,
     specifier,

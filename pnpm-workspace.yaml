@@ -3,16 +3,16 @@ catalogs:
   build:
     unbuild: ^3.6.0
   cli:
-    bumpp: ^10.2.1
+    bumpp: ^10.2.2
     czg: ^1.12.0
     taze: ^19.1.0
   dev:
-    typescript: ^5.8.3
+    typescript: ^5.9.2
   lint:
-    '@antfu/eslint-config': ^5.0.0
+    '@antfu/eslint-config': ^5.1.0
     eslint: ^9.32.0
     lint-staged: ^16.1.2
-    simple-git-hooks: ^2.13.0
+    simple-git-hooks: ^2.13.1
   node:
     '@clack/prompts': ^0.11.0
     ansis: ^4.1.0

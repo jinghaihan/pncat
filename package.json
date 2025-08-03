@@ -2,7 +2,7 @@
   "name": "pncat",
   "type": "module",
   "version": "0.4.0",
-  "packageManager": "pnpm@10.13.1",
+  "packageManager": "pnpm@10.14.0",
   "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
   "author": "jinghaihan",
   "license": "MIT",

@@ -69,7 +69,9 @@ To update catalog groups according to rules, run `pncat migrate -f`, or do a cle
 pncat add bumpp -D
 ```
 
-Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
+Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
+
+Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
 
 <p align='center'>
 <img src='./assets/add-r.png' />

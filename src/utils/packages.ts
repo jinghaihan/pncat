@@ -20,27 +20,44 @@ export async function loadPackage(
 }
 
 export async function loadPackages(options: CommonOptions): Promise<PackageMeta[]> {
-  let packagesNames: string[] = []
   const cwd = resolve(options.cwd || process.cwd())
   const filter = createDependenciesFilter(options.include, options.exclude, options.specifierOptions)
 
+  const paths: string[] = await findPackagePaths(options)
+  if (existsSync(join(cwd, 'pnpm-workspace.yaml'))) {
+    paths.unshift('pnpm-workspace.yaml')
+  }
+
+  const packages = (await Promise.all(
+    paths.map(
+      relative => loadPackage(relative, options, filter),
+    ),
+  )).flat()
+
+  return packages
+}
+
+export async function findPackagePaths(options: CommonOptions): Promise<string[]> {
+  let paths: string[] = []
+  const cwd = resolve(options.cwd || process.cwd())
+
   if (options.recursive) {
-    packagesNames = await glob('**/package.json', {
+    paths = await glob('**/package.json', {
       ignore: DEFAULT_IGNORE_PATHS.concat(options.ignorePaths || []),
       cwd: options.cwd,
       onlyFiles: true,
       dot: false,
       expandDirectories: false,
     })
-    packagesNames.sort((a, b) => a.localeCompare(b))
+    paths.sort((a, b) => a.localeCompare(b))
   }
   else {
-    packagesNames = ['package.json']
+    paths = ['package.json']
   }
 
   if (options.ignoreOtherWorkspaces) {
-    packagesNames = (await Promise.all(
-      packagesNames.map(async (packagePath) => {
+    paths = (await Promise.all(
+      paths.map(async (packagePath) => {
         if (!packagePath.includes('/'))
           return [packagePath]
 
@@ -56,15 +73,5 @@ export async function loadPackages(options: CommonOptions): Promise<PackageMeta[
     )).flat()
   }
 
-  if (existsSync(join(cwd, 'pnpm-workspace.yaml'))) {
-    packagesNames.unshift('pnpm-workspace.yaml')
-  }
-
-  const packages = (await Promise.all(
-    packagesNames.map(
-      relative => loadPackage(relative, options, filter),
-    ),
-  )).flat()
-
-  return packages
+  return paths
 }
