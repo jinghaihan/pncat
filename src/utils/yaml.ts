@@ -1,3 +1,4 @@
+import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import type { Document } from 'yaml'
 import c from 'ansis'
 
@@ -35,4 +36,34 @@ export function highlightYAML(yamlContent: string): string {
 
     return color(line)
   }).join('\n')
+}
+
+export function cleanupCatalogs(context: PnpmWorkspaceYaml) {
+  const document = context.getDocument()
+
+  // Clean up empty catalog sections
+  const workspaceJson = context.toJSON()
+
+  // Remove empty catalog (default catalog)
+  if (workspaceJson.catalog && !Object.keys(workspaceJson.catalog).length)
+    safeYAMLDeleteIn(document, ['catalog'])
+
+  // Remove empty catalogs[key] sections
+  if (workspaceJson.catalogs) {
+    const emptyCatalogs: string[] = []
+    for (const [catalogKey, catalogValue] of Object.entries(workspaceJson.catalogs)) {
+      if (!catalogValue || Object.keys(catalogValue).length === 0)
+        emptyCatalogs.push(catalogKey)
+    }
+
+    emptyCatalogs.forEach((key) => {
+      safeYAMLDeleteIn(document, ['catalogs', key])
+    })
+  }
+
+  // Remove empty catalogs section
+  const updatedWorkspaceJson = context.toJSON()
+  if (!updatedWorkspaceJson.catalogs || Object.keys(updatedWorkspaceJson.catalogs).length === 0) {
+    safeYAMLDeleteIn(document, ['catalogs'])
+  }
 }

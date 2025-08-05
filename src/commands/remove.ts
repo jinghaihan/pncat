@@ -8,7 +8,7 @@ import { writePackageJSON } from 'pkg-types'
 import { Scanner } from '../api/scanner'
 import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
 import { findWorkspaceYaml } from '../utils/workspace'
-import { safeYAMLDeleteIn } from '../utils/yaml'
+import { cleanupCatalogs, safeYAMLDeleteIn } from '../utils/yaml'
 
 interface OptionalCatalog {
   name: string
@@ -112,6 +112,7 @@ export async function removeCommand(options: CatalogOptions) {
           pendingDeps.push(await resolveCatalogSelect(name, selected))
         }))
 
+        cleanupCatalogs(context)
         p.log.info('writing pnpm-workspace.yaml')
         await writeFile(pnpmWorkspaceYamlPath, context.toString(), 'utf-8')
         p.log.info('writing package.json')

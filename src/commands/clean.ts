@@ -1,4 +1,3 @@
-import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import type { CatalogOptions, PnpmWorkspaceMeta, RawDep } from '../types'
 import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -8,7 +7,7 @@ import { execa } from 'execa'
 import { Scanner } from '../api/scanner'
 import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
 import { findWorkspaceYaml } from '../utils/workspace'
-import { safeYAMLDeleteIn } from '../utils/yaml'
+import { cleanupCatalogs, safeYAMLDeleteIn } from '../utils/yaml'
 
 interface DeletableCatalogs {
   catalogName: string
@@ -86,7 +85,6 @@ export async function cleanCommand(options: CatalogOptions) {
         })
 
         cleanupCatalogs(context)
-
         p.log.info('writing pnpm-workspace.yaml')
         await writeFile(pnpmWorkspaceYamlPath, context.toString(), 'utf-8')
 
@@ -102,34 +100,4 @@ export async function cleanCommand(options: CatalogOptions) {
       },
     },
   )
-}
-
-function cleanupCatalogs(context: PnpmWorkspaceYaml) {
-  const document = context.getDocument()
-
-  // Clean up empty catalog sections
-  const workspaceJson = context.toJSON()
-
-  // Remove empty catalog (default catalog)
-  if (workspaceJson.catalog && !Object.keys(workspaceJson.catalog).length)
-    safeYAMLDeleteIn(document, ['catalog'])
-
-  // Remove empty catalogs[key] sections
-  if (workspaceJson.catalogs) {
-    const emptyCatalogs: string[] = []
-    for (const [catalogKey, catalogValue] of Object.entries(workspaceJson.catalogs)) {
-      if (!catalogValue || Object.keys(catalogValue).length === 0)
-        emptyCatalogs.push(catalogKey)
-    }
-
-    emptyCatalogs.forEach((key) => {
-      safeYAMLDeleteIn(document, ['catalogs', key])
-    })
-  }
-
-  // Remove empty catalogs section
-  const updatedWorkspaceJson = context.toJSON()
-  if (!updatedWorkspaceJson.catalogs || Object.keys(updatedWorkspaceJson.catalogs).length === 0) {
-    safeYAMLDeleteIn(document, ['catalogs'])
-  }
 }
