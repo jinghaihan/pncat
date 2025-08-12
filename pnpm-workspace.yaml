@@ -3,15 +3,15 @@ catalogs:
   build:
     unbuild: ^3.6.0
   cli:
-    bumpp: ^10.2.2
+    bumpp: ^10.2.3
     czg: ^1.12.0
     taze: ^19.1.0
   dev:
     typescript: ^5.9.2
   lint:
-    '@antfu/eslint-config': ^5.1.0
-    eslint: ^9.32.0
-    lint-staged: ^16.1.2
+    '@antfu/eslint-config': ^5.2.1
+    eslint: ^9.33.0
+    lint-staged: ^16.1.5
     simple-git-hooks: ^2.13.1
   node:
     '@clack/prompts': ^0.11.0
@@ -28,11 +28,11 @@ catalogs:
   test:
     vitest: ^3.2.4
   types:
-    '@types/node': ^24.1.0
+    '@types/node': ^24.2.1
     '@types/semver': ^7.7.0
   utils:
     deepmerge: ^4.3.1
-    fast-npm-meta: ^0.4.4
+    fast-npm-meta: ^0.4.6
     pnpm-workspace-yaml: ^1.1.0
     semver: ^7.7.2
-    yaml: ^2.8.0
+    yaml: ^2.8.1
