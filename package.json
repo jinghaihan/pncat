@@ -1,0 +1,91 @@
+{
+  "name": "pncat",
+  "type": "module",
+  "version": "0.5.0",
+  "packageManager": "pnpm@10.14.0",
+  "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
+  "author": "jinghaihan",
+  "license": "MIT",
+  "homepage": "https://github.com/jinghaihan/pncat#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jinghaihan/pncat.git"
+  },
+  "bugs": {
+    "url": "https://github.com/jinghaihan/pncat/issues"
+  },
+  "keywords": [
+    "pnpm",
+    "pnpm-catalogs",
+    "pnpm-workspace",
+    "catalog",
+    "workspace"
+  ],
+  "exports": {
+    ".": "./dist/index.mjs",
+    "./cli": "./dist/cli.mjs",
+    "./package.json": "./package.json"
+  },
+  "main": "./dist/index.mjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.mts",
+  "bin": {
+    "pncat": "./bin/pncat.mjs"
+  },
+  "files": [
+    "bin",
+    "dist"
+  ],
+  "scripts": {
+    "pncat": "tsx ./src/cli.ts",
+    "build": "unbuild",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest",
+    "lint": "eslint",
+    "deps": "taze major -I",
+    "release": "bumpp && pnpm publish --no-git-checks",
+    "catalog": "pncat",
+    "prepare": "npx simple-git-hooks",
+    "bootstrap": "pnpm install",
+    "preinstall": "npx only-allow pnpm",
+    "prepublishOnly": "pnpm build"
+  },
+  "dependencies": {
+    "@clack/prompts": "catalog:node",
+    "ansis": "catalog:node",
+    "cac": "catalog:node",
+    "deepmerge": "catalog:utils",
+    "diff": "catalog:utils",
+    "execa": "catalog:node",
+    "fast-npm-meta": "catalog:utils",
+    "find-up": "catalog:node",
+    "pathe": "catalog:node",
+    "pkg-types": "catalog:node",
+    "pnpm-workspace-yaml": "catalog:utils",
+    "semver": "catalog:utils",
+    "tinyglobby": "catalog:node",
+    "unconfig": "catalog:node"
+  },
+  "devDependencies": {
+    "@antfu/eslint-config": "catalog:lint",
+    "@antfu/utils": "catalog:utils",
+    "@types/node": "catalog:types",
+    "@types/semver": "catalog:types",
+    "bumpp": "catalog:cli",
+    "eslint": "catalog:lint",
+    "lint-staged": "catalog:lint",
+    "pncat": "workspace:*",
+    "simple-git-hooks": "catalog:lint",
+    "taze": "catalog:cli",
+    "tsx": "catalog:script",
+    "typescript": "catalog:dev",
+    "unbuild": "catalog:build",
+    "vitest": "catalog:test"
+  },
+  "simple-git-hooks": {
+    "pre-commit": "pnpm lint-staged"
+  },
+  "lint-staged": {
+    "*": "eslint --fix"
+  }
+}
