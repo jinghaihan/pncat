@@ -1,66 +1,32 @@
-import type { CatalogOptions, RawDep } from '../types'
+import type { CatalogOptions } from '../types'
+import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { Scanner } from '../api/scanner'
-
-interface CatalogableDep extends RawDep {
-  packageName: string
-  relativePath: string
-}
+import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { renderChanges } from '../utils/render'
+import { resolveMigrate } from '../utils/resolver'
 
 export async function detectCommand(options: CatalogOptions) {
-  const catalogableDeps: CatalogableDep[] = []
+  const pnpmCatalogManager = new PnpmCatalogManager(options)
 
-  await Scanner(
+  const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
     options,
-    {
-      onPackageResolved: async (pkg) => {
-        if (pkg.type === 'pnpm-workspace.yaml')
-          return
+    pnpmCatalogManager,
+  })
+  const deps = dependencies.filter(i => i.update)
 
-        for (const dep of pkg.deps) {
-          if (!dep.catalog)
-            continue
+  if (!deps.length) {
+    p.outro(c.yellow('no dependencies to migrate, aborting'))
+    process.exit(0)
+  }
 
-          if (options.allowedProtocols.some(p => dep.specifier.startsWith(p)))
-            continue
+  p.log.info(`📦 Found ${c.yellow(deps.length)} dependencies to migrate`)
 
-          if (dep.specifier.startsWith('catalog:'))
-            continue
+  let result = renderChanges(deps, updatedPackages)
+  if (result) {
+    result += `\nrun ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''} to apply changes`
+    p.note(c.reset(result))
+  }
 
-          catalogableDeps.push({
-            ...dep,
-            packageName: pkg.name,
-            relativePath: pkg.relative,
-          })
-        }
-      },
-      afterPackagesEnd: () => {
-        const catalogableDepsRecord = catalogableDeps.reduce((acc, dep) => {
-          if (!acc[dep.name])
-            acc[dep.name] = []
-          acc[dep.name].push(dep)
-          return acc
-        }, {} as Record<string, CatalogableDep[]>)
-
-        if (!catalogableDeps.length) {
-          p.outro(c.yellow('No catalogable dependencies found'))
-          return
-        }
-
-        const contents: string[] = []
-        Object.keys(catalogableDepsRecord).sort().forEach((name) => {
-          catalogableDepsRecord[name].sort((a, b) => a.packageName.localeCompare(b.packageName))
-        })
-        for (const [name, deps] of Object.entries(catalogableDepsRecord)) {
-          contents.push(c.cyan(`${name} (${deps.length}):`))
-          for (const dep of deps) {
-            contents.push(`  ${c.yellow(dep.packageName)} (${c.dim(dep.relativePath)}): ${c.green(dep.specifier)}`)
-          }
-        }
-        p.note(c.reset(contents.join('\n')), `📦 Found ${catalogableDeps.length} catalogable dependencies:`)
-        p.outro('detect complete')
-      },
-    },
-  )
+  p.outro(c.green('detect complete'))
 }

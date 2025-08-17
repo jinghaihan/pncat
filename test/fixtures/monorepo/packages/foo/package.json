@@ -1,8 +1,0 @@
-{
-  "name": "@pncat/example-foo",
-  "private": true,
-  "dependencies": {
-    "lodash": "^4.17.10",
-    "webpack": "~1.9.10"
-  }
-}

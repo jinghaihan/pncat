@@ -1,8 +1,8 @@
 {
   "name": "pncat",
   "type": "module",
-  "version": "0.4.2",
-  "packageManager": "pnpm@10.14.0",
+  "version": "0.5.0",
+  "packageManager": "pnpm@10.15.0",
   "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
   "author": "jinghaihan",
   "license": "MIT",
@@ -39,10 +39,9 @@
   "scripts": {
     "pncat": "tsx ./src/cli.ts",
     "build": "unbuild",
-    "typecheck": "tsc",
+    "typecheck": "tsc --noEmit",
     "test": "vitest",
     "lint": "eslint",
-    "commit": "czg",
     "deps": "taze major -I",
     "release": "bumpp && pnpm publish --no-git-checks",
     "catalog": "pncat",
@@ -56,6 +55,7 @@
     "ansis": "catalog:node",
     "cac": "catalog:node",
     "deepmerge": "catalog:utils",
+    "diff": "catalog:utils",
     "execa": "catalog:node",
     "fast-npm-meta": "catalog:utils",
     "find-up": "catalog:node",
@@ -64,15 +64,14 @@
     "pnpm-workspace-yaml": "catalog:utils",
     "semver": "catalog:utils",
     "tinyglobby": "catalog:node",
-    "unconfig": "catalog:node",
-    "yaml": "catalog:utils"
+    "unconfig": "catalog:node"
   },
   "devDependencies": {
     "@antfu/eslint-config": "catalog:lint",
+    "@antfu/utils": "catalog:utils",
     "@types/node": "catalog:types",
     "@types/semver": "catalog:types",
     "bumpp": "catalog:cli",
-    "czg": "catalog:cli",
     "eslint": "catalog:lint",
     "lint-staged": "catalog:lint",
     "pncat": "workspace:*",

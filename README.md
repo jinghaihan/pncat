@@ -2,36 +2,29 @@
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
-[![bundle][bundle-src]][bundle-href]
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Advanced dependency management for pnpm workspaces with catalog support.
-
-> [!NOTE]
-> Enhanced pnpm workspace management with intelligent dependency cataloging, inspired by [taze](https://github.com/antfu-collective/taze) and [@antfu/nip](https://github.com/antfu/nip).
+Enhanced pnpm catalogs management with advanced workspace dependency control.
 
 ```bash
 pnpm add -D pncat
 ```
 
-## Features
+- **Detect** - Scan workspace to identify catalogable dependencies
+- **Migrate** - Automatically group dependencies by rules
+- **Add** - Install dependencies with catalog support
+- **Remove** - Safely remove dependencies with catalog awareness
+- **Clean** - Find and remove unused catalog dependencies
+- **Revert** - Revert cataloged dependencies to package.json
 
-**🔍 Detect** - Scan workspace to identify catalogable dependencies
-
-**🚀 Migrate** - Automatically group dependencies by rules
-
-**➕ Add** - Install dependencies with catalog support
-
-**🗑️ Remove** - Safely remove dependencies with catalog awareness
-
-**🧹 Clean** - Find and remove unused catalog dependencies
-
-**↩️ Revert** - Revert cataloged dependencies to package.json
+<p align='center'>
+<img src='./assets/pncat.png' />
+</p>
 
 ## Usage
 
-### Detect Catalogable Dependencies
+### Detect
 
 ```bash
 pncat detect
@@ -40,56 +33,55 @@ pncat detect
 Scans your workspace to identify dependencies that could be moved to catalogs.
 
 <p align='center'>
-<img src='./assets/detect-r.png' />
+<img src='./assets/detect.png' />
 </p>
 
-### Smart Catalog Migration
+### Migrate
 
 ```bash
-pncat migrate -f
+pncat migrate
 ```
+
+> [!NOTE]
+> To update catalog groups according to rules, run `pncat migrate -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
 
 Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm.workspace.yaml` and relevant `package.json`.
 
 Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
 <p align='center'>
-<img src='./assets/migrate-r.png' />
+<img src='./assets/migrate.png' />
 </p>
 
-#### Migration Guide
-
-To preserve existing catalogs, run `pncat migrate` - this will only migrate uncataloged dependencies.
-
-To update catalog groups according to rules, run `pncat migrate -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
-
-### Add with Catalog Support
+### Add
 
 ```bash
-pncat add bumpp -D
+pncat add dep
 ```
 
-Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
+Add dependencies with prompts and catalogs support (credit to [nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
 
-Starting from version 0.4.0, manual catalog specification is no longer supported. All dependencies are automatically assigned based on your catalog rules configuration.
+You can specify a catalog name using `--catalog name`. When no catalog is specified, dependencies are automatically assigned based on your catalog rules configuration.
 
 <p align='center'>
-<img src='./assets/add-r.png' />
+<img src='./assets/add.png' />
 </p>
 
-### Safe Dependency Removal
+### Remove
 
 ```bash
-pncat remove bumpp
+pncat remove dep
 ```
 
 Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both `pnpm.workspace.yaml` and `package.json`.
 
+To remove a dependency from all packages in the monorepo, you can use `pnpm remove dep -r` or `pnpm remove dep --recursive` to recursively remove the dependency from all workspace packages.
+
 <p align='center'>
-<img src='./assets/remove-r.png' />
+<img src='./assets/remove.png' />
 </p>
 
-### Catalog Cleanup
+### Clean
 
 ```bash
 pncat clean
@@ -98,10 +90,10 @@ pncat clean
 Find unused catalog dependencies and remove them from `pnpm.workspace.yaml`.
 
 <p align='center'>
-<img src='./assets/clean-r.png' />
+<img src='./assets/clean.png' />
 </p>
 
-### Revert Cataloged Dependencies
+### Revert
 
 ```bash
 pncat revert
@@ -110,7 +102,17 @@ pncat revert
 Reverts cataloged dependencies to `package.json`. Useful for monorepo restructuring or migration.
 
 <p align='center'>
-<img src='./assets/revert-r.png' />
+<img src='./assets/revert.png' />
+</p>
+
+You can also revert specific dependencies using:
+
+```bash
+pncat revert dep
+```
+
+<p align='center'>
+<img src='./assets/revert-d.png' />
 </p>
 
 ## Configuration
@@ -121,8 +123,7 @@ Create a `pncat.config.ts` file to customize catalog rules:
 import { defineConfig, mergeCatalogRules } from 'pncat'
 
 export default defineConfig({
-  // To extend default rules instead, use:
-  // catalogRules: mergeCatalogRules([...])
+  // To extend default rules instead, use: catalogRules: mergeCatalogRules([...])
   catalogRules: [
     {
       name: 'vue',
@@ -174,23 +175,14 @@ Currently, pnpm's catalog support is limited. For example, there is no built-in 
 
 Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm.workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
 
-Special thanks to [@antfu](https://github.com/antfu) — his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) provided great inspiration and guidance during the development of this tool.
+## Inspiration
 
-## Roadmap
+This project is inspired by and builds upon the excellent work of the following projects:
 
-### Core Features
-- [x] Detect catalogable dependencies
-- [x] Migrate to catalogs
-- [x] Install dependency with catalog support
-- [x] Safely remove dependency
-- [x] Cleanup unused catalog dependencies
-- [x] Revert cataloged dependencies version to `package.json`
+- [taze](https://github.com/antfu-collective/taze) - provided essential monorepo I/O utilities for reading and parsing `pnpm-workspace.yaml` and `package.json` files across workspace packages
+- [nip](https://github.com/antfu/nip) - inspired the interactive prompts and user experience design for dependency management workflows
 
-### Advanced
-- [x] Config file support
-- [x] Custom grouping rules
-- [x] Custom specifier processing
-- [x] Specifier conflict resolution
+Special thanks to [@antfu](https://github.com/antfu) for his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) which provided great inspiration and guidance during the development of this tool.
 
 ## Related Projects
 

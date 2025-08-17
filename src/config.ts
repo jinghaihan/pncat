@@ -1,58 +1,49 @@
-import type { CatalogOptions, CommonOptions } from './types'
+import type { CatalogOptions } from './types'
 import process from 'node:process'
 import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
 import { DEFAULT_CATALOG_OPTIONS } from './constants'
-import { sortCatalogRules } from './utils/sort'
-import { findWorkspaceRoot } from './utils/workspace'
+import { findWorkspaceRoot } from './io/workspace'
+import { DEFAULT_CATALOG_RULES } from './rules'
 
-function normalizeConfig(options: Partial<CommonOptions>) {
+function normalizeConfig(options: Partial<CatalogOptions>) {
   // interop
   if ('default' in options)
-    options = options.default as Partial<CommonOptions>
+    options = options.default as Partial<CatalogOptions>
 
   return options
 }
 
-export async function resolveConfig(
-  options: Partial<CommonOptions>,
-): Promise<CatalogOptions> {
-  const defaults = { ...DEFAULT_CATALOG_OPTIONS }
+export async function resolveConfig(options: Partial<CatalogOptions>): Promise<CatalogOptions> {
+  const defaults = structuredClone(DEFAULT_CATALOG_OPTIONS)
   options = normalizeConfig(options)
 
-  const loader = createConfigLoader<CommonOptions>({
+  const loader = createConfigLoader<CatalogOptions>({
     sources: [
       {
-        files: [
-          'pncat.config',
-        ],
+        files: ['pncat.config'],
       },
       {
-        files: [
-          '.pncatrc',
-        ],
+        files: ['.pncatrc'],
         extensions: ['json', ''],
       },
     ],
     cwd: options.cwd || process.cwd(),
     merge: false,
   })
-
   const config = await loader.load()
+  const configOptions = config.sources.length ? normalizeConfig(config.config) : {}
 
-  if (!config.sources.length)
-    return deepmerge(defaults, options)
-
-  const configOptions = normalizeConfig(config.config)
-
-  if (!configOptions.cwd)
-    configOptions.cwd = await findWorkspaceRoot()
-
-  const catalogRules = configOptions.catalogRules ?? defaults.catalogRules ?? []
+  const catalogRules = configOptions.catalogRules || structuredClone(DEFAULT_CATALOG_RULES) || []
   delete configOptions.catalogRules
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
-  merged.catalogRules = sortCatalogRules(catalogRules)
+
+  merged.cwd = merged.cwd || await findWorkspaceRoot()
+  if (typeof merged.catalog === 'boolean')
+    delete merged.catalog
+
+  merged.catalogRules = catalogRules
 
   return merged
 }

@@ -1,5 +1,4 @@
-import type { CatalogOptions, CommonOptions, DepType } from './types'
-import { DEFAULT_CATALOG_RULES } from './rules'
+import type { CatalogOptions, DepType } from './types'
 
 export const MODE_CHOICES = ['detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
@@ -8,38 +7,40 @@ export const DEPS_FIELDS = [
   'devDependencies',
   'peerDependencies',
   'optionalDependencies',
-  'packageManager',
   'pnpm.overrides',
   'resolutions',
-  'overrides',
+  // 'overrides',
   'pnpm-workspace',
 ] as const
 
-export const DEFAULT_COMMON_OPTIONS: CommonOptions = {
-  cwd: '',
+export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
+  'dependencies': '',
+  'devDependencies': 'dev',
+  'peerDependencies': 'peer',
+  'optionalDependencies': 'optional',
+  'resolutions': 'resolutions',
+  // 'overrides': 'overrides',
+  'pnpm.overrides': 'pnpm-overrides',
+  'pnpm-workspace': 'pnpm-workspace',
+}
+
+export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
+  mode: 'detect',
   recursive: true,
   force: false,
-  ignorePaths: '',
   ignoreOtherWorkspaces: true,
-  include: '',
-  exclude: '',
   depFields: {
-    packageManager: false,
+    dependencies: true,
+    devDependencies: true,
+    peerDependencies: true,
   },
   allowedProtocols: ['workspace', 'link', 'file'],
-  catalogRules: DEFAULT_CATALOG_RULES,
   specifierOptions: {
     skipComplexRanges: true,
     allowPreReleases: true,
     allowWildcards: false,
   },
-}
-
-export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
-  ...DEFAULT_COMMON_OPTIONS,
-  mode: 'detect',
   yes: false,
-  install: true,
 }
 
 export const DEFAULT_IGNORE_PATHS = [

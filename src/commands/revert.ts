@@ -1,79 +1,66 @@
-import type { PackageJson } from 'pkg-types'
-import type { CatalogOptions, PnpmWorkspaceMeta } from '../types'
-import { writeFile } from 'node:fs/promises'
+import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { execa } from 'execa'
-import { writePackageJSON } from 'pkg-types'
-import { Scanner } from '../api/scanner'
-import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
-import { safeYAMLDeleteIn } from '../utils/yaml'
+import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
+import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { runPnpmInstall } from '../utils/process'
+import { resolveRevert } from '../utils/resolver'
+import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writePnpmWorkspace } from '../utils/workspace'
 
 export async function revertCommand(options: CatalogOptions) {
-  const catalogSpecifiedRecord: Record<string, Record<string, string>> = {}
-  const resolvedPackageJson: Record<string, PackageJson> = {}
+  const args: string[] = process.argv.slice(3)
 
-  await Scanner(
+  const workspaceYamlPath = await findWorkspaceYAML()
+  if (!workspaceYamlPath) {
+    p.outro(c.red('no pnpm-workspace.yaml found, aborting'))
+    process.exit(1)
+  }
+
+  const { workspaceYaml } = await ensureWorkspaceYAML()
+  const pnpmCatalogManager = new PnpmCatalogManager(options)
+
+  const { isRevertAll, dependencies = [], updatedPackages = {} } = await resolveRevert(args, {
     options,
-    {
-      afterPackagesLoaded: (pkgs) => {
-        const pnpmWorkspacePackages: PnpmWorkspaceMeta[] = pkgs.filter(pkg => pkg.type === 'pnpm-workspace.yaml')
-        for (const pkg of pnpmWorkspacePackages) {
-          for (const dep of pkg.deps) {
-            const catalogSpecifier = pkg.name.replace('pnpm-catalog:', 'catalog:')
-            catalogSpecifiedRecord[dep.name] ??= {}
-            catalogSpecifiedRecord[dep.name][catalogSpecifier] = dep.specifier
-          }
-        }
+    pnpmCatalogManager,
+    workspaceYaml,
+  })
+
+  if (isRevertAll) {
+    if (!options.yes) {
+      const result = await p.confirm({
+        message: c.green('all catalog dependencies will be reverted, are you sure?'),
+      })
+      if (!result || p.isCancel(result)) {
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      }
+    }
+
+    const document = workspaceYaml.getDocument()
+    document.deleteIn(['catalog'])
+    document.deleteIn(['catalogs'])
+
+    await writePnpmWorkspace(workspaceYamlPath, workspaceYaml.toString())
+    await writePackageJSONs(updatedPackages)
+  }
+  else {
+    await confirmWorkspaceChanges(
+      async () => {
+        removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
       },
-      onPackageResolved: (pkg) => {
-        if (pkg.type === 'pnpm-workspace.yaml')
-          return
-
-        const content = pkg.raw
-        for (const dep of pkg.deps) {
-          if (!dep.specifier.includes('catalog:'))
-            continue
-
-          content[dep.source][dep.name] = catalogSpecifiedRecord[dep.name][dep.specifier]
-        }
-        resolvedPackageJson[pkg.filepath] = content
+      {
+        pnpmCatalogManager,
+        workspaceYaml,
+        workspaceYamlPath,
+        updatedPackages,
+        yes: options.yes,
+        verbose: options.verbose,
+        bailout: true,
       },
-      afterPackagesEnd: async (_pkgs) => {
-        const { context, pnpmWorkspaceYamlPath } = await ensurePnpmWorkspaceYAML()
-        const document = context.getDocument()
+    )
+  }
 
-        safeYAMLDeleteIn(document, ['catalog'])
-        safeYAMLDeleteIn(document, ['catalogs'])
-
-        if (!options.yes) {
-          const result = await p.confirm({
-            message: c.green('All catalog dependencies will be removed from pnpm-workspace.yaml, are you sure?'),
-          })
-          if (!result || p.isCancel(result)) {
-            p.outro(c.red('aborting'))
-            process.exit(1)
-          }
-        }
-
-        p.log.info('writing pnpm-workspace.yaml')
-        await writeFile(pnpmWorkspaceYamlPath, context.toString(), 'utf-8')
-        p.log.info('writing package.json')
-        await Promise.all(Object.entries(resolvedPackageJson).map(([filepath, content]) => {
-          return writePackageJSON(filepath, content)
-        }))
-
-        p.log.success('revert complete')
-
-        if (options.install) {
-          p.outro('running pnpm install')
-          await execa('pnpm', ['install'], {
-            stdio: 'inherit',
-            cwd: options.cwd || process.cwd(),
-          })
-        }
-      },
-    },
-  )
+  p.log.success(c.green('revert complete'))
+  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

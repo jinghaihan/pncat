@@ -1,10 +1,14 @@
-import { defineConfig, mergeCatalogRules } from 'pncat'
+import { defineConfig, mergeCatalogRules } from './src'
 
 export default defineConfig({
   catalogRules: mergeCatalogRules([
     {
       name: 'utils',
-      match: ['fast-npm-meta', 'pnpm-workspace-yaml', 'yaml'],
+      match: [
+        'diff',
+        'fast-npm-meta',
+        'pnpm-workspace-yaml',
+      ],
     },
   ]),
 })

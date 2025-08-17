@@ -1,11 +1,10 @@
 packages: []
 catalogs:
   build:
-    unbuild: ^3.6.0
+    unbuild: ^3.6.1
   cli:
     bumpp: ^10.2.3
-    czg: ^1.12.0
-    taze: ^19.1.0
+    taze: ^19.3.0
   dev:
     typescript: ^5.9.2
   lint:
@@ -20,19 +19,20 @@ catalogs:
     execa: ^9.6.0
     find-up: ^7.0.0
     pathe: ^2.0.3
-    pkg-types: ^2.2.0
+    pkg-types: ^2.3.0
     tinyglobby: ^0.2.14
-    unconfig: ^7.3.2
+    unconfig: ^7.3.3
   script:
-    tsx: ^4.20.3
+    tsx: ^4.20.4
   test:
     vitest: ^3.2.4
   types:
-    '@types/node': ^24.2.1
+    '@types/node': ^24.3.0
     '@types/semver': ^7.7.0
   utils:
+    '@antfu/utils': ^9.2.0
     deepmerge: ^4.3.1
+    diff: ^8.0.2
     fast-npm-meta: ^0.4.6
-    pnpm-workspace-yaml: ^1.1.0
+    pnpm-workspace-yaml: ^1.1.1
     semver: ^7.7.2
-    yaml: ^2.8.1

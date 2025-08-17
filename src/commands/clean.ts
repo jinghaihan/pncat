@@ -1,103 +1,48 @@
-import type { CatalogOptions, PnpmWorkspaceMeta, RawDep } from '../types'
-import { writeFile } from 'node:fs/promises'
+import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { execa } from 'execa'
-import { Scanner } from '../api/scanner'
-import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
-import { findWorkspaceYaml } from '../utils/workspace'
-import { cleanupCatalogs, safeYAMLDeleteIn } from '../utils/yaml'
-
-interface DeletableCatalogs {
-  catalogName: string
-  name: string
-  specifier: string
-}
+import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
+import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { runPnpmInstall } from '../utils/process'
+import { resolveClean } from '../utils/resolver'
+import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
 
 export async function cleanCommand(options: CatalogOptions) {
-  const pnpmWorkspaceYamlPath = await findWorkspaceYaml()
-  if (!pnpmWorkspaceYamlPath) {
+  const workspaceYamlPath = await findWorkspaceYAML()
+  if (!workspaceYamlPath) {
     p.outro(c.red('no pnpm-workspace.yaml found, aborting'))
     process.exit(1)
   }
 
-  await Scanner(
+  const pnpmCatalogManager = new PnpmCatalogManager(options)
+  const { dependencies = [] } = await resolveClean({
     options,
+    pnpmCatalogManager,
+  })
+
+  if (!dependencies.length) {
+    p.outro(c.yellow('no dependencies to clean, aborting'))
+    process.exit(0)
+  }
+
+  const { workspaceYaml } = await ensureWorkspaceYAML()
+  p.log.info(`📦 Found ${c.yellow(dependencies.length)} dependencies not in package.json`)
+
+  await confirmWorkspaceChanges(
+    async () => {
+      removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
+    },
     {
-      afterPackagesLoaded: async (pkgs) => {
-        const depsRecord: Record<string, RawDep[]> = {}
-        const deletableCatalogs: DeletableCatalogs[] = []
-
-        for (const pkg of pkgs) {
-          if (pkg.type === 'pnpm-workspace.yaml')
-            continue
-
-          for (const dep of pkg.deps) {
-            depsRecord[dep.name] ??= []
-            depsRecord[dep.name].push(dep)
-          }
-        }
-
-        const pnpmWorkspacePackages: PnpmWorkspaceMeta[] = pkgs.filter(pkg => pkg.type === 'pnpm-workspace.yaml')
-        for (const pkg of pnpmWorkspacePackages) {
-          for (const dep of pkg.deps) {
-            const catalogSpecifier = pkg.name.replace('pnpm-catalog:', 'catalog:')
-            if (!depsRecord[dep.name] || !depsRecord[dep.name].some(d => d.specifier === catalogSpecifier)) {
-              deletableCatalogs.push({
-                catalogName: pkg.name.replace('pnpm-catalog:', ''),
-                name: dep.name,
-                specifier: dep.specifier,
-              })
-            }
-          }
-        }
-
-        if (!deletableCatalogs.length) {
-          p.outro(c.yellow('No deletable catalog found'))
-          return
-        }
-
-        p.note(
-          c.reset(deletableCatalogs.map((item) => {
-            return `${c.yellow(item.catalogName)}: ${c.cyan(item.name)} (${c.green(item.specifier)})`
-          }).join('\n')),
-          `📦 Found ${deletableCatalogs.length} deletable catalogs:`,
-        )
-
-        if (!options.yes) {
-          const result = await p.confirm({
-            message: c.green('Do you want to continue?'),
-          })
-          if (!result || p.isCancel(result)) {
-            p.outro(c.red('aborting'))
-            process.exit(1)
-          }
-        }
-
-        const { context } = await ensurePnpmWorkspaceYAML()
-        const document = context.getDocument()
-
-        deletableCatalogs.forEach((catalog) => {
-          if (catalog.catalogName === 'default')
-            safeYAMLDeleteIn(document, ['catalog', catalog.name])
-          safeYAMLDeleteIn(document, ['catalogs', catalog.catalogName, catalog.name])
-        })
-
-        cleanupCatalogs(context)
-        p.log.info('writing pnpm-workspace.yaml')
-        await writeFile(pnpmWorkspaceYamlPath, context.toString(), 'utf-8')
-
-        p.log.success('clean complete')
-
-        if (options.install) {
-          p.outro('running pnpm install')
-          await execa('pnpm', ['install'], {
-            stdio: 'inherit',
-            cwd: options.cwd || process.cwd(),
-          })
-        }
-      },
+      pnpmCatalogManager,
+      workspaceYaml,
+      workspaceYamlPath,
+      yes: options.yes,
+      verbose: options.verbose,
+      bailout: true,
     },
   )
+
+  p.log.success(c.green('clean complete'))
+  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

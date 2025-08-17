@@ -1,9 +1,5 @@
-import type { SpecifierOptions } from '../types'
-
-function toArray<T>(array?: T | Array<T>): Array<T> {
-  array = array ?? []
-  return Array.isArray(array) ? array : [array]
-}
+import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '../types'
+import { toArray } from '@antfu/utils'
 
 function escapeRegExp(str: string) {
   return str.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
@@ -34,7 +30,10 @@ export function parseFilter(str?: string | string[], defaultValue = true): ((nam
   }
 }
 
-export function specifierFilter(str: string, options?: SpecifierOptions): boolean {
+export function specFilter(str: string, options?: SpecifierOptions): boolean {
+  if (!str.trim())
+    return false
+
   const {
     skipComplexRanges = true,
     skipRangeTypes = [],
@@ -42,59 +41,68 @@ export function specifierFilter(str: string, options?: SpecifierOptions): boolea
     allowWildcards = false,
   } = options ?? {}
 
-  if (!str.trim())
-    return false
+  // Define range type checks
+  const rangeTypeChecks: Record<SpecifierRangeType, (s: string) => boolean> = {
+    '||': s => s.includes('||'),
+    '-': s => s.includes(' - '),
+    '>=': s => s.startsWith('>='),
+    '<=': s => s.startsWith('<='),
+    '>': s => s.startsWith('>') && !s.startsWith('>='),
+    '<': s => s.startsWith('<') && !s.startsWith('<='),
+    'x': s => s.includes('x'),
+    '*': s => s === '*',
+    'pre-release': s => s.includes('-'),
+  }
 
-  if (str.startsWith('catalog:'))
-    return true
-
+  // Check skipRangeTypes first (takes priority)
   if (skipRangeTypes.length > 0) {
     for (const type of skipRangeTypes) {
-      if (type === '||' && str.includes('||'))
-        return false
-      if (type === '-' && str.includes(' - '))
-        return false
-      if (type === '>=' && str.startsWith('>='))
-        return false
-      if (type === '<=' && str.startsWith('<='))
-        return false
-      if (type === '>' && str.startsWith('>'))
-        return false
-      if (type === '<' && str.startsWith('<'))
-        return false
-      if (type === 'x' && str.includes('x'))
-        return false
-      if (type === '*' && str === '*')
-        return false
-      if (type === 'pre-release' && str.includes('-'))
+      if (rangeTypeChecks[type](str))
         return false
     }
     return true
   }
 
+  // Check skipComplexRanges
   if (skipComplexRanges) {
-    const isComplex
-      = str.includes('||')
-        || str.includes(' - ')
-        || /^[><=]/.test(str)
-
-    if (isComplex)
-      return false
+    for (const type of ['||', '-', '>=', '<=', '>', '<']) {
+      if (rangeTypeChecks[type as SpecifierRangeType](str))
+        return false
+    }
   }
 
-  if (!allowPreReleases && str.includes('-')) {
+  // Check pre-releases
+  if (!allowPreReleases && str.includes('-'))
     return false
-  }
 
-  if (!allowWildcards && (str.includes('x') || str === '*')) {
+  // Check wildcards
+  if (!allowWildcards && (str.includes('x') || str === '*'))
     return false
-  }
 
   return true
 }
 
-export function createDependenciesFilter(include?: string | string[], exclude?: string | string[], options?: SpecifierOptions) {
-  const i = parseFilter(include, true)
-  const e = parseFilter(exclude, false)
-  return (name: string, specifier: string) => !e(name) && i(name) && specifierFilter(specifier, options)
+export function protocolsFilter(str: string, protocols?: string[]) {
+  if (protocols) {
+    return !protocols.some(p => str.startsWith(p))
+  }
+  return true
+}
+
+export function createDependenciesFilter(
+  include?: string | string[],
+  exclude?: string | string[],
+  protocols?: string[],
+  specOptions?: SpecifierOptions,
+): DepFilter {
+  const includeFilter = parseFilter(include, true)
+  const excludeFilter = parseFilter(exclude, false)
+
+  return (name: string, specifier: string) => {
+    if (excludeFilter(name) || !includeFilter(name))
+      return false
+    if (!protocolsFilter(specifier, protocols))
+      return false
+    return specFilter(specifier, specOptions)
+  }
 }

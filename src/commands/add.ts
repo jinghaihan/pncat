@@ -1,190 +1,62 @@
-import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import type { CatalogOptions, ParsedSpec } from '../types'
-import { writeFile } from 'node:fs/promises'
+import type { CatalogOptions, PackageJsonMeta } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { execa } from 'execa'
-import { join, resolve } from 'pathe'
-import { readPackageJSON, writePackageJSON } from 'pkg-types'
-import { ensurePnpmWorkspaceYAML } from '../utils/ensure'
-import { findPackagePaths } from '../utils/packages'
-import { parseSpec } from '../utils/parse'
-import { getDepCatalogName } from '../utils/rule'
-
-interface ParsedDependencies {
-  dependencies: ParsedSpec[]
-  isDev: boolean
-}
+import { ensureWorkspaceYAML } from '../io/workspace'
+import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { runPnpmInstall } from '../utils/process'
+import { resolveAdd } from '../utils/resolver'
+import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
 
 export async function addCommand(options: CatalogOptions) {
-  // Get command line arguments (skip node and script name)
   const args = process.argv.slice(3)
   if (args.length === 0) {
-    p.outro(c.red('no arguments provided, aborting'))
+    p.outro(c.red('no dependencies provided, aborting'))
     process.exit(1)
   }
 
-  const targetPackageJSON = join(process.cwd(), 'package.json')
-  if (!targetPackageJSON) {
-    p.outro(c.red('no package.json found, aborting'))
-    process.exit(1)
-  }
+  const { pkgJson, pkgPath } = await readPackageJSON()
+  const { workspaceYaml, workspaceYamlPath } = await ensureWorkspaceYAML()
+  const pnpmCatalogManager = new PnpmCatalogManager(options)
 
-  const pkgJson = await readPackageJSON(targetPackageJSON)
-  const { context: workspaceYaml, pnpmWorkspaceYamlPath } = await ensurePnpmWorkspaceYAML()
+  const { isDev = false, dependencies = [] } = await resolveAdd(args, {
+    options,
+    pnpmCatalogManager,
+    workspaceYaml,
+  })
 
-  // Process and validate arguments
-  const config = await resolveDependencies(workspaceYaml, args, options)
+  const depsName = isDev ? 'devDependencies' : 'dependencies'
+  const depNameOppsite = isDev ? 'dependencies' : 'devDependencies'
 
-  const contents: string[] = []
-  for (const dep of config.dependencies) {
-    const padEnd = Math.max(0, 20 - dep.name.length - (dep.specifier?.length || 0))
-    const padCatalog = Math.max(0, 20 - (dep.catalog?.length ? (dep.catalog.length + ' catalog:'.length) : 0))
-    contents.push([
-      `${c.cyan(dep.name)}@${c.green(dep.specifier)} ${' '.repeat(padEnd)}`,
-      dep.catalog ? c.yellow` catalog:${dep.catalog}` : '',
-      ' '.repeat(padCatalog),
-      dep.specifierSource ? c.gray(` (from ${dep.specifierSource})`) : '',
-    ].join(' '))
-  }
-  p.note(c.reset(contents.join('\n')), `install packages to ${c.dim(pnpmWorkspaceYamlPath)}`)
-
-  if (!options.yes) {
-    const result = await p.confirm({
-      message: c.green`looks good?`,
-    })
-    if (!result || p.isCancel(result)) {
-      p.outro(c.red('aborting'))
-      process.exit(1)
-    }
-  }
-
-  for (const dep of config.dependencies) {
-    if (dep.catalog)
-      workspaceYaml.setPackage(dep.catalog, dep.name, dep.specifier || '^0.0.0')
-  }
-
-  const depsName = config.isDev ? 'devDependencies' : 'dependencies'
-  const depNameOppsite = config.isDev ? 'dependencies' : 'devDependencies'
   const deps = pkgJson[depsName] ||= {}
-  for (const pkg of config.dependencies) {
-    deps[pkg.name] = pkg.catalog ? (`catalog:${pkg.catalog}`) : pkg.specifier || '^0.0.0'
-    if (pkgJson[depNameOppsite]?.[pkg.name])
-      delete pkgJson[depNameOppsite][pkg.name]
+  for (const dep of dependencies) {
+    deps[dep.name] = dep.catalogName ? (`catalog:${dep.catalogName}`) : dep.specifier || '^0.0.0'
+    if (pkgJson[depNameOppsite]?.[dep.name])
+      delete pkgJson[depNameOppsite][dep.name]
   }
 
-  p.log.info('writing pnpm-workspace.yaml')
-  await writeFile(pnpmWorkspaceYamlPath, workspaceYaml.toString(), 'utf-8')
-  p.log.info('writing package.json')
-  await writePackageJSON(targetPackageJSON, pkgJson)
-  p.log.info('done')
-
-  p.log.success('add complete')
-
-  if (options.install) {
-    p.outro('running pnpm install')
-    await execa('pnpm', ['install'], {
-      stdio: 'inherit',
-      cwd: options.cwd || process.cwd(),
-    })
-  }
-}
-
-async function resolveDependencies(
-  workspaceYaml: PnpmWorkspaceYaml,
-  args: string[],
-  options: CatalogOptions,
-): Promise<ParsedDependencies> {
-  const isDev = ['--save-dev', '-D'].some(flag => args.includes(flag))
-
-  // Extract dependency name (first non-flag argument)
-  const dependencies = args.filter(arg => !arg.startsWith('-'))
-
-  if (!dependencies.length) {
-    p.outro(c.red('no dependency provided, aborting'))
-    process.exit(1)
+  const updatedPackages: Record<string, PackageJsonMeta> = {
+    [pkgJson.name as string]: { filepath: pkgPath, raw: pkgJson } as PackageJsonMeta,
   }
 
-  const workspaceJson = workspaceYaml.toJSON()
-  const parsed = dependencies.map(x => x.trim()).filter(Boolean).map(parseSpec)
-
-  // find all workspace packages
-  const workspacePackages: string[] = []
-  if (options.recursive) {
-    const paths = await findPackagePaths(options)
-    await Promise.all(
-      paths.map(async (relative) => {
-        const filepath = resolve(options.cwd || '', relative)
-        const pkg = await readPackageJSON(filepath)
-        if (pkg.name)
-          workspacePackages.push(pkg.name)
-      }),
-    )
-  }
-
-  for (const dep of parsed) {
-    if (dep.specifier)
-      dep.specifierSource ||= 'user'
-
-    if (!dep.specifier) {
-      const catalogs = workspaceYaml.getPackageCatalogs(dep.name)
-      if (catalogs[0]) {
-        dep.catalog = catalogs[0]
-        dep.specifierSource ||= 'catalog'
+  await confirmWorkspaceChanges(
+    async () => {
+      for (const dep of dependencies) {
+        if (dep.catalogName)
+          workspaceYaml.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
       }
-    }
+    },
+    {
+      pnpmCatalogManager,
+      workspaceYaml,
+      workspaceYamlPath,
+      updatedPackages,
+      yes: options.yes,
+      verbose: options.verbose,
+      bailout: false,
+    },
+  )
 
-    if (dep.catalog && !dep.specifier) {
-      const spec = dep.catalog === 'default' ? workspaceJson?.catalog?.[dep.name] : workspaceJson?.catalogs?.[dep.catalog]?.[dep.name]
-      if (spec) {
-        dep.specifier = spec
-        dep.specifierSource ||= 'catalog'
-      }
-    }
-
-    if (!dep.specifier) {
-      // if the dependency is a workspace package, use the workspace: protocol
-      if (workspacePackages.includes(dep.name)) {
-        dep.specifier = 'workspace:*'
-        dep.specifierSource ||= 'workspace'
-        continue
-      }
-
-      const spinner = p.spinner({ indicator: 'dots' })
-      spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
-      const { getLatestVersion } = await import('fast-npm-meta')
-      const version = await getLatestVersion(dep.name)
-      if (version.version) {
-        dep.specifier = `^${version.version}`
-        dep.specifierSource ||= 'npm'
-        spinner.stop(c.gray`resolved ${c.cyan(dep.name)}@${c.green(dep.specifier)}`)
-      }
-      else {
-        spinner.stop(`failed to resolve ${c.cyan(dep.name)} from npm`)
-        p.outro(c.red('aborting'))
-        process.exit(1)
-      }
-    }
-
-    if (!dep.catalog)
-      dep.catalog = determineCatalogName(dep.name, dep.specifier, isDev, options)
-  }
-
-  return {
-    dependencies: parsed,
-    isDev,
-  }
-}
-
-function determineCatalogName(name: string, specifier: string, isDev: boolean, options: CatalogOptions): string | undefined {
-  if (specifier.startsWith('workspace:'))
-    return
-
-  return getDepCatalogName({
-    name,
-    specifier,
-    source: isDev ? 'devDependencies' : 'dependencies',
-    catalog: true,
-  }, options)
+  p.log.success(c.green('add complete'))
+  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }
