@@ -9,7 +9,7 @@ catalogs:
     typescript: ^5.9.2
   lint:
     '@antfu/eslint-config': ^5.2.1
-    eslint: ^9.33.0
+    eslint: ^9.34.0
     lint-staged: ^16.1.5
     simple-git-hooks: ^2.13.1
   node:
@@ -23,7 +23,7 @@ catalogs:
     tinyglobby: ^0.2.14
     unconfig: ^7.3.3
   script:
-    tsx: ^4.20.4
+    tsx: ^4.20.5
   test:
     vitest: ^3.2.4
   types:
@@ -36,3 +36,8 @@ catalogs:
     fast-npm-meta: ^0.4.6
     pnpm-workspace-yaml: ^1.1.1
     semver: ^7.7.2
+onlyBuiltDependencies:
+  - esbuild
+  - rolldown
+  - unrs-resolver
+  - vsxpub

@@ -34,6 +34,9 @@ export function specFilter(str: string, options?: SpecifierOptions): boolean {
   if (!str.trim())
     return false
 
+  if (str.startsWith('catalog:'))
+    return true
+
   const {
     skipComplexRanges = true,
     skipRangeTypes = [],

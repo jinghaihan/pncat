@@ -68,6 +68,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /unbuild/,
       /rspack/,
       /unplugin/,
+      /build/,
     ],
     priority: 40,
   },
