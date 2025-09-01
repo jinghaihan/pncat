@@ -30,7 +30,7 @@ export async function addCommand(options: CatalogOptions) {
 
   const deps = pkgJson[depsName] ||= {}
   for (const dep of dependencies) {
-    deps[dep.name] = dep.catalogName ? (`catalog:${dep.catalogName}`) : dep.specifier || '^0.0.0'
+    deps[dep.name] = dep.catalogName ? (dep.catalogName === 'default' ? 'catalog:' : `catalog:${dep.catalogName}`) : dep.specifier || '^0.0.0'
     if (pkgJson[depNameOppsite]?.[dep.name])
       delete pkgJson[depNameOppsite][dep.name]
   }
