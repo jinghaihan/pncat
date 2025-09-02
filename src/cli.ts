@@ -20,8 +20,9 @@ try {
     .option('--include, -n <deps>', 'Only included dependencies will be checked for catalog')
     .option('--exclude, -x <deps>', 'Exclude dependencies to be checked, will override --include options')
     .option('--ignore-paths <paths>', 'Ignore paths for search package.json')
-    .option('--ignore-other-workspaces', 'Ignore package.json that in other workspaces (with their own .git,pnpm-workspace.yaml,etc.)', { default: true })
+    .option('--ignore-other-workspaces', 'Ignore package.json that in other workspaces (with their own .git,pnpm-workspace.yaml,etc.)')
     .option('--yes', 'Skip prompt confirmation')
+    .option('--install', 'Run pnpm install after command')
     .option('--verbose', 'Show complete pnpm-workspace.yaml instead of only the diff')
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {

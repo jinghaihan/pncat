@@ -41,6 +41,7 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
     allowWildcards: false,
   },
   yes: false,
+  install: true,
 }
 
 export const DEFAULT_IGNORE_PATHS = [

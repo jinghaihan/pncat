@@ -1,9 +1,6 @@
 import type { CatalogOptions } from '../types'
-import * as p from '@clack/prompts'
-import c from 'ansis'
 import { ensureWorkspaceYAML } from '../io/workspace'
 import { PnpmCatalogManager } from '../pnpm-catalog-manager'
-import { runPnpmInstall } from '../utils/process'
 import { resolveMigrate } from '../utils/resolver'
 import { confirmWorkspaceChanges, generateWorkspaceYAML } from '../utils/workspace'
 
@@ -29,9 +26,7 @@ export async function migrateCommand(options: CatalogOptions) {
       yes: options.yes,
       verbose: options.verbose,
       bailout: true,
+      completeMessage: 'migrate complete',
     },
   )
-
-  p.log.success(c.green('migrate complete'))
-  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

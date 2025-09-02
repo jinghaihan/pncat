@@ -19,7 +19,7 @@ pnpm add -D pncat
 - **Revert** - Revert cataloged dependencies to package.json
 
 <p align='center'>
-<img src='./assets/pncat.png' />
+<img src='./assets/help.png' />
 </p>
 
 ## Usage

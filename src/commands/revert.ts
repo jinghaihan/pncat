@@ -4,7 +4,6 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { PnpmCatalogManager } from '../pnpm-catalog-manager'
-import { runPnpmInstall } from '../utils/process'
 import { resolveRevert } from '../utils/resolver'
 import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writePnpmWorkspace } from '../utils/workspace'
 
@@ -57,10 +56,8 @@ export async function revertCommand(options: CatalogOptions) {
         yes: options.yes,
         verbose: options.verbose,
         bailout: true,
+        completeMessage: 'revert complete',
       },
     )
   }
-
-  p.log.success(c.green('revert complete'))
-  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

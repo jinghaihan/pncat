@@ -4,7 +4,6 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { ensureWorkspaceYAML } from '../io/workspace'
 import { PnpmCatalogManager } from '../pnpm-catalog-manager'
-import { runPnpmInstall } from '../utils/process'
 import { resolveAdd } from '../utils/resolver'
 import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
 
@@ -54,9 +53,7 @@ export async function addCommand(options: CatalogOptions) {
       yes: options.yes,
       verbose: options.verbose,
       bailout: false,
+      completeMessage: 'add complete',
     },
   )
-
-  p.log.success(c.green('add complete'))
-  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

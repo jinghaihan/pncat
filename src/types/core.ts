@@ -25,6 +25,10 @@ export interface CommandOptions {
    */
   yes?: boolean
   /**
+   * Run pnpm install after command
+   */
+  install?: boolean
+  /**
    * Show complete pnpm-workspace.yaml instead of only the diff
    */
   verbose?: boolean

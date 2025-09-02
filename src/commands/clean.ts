@@ -4,7 +4,6 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { PnpmCatalogManager } from '../pnpm-catalog-manager'
-import { runPnpmInstall } from '../utils/process'
 import { resolveClean } from '../utils/resolver'
 import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
 
@@ -40,9 +39,7 @@ export async function cleanCommand(options: CatalogOptions) {
       yes: options.yes,
       verbose: options.verbose,
       bailout: true,
+      completeMessage: 'clean complete',
     },
   )
-
-  p.log.success(c.green('clean complete'))
-  await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
 }

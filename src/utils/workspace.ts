@@ -10,6 +10,7 @@ import c from 'ansis'
 import { join } from 'pathe'
 import { readPackageJSON as _readPackageJSON, writePackageJSON as _writePackageJSON } from 'pkg-types'
 import { DEPS_FIELDS } from '../constants'
+import { runPnpmInstall } from './process'
 import { diffYAML } from './yaml'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
@@ -17,20 +18,25 @@ export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbo
   workspaceYaml: PnpmWorkspaceYaml
   workspaceYamlPath: string
   updatedPackages?: Record<string, PackageJsonMeta>
-  message?: string
   bailout?: boolean
+  confirmMessage?: string
+  completeMessage?: string
 }
 
 export async function confirmWorkspaceChanges(modifier: () => Promise<void>, options: ConfirmationOptions) {
   const {
+    pnpmCatalogManager,
     workspaceYaml,
     workspaceYamlPath,
     updatedPackages,
-    message = 'continue?',
     yes = false,
     verbose = false,
     bailout = true,
+    confirmMessage = 'continue?',
+    completeMessage,
   } = options ?? {}
+
+  const commandOptions = pnpmCatalogManager.getOptions()
 
   const rawContent = workspaceYaml.toString()
   await modifier()
@@ -47,15 +53,11 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   }
 
   const diff = diffYAML(rawContent, content, { verbose })
-  // const pkgNames = Object.keys(updatedPackages ?? {})
-  // if (pkgNames.length) {
-  //   diff += `\n${c.yellow(pkgNames.length)} ${pkgNames.length === 1 ? 'package' : 'packages'} will be updated: ${c.dim(pkgNames.join(', '))}`
-  // }
 
   if (diff) {
     p.note(c.reset(diff), c.dim(workspaceYamlPath))
     if (!yes) {
-      const result = await p.confirm({ message })
+      const result = await p.confirm({ message: confirmMessage })
       if (!result || p.isCancel(result)) {
         p.outro(c.red('aborting'))
         process.exit(1)
@@ -66,6 +68,16 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
 
   if (updatedPackages)
     await writePackageJSONs(updatedPackages!)
+
+  if (completeMessage) {
+    if (commandOptions.install) {
+      p.log.info(c.green(completeMessage))
+      await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
+    }
+    else {
+      p.outro(c.green(completeMessage))
+    }
+  }
 }
 
 export async function writePnpmWorkspace(filePath: string, content: string) {
