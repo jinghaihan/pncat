@@ -153,7 +153,7 @@ export async function resolveMigrate(context: ResolveContext): Promise<ResolveRe
       updatedPackages.set(pkg.name, structuredClone(pkg))
 
     const pkgJson = updatedPackages.get(pkg.name)!
-    pkgJson.raw[dep.source][dep.name] = `catalog:${dep.catalogName}`
+    pkgJson.raw[dep.source][dep.name] = dep.catalogName === 'default' ? 'catalog:' : `catalog:${dep.catalogName}`
   }
 
   for (const pkg of packages) {
