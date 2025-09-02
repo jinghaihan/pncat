@@ -51,8 +51,8 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
       const depName = dep.name.padEnd(maxDepNameWidth)
       const depType = DEPENDENCIES_TYPE_SHORT_MAP[dep.source].padEnd(maxDepTypeWidth)
       const depSpecifier = (dep.specifier || '').padStart(maxSpecifierWidth)
-      const catalogName = dep.catalogName.padEnd(maxCatalogWidth)
-      lines.push(`  ${depName} ${c.dim(depType)} ${c.red(depSpecifier)}  ${c.dim('→')}  catalog:${c.reset(c.green(`${catalogName}`))}`)
+      const catalogRef = (dep.catalogName === 'default' ? '' : dep.catalogName).padEnd(maxCatalogWidth)
+      lines.push(`  ${depName} ${c.dim(depType)} ${c.red(depSpecifier)}  ${c.dim('→')}  catalog:${c.reset(c.green(catalogRef))}`)
     }
     lines.push('')
   }
