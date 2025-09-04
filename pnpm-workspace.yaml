@@ -4,12 +4,12 @@ catalogs:
     unbuild: ^3.6.1
   cli:
     bumpp: ^10.2.3
-    taze: ^19.4.0
+    taze: ^19.6.0
   dev:
     typescript: ^5.9.2
   lint:
-    '@antfu/eslint-config': ^5.2.1
-    eslint: ^9.34.0
+    '@antfu/eslint-config': ^5.3.0
+    eslint: ^9.35.0
     lint-staged: ^16.1.6
     simple-git-hooks: ^2.13.1
   node:
@@ -20,15 +20,15 @@ catalogs:
     find-up: ^7.0.0
     pathe: ^2.0.3
     pkg-types: ^2.3.0
-    tinyglobby: ^0.2.14
+    tinyglobby: ^0.2.15
     unconfig: ^7.3.3
   script:
     tsx: ^4.20.5
   test:
     vitest: ^3.2.4
   types:
-    '@types/node': ^24.3.0
-    '@types/semver': ^7.7.0
+    '@types/node': ^24.3.1
+    '@types/semver': ^7.7.1
   utils:
     '@antfu/utils': ^9.2.0
     deepmerge: ^4.3.1

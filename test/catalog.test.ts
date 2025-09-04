@@ -50,7 +50,7 @@ describe('inferCatalogName', () => {
 
   it('should fallback by dep source if no match', () => {
     expect(inferCatalogName(createDep('leaflet'), config)).toBe('prod')
-    expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('dev')
+    expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('tsc')
     expect(inferCatalogName(createDep('babel-core', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
     expect(inferCatalogName(createDep('node-pty', '^1.0.0', 'optionalDependencies'), config)).toBe('optional')
     expect(inferCatalogName(createDep('vsce', '^1.0.0', 'resolutions'), config)).toBe('default')
@@ -119,5 +119,24 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('vue', '^1.0.0'), options)).toBe('vue')
     expect(inferCatalogName(createDep('vue', '^2.7.16'), options)).toBe('vue-legacy')
     expect(inferCatalogName(createDep('vue', '^3.6.0'), options)).toBe('vue-next')
+  })
+
+  it('test special regex match', () => {
+    expect(inferCatalogName(createDep('fs', '^1.0.0', 'devDependencies'), config)).toBe('dev')
+    expect(inferCatalogName(createDep('fs-extra'), config)).toBe('node')
+    expect(inferCatalogName(createDep('graceful-fs'), config)).toBe('node')
+
+    expect(inferCatalogName(createDep('pkg'), config)).toBe('prod')
+    expect(inferCatalogName(createDep('pkg-types'), config)).toBe('node')
+    expect(inferCatalogName(createDep('local-pkg'), config)).toBe('node')
+
+    expect(inferCatalogName(createDep('find'), config)).toBe('prod')
+    expect(inferCatalogName(createDep('find-up'), config)).toBe('node')
+    expect(inferCatalogName(createDep('find-root'), config)).toBe('node')
+
+    expect(inferCatalogName(createDep('ui'), config)).toBe('prod')
+    expect(inferCatalogName(createDep('guide'), config)).toBe('prod')
+    expect(inferCatalogName(createDep('reka-ui'), config)).toBe('frontend')
+    expect(inferCatalogName(createDep('@storybook/ui'), config)).toBe('frontend')
   })
 })
