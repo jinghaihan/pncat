@@ -9,7 +9,7 @@ export const DEPS_FIELDS = [
   'optionalDependencies',
   'pnpm.overrides',
   'resolutions',
-  // 'overrides',
+  'overrides',
   'pnpm-workspace',
   'yarn-workspace',
 ] as const
@@ -20,7 +20,7 @@ export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
   'peerDependencies': 'peer',
   'optionalDependencies': 'optional',
   'resolutions': 'resolutions',
-  // 'overrides': 'overrides',
+  'overrides': 'overrides',
   'pnpm.overrides': 'pnpm-overrides',
   'pnpm-workspace': 'pnpm-workspace',
   'yarn-workspace': 'yarn-workspace',

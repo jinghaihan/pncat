@@ -2,7 +2,7 @@
   "name": "pncat",
   "type": "module",
   "version": "0.6.0",
-  "packageManager": "pnpm@10.15.1",
+  "packageManager": "pnpm@10.17.1",
   "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
   "author": "jinghaihan",
   "license": "MIT",
@@ -82,7 +82,7 @@
     "simple-git-hooks": "catalog:lint",
     "taze": "catalog:cli",
     "tsx": "catalog:script",
-    "typescript": "catalog:dev",
+    "typescript": "catalog:tsc",
     "unbuild": "catalog:build",
     "vitest": "catalog:test"
   },

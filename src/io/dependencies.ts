@@ -28,7 +28,7 @@ export function parseDependency(
   shouldCatalog: (name: string, specifier: string) => boolean,
   options: CatalogOptions,
   parents?: string[],
-  catalogPkgName?: string,
+  packageName?: string,
 ): RawDep {
   const dep: Omit<RawDep, 'catalogName'> = {
     name,
@@ -42,7 +42,7 @@ export function parseDependency(
   return {
     ...dep,
     catalogName: type === 'pnpm-workspace' || type === 'yarn-workspace'
-      ? catalogPkgName!
+      ? packageName!
           .replace('pnpm-catalog:', '')
           .replace('yarn-catalog:', '')
       : inferCatalogName(dep, options),
