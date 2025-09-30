@@ -10,6 +10,7 @@ import c from 'ansis'
 import { basename, join } from 'pathe'
 import { writePackageJSON as _writePackageJSON, readPackageJSON as readPkgJSON } from 'pkg-types'
 import { DEPS_FIELDS, WORKSPACE_FILES } from '../constants'
+import { updateWorkspaceOverrides } from './overrides'
 import { runInstallCommand } from './process'
 import { diffYAML } from './yaml'
 
@@ -41,6 +42,10 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
 
   const rawContent = workspaceYaml.toString()
   await modifier()
+  // update pnpm-workspace.yaml overrides
+  if (commandOptions.packageManager === 'pnpm') {
+    await updateWorkspaceOverrides(workspaceYaml, catalogManager)
+  }
   const content = workspaceYaml.toString()
 
   if (rawContent === content) {
