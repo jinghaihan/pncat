@@ -2,16 +2,16 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { CatalogManager } from '../catalog-manager'
 import { renderChanges } from '../utils/render'
 import { resolveMigrate } from '../utils/resolver'
 
 export async function detectCommand(options: CatalogOptions) {
-  const pnpmCatalogManager = new PnpmCatalogManager(options)
+  const catalogManager = new CatalogManager(options)
 
   const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
     options,
-    pnpmCatalogManager,
+    catalogManager,
   })
   const deps = dependencies.filter(i => i.update)
 

@@ -2,8 +2,8 @@ import type { CatalogOptions, PackageJsonMeta } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { CatalogManager } from '../catalog-manager'
 import { ensureWorkspaceYAML } from '../io/workspace'
-import { PnpmCatalogManager } from '../pnpm-catalog-manager'
 import { resolveAdd } from '../utils/resolver'
 import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
 
@@ -15,12 +15,12 @@ export async function addCommand(options: CatalogOptions) {
   }
 
   const { pkgJson, pkgPath } = await readPackageJSON()
-  const { workspaceYaml, workspaceYamlPath } = await ensureWorkspaceYAML()
-  const pnpmCatalogManager = new PnpmCatalogManager(options)
+  const { workspaceYaml, workspaceYamlPath } = await ensureWorkspaceYAML(options.packageManager)
+  const catalogManager = new CatalogManager(options)
 
   const { isDev = false, dependencies = [] } = await resolveAdd(args, {
     options,
-    pnpmCatalogManager,
+    catalogManager,
     workspaceYaml,
   })
 
@@ -46,7 +46,7 @@ export async function addCommand(options: CatalogOptions) {
       }
     },
     {
-      pnpmCatalogManager,
+      catalogManager,
       workspaceYaml,
       workspaceYamlPath,
       updatedPackages,

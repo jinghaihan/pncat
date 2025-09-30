@@ -8,6 +8,7 @@ export default defineConfig({
         'diff',
         'fast-npm-meta',
         'pnpm-workspace-yaml',
+        'package-manager-detector',
       ],
     },
   ]),

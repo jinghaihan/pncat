@@ -13,17 +13,16 @@ try {
   const cli: CAC = cac(name)
 
   cli
-    .command('[mode]', 'Enhanced pnpm catalogs management with advanced workspace dependency control')
+    .command('[mode]', 'Enhanced pnpm/yarn catalogs management with advanced workspace dependency control')
     .option('--catalog [name]', 'Install from a specific catalog, auto detect if not provided')
     .option('--recursive, -r', 'Recursively search for package.json in subdirectories')
     .option('--force, -f', 'Force cataloging according to rules, ignoring original configurations')
     .option('--include, -n <deps>', 'Only included dependencies will be checked for catalog')
     .option('--exclude, -x <deps>', 'Exclude dependencies to be checked, will override --include options')
     .option('--ignore-paths <paths>', 'Ignore paths for search package.json')
-    .option('--ignore-other-workspaces', 'Ignore package.json that in other workspaces (with their own .git,pnpm-workspace.yaml,etc.)')
     .option('--yes', 'Skip prompt confirmation')
-    .option('--install', 'Run pnpm install after command')
-    .option('--verbose', 'Show complete pnpm-workspace.yaml instead of only the diff')
+    .option('--install', 'Run install after command')
+    .option('--verbose', 'Show complete catalogs instead of only the diff')
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {

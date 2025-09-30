@@ -29,11 +29,11 @@ vi.mock('../src/io/workspace', () => ({
 
 // Mock side effects that don't affect core logic
 vi.mock('../src/utils/process', () => ({
-  runPnpmInstall: vi.fn(),
+  runInstallCommand: vi.fn(),
 }))
 
 vi.mock('../src/pnpm-catalog-manager', () => ({
-  PnpmCatalogManager: vi.fn().mockImplementation(() => ({
+  CatalogManager: vi.fn().mockImplementation(() => ({
     getCwd: vi.fn().mockReturnValue('/test/cwd'),
   })),
 }))

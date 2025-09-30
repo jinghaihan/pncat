@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseArgs, parsePnpmOptions } from '../src/utils/process'
+import { parseArgs, parseCommandOptions } from '../src/utils/process'
 
 describe('parseArgs', () => {
   it('should parse args', () => {
@@ -10,9 +10,9 @@ describe('parseArgs', () => {
   })
 })
 
-describe('parsePnpmOptions', () => {
+describe('parseCommandOptions', () => {
   it('should parse pnpm options', () => {
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend'])).toEqual({
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend'])).toEqual({
       deps: ['vue'],
       isRecursive: false,
       isDev: false,
@@ -30,8 +30,8 @@ describe('parsePnpmOptions', () => {
       isProd: false,
     }
 
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '-r'])).toEqual(expected)
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '--recursive'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-r'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--recursive'])).toEqual(expected)
   })
 
   it('should parse pnpm options with dev', () => {
@@ -43,8 +43,8 @@ describe('parsePnpmOptions', () => {
       isProd: false,
     }
 
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '-D'])).toEqual(expected)
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '--save-dev'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-D'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-dev'])).toEqual(expected)
   })
 
   it('should parse pnpm options with optional', () => {
@@ -56,8 +56,8 @@ describe('parsePnpmOptions', () => {
       isProd: false,
     }
 
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '-O'])).toEqual(expected)
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '--save-optional'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-O'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-optional'])).toEqual(expected)
   })
 
   it('should parse pnpm options with prod', () => {
@@ -69,7 +69,7 @@ describe('parsePnpmOptions', () => {
       isProd: true,
     }
 
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
-    expect(parsePnpmOptions(['vue', '--catalog', 'frontend', '--save-prod'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-prod'])).toEqual(expected)
   })
 })

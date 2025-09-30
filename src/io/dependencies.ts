@@ -35,13 +35,17 @@ export function parseDependency(
     specifier,
     parents,
     source: type,
-    catalog: type === 'pnpm-workspace' || specifier.startsWith('catalog:'),
+    catalog: type === 'pnpm-workspace' || type === 'yarn-workspace' || specifier.startsWith('catalog:'),
     catalogable: shouldCatalog(name, specifier),
   }
 
   return {
     ...dep,
-    catalogName: type === 'pnpm-workspace' ? catalogPkgName!.replace('pnpm-catalog:', '') : inferCatalogName(dep, options),
+    catalogName: type === 'pnpm-workspace' || type === 'yarn-workspace'
+      ? catalogPkgName!
+          .replace('pnpm-catalog:', '')
+          .replace('yarn-catalog:', '')
+      : inferCatalogName(dep, options),
   }
 }
 

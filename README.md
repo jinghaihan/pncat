@@ -5,7 +5,7 @@
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Enhanced pnpm catalogs management with advanced workspace dependency control.
+Enhanced <a href="https://pnpm.io/catalogs" target="_blank">pnpm</a> and <a href="https://yarnpkg.com/features/catalogs" target="_blank">yarn</a> <code>catalog:</code> management with advanced workspace dependency control.
 
 ```bash
 pnpm add -D pncat
@@ -45,7 +45,7 @@ pncat migrate
 > [!NOTE]
 > To update catalog groups according to rules, run `pncat migrate -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
 
-Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm.workspace.yaml` and relevant `package.json`.
+Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm.workspace.yaml/.yarnrc.yml` and relevant `package.json`.
 
 Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
@@ -87,7 +87,7 @@ To remove a dependency from all packages in the monorepo, you can use `pnpm remo
 pncat clean
 ```
 
-Find unused catalog dependencies and remove them from `pnpm.workspace.yaml`.
+Find unused catalog dependencies and remove them from `pnpm.workspace.yaml/.yarnrc.yml`.
 
 <p align='center'>
 <img src='./assets/clean.png' />

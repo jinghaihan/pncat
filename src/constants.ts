@@ -1,4 +1,4 @@
-import type { CatalogOptions, DepType } from './types'
+import type { CatalogOptions, DepType, PackageManager, WorkspaceFile } from './types'
 
 export const MODE_CHOICES = ['detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
@@ -11,6 +11,7 @@ export const DEPS_FIELDS = [
   'resolutions',
   // 'overrides',
   'pnpm-workspace',
+  'yarn-workspace',
 ] as const
 
 export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
@@ -22,6 +23,7 @@ export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
   // 'overrides': 'overrides',
   'pnpm.overrides': 'pnpm-overrides',
   'pnpm-workspace': 'pnpm-workspace',
+  'yarn-workspace': 'yarn-workspace',
 }
 
 export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
@@ -57,4 +59,16 @@ export const DEP_TYPE_GROUP_NAME_MAP: Partial<Record<DepType, string>> = {
   devDependencies: 'dev',
   peerDependencies: 'peer',
   optionalDependencies: 'optional',
+}
+
+export const PACKAGE_MANAGERS = ['pnpm', 'yarn'] as const
+
+export const WORKSPACE_FILES: Record<PackageManager, WorkspaceFile> = {
+  pnpm: 'pnpm-workspace.yaml',
+  yarn: '.yarnrc.yml',
+}
+
+export const WORKSPACE_DEFAULT_CONTENT: Record<PackageManager, string> = {
+  pnpm: 'packages: []',
+  yarn: 'defaultProtocol: "npm:"',
 }

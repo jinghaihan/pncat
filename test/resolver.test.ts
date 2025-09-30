@@ -4,10 +4,11 @@ import { resolveConflict, resolveMigrate } from '../src/utils/resolver'
 
 import { createDep } from './_utils'
 
-// Mock the PnpmCatalogManager
+// Mock the CatalogManager
 const mockPnpmCatalogManager = {
   loadPackages: vi.fn(),
   resolveDep: vi.fn(),
+  isCatalogPackage: vi.fn(),
 }
 
 describe('resolveConflict', () => {
@@ -75,7 +76,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options: { yes: true },
-      pnpmCatalogManager: mockPnpmCatalogManager as any,
+      catalogManager: mockPnpmCatalogManager as any,
     })
 
     expect(result.updatedPackages).toBeDefined()
@@ -127,7 +128,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options: { yes: true },
-      pnpmCatalogManager: mockPnpmCatalogManager as any,
+      catalogManager: mockPnpmCatalogManager as any,
     })
 
     expect(result.updatedPackages).toBeDefined()
@@ -221,7 +222,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options: { yes: true },
-      pnpmCatalogManager: mockPnpmCatalogManager as any,
+      catalogManager: mockPnpmCatalogManager as any,
     })
 
     expect(result.updatedPackages).toBeDefined()
@@ -268,7 +269,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options: { yes: true },
-      pnpmCatalogManager: mockPnpmCatalogManager as any,
+      catalogManager: mockPnpmCatalogManager as any,
     })
 
     // Should not update any packages since dependency is not catalogable
@@ -317,7 +318,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options: { yes: true },
-      pnpmCatalogManager: mockPnpmCatalogManager as any,
+      catalogManager: mockPnpmCatalogManager as any,
     })
 
     // Should not update any packages since dependency doesn't need update

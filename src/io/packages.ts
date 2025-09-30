@@ -8,8 +8,11 @@ import { DEFAULT_IGNORE_PATHS } from '../constants'
 import { createDependenciesFilter } from '../utils/filter'
 import { loadPackageJSON } from './package-json'
 import { loadPnpmWorkspace } from './pnpm-workspace'
+import { loadYarnWorkspace } from './yarn-workspace'
 
 export async function findPackageJsonPaths(options: CatalogOptions): Promise<string[]> {
+  const { packageManager = 'pnpm' } = options
+
   let packagePaths: string[] = []
   const cwd = resolve(options.cwd || process.cwd())
 
@@ -37,9 +40,21 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
         const gitDir = await findUp('.git', { cwd: absolute, stopAt: cwd })
         if (gitDir && dirname(gitDir) !== cwd)
           return []
-        const pnpmWorkspace = await findUp('pnpm-workspace.yaml', { cwd: absolute, stopAt: cwd })
-        if (pnpmWorkspace && dirname(pnpmWorkspace) !== cwd)
-          return []
+
+        if (packageManager === 'pnpm') {
+          // pnpm workspace
+          const pnpmWorkspace = await findUp('pnpm-workspace.yaml', { cwd: absolute, stopAt: cwd })
+          if (pnpmWorkspace && dirname(pnpmWorkspace) !== cwd)
+            return []
+        }
+
+        if (packageManager === 'yarn') {
+          // yarn workspace
+          const yarnWorkspace = await findUp('.yarnrc.yml', { cwd: absolute, stopAt: cwd })
+          if (yarnWorkspace && dirname(yarnWorkspace) !== cwd)
+            return []
+        }
+
         return [packagePath]
       }),
     )).flat()
@@ -51,10 +66,14 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
 export async function loadPackage(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<PackageMeta[]> {
   if (relative.endsWith('pnpm-workspace.yaml'))
     return loadPnpmWorkspace(relative, options, shouldCatalog)
+  if (relative.endsWith('.yarnrc.yml'))
+    return loadYarnWorkspace(relative, options, shouldCatalog)
   return loadPackageJSON(relative, options, shouldCatalog)
 }
 
 export async function loadPackages(options: CatalogOptions): Promise<PackageMeta[]> {
+  const { packageManager = 'pnpm' } = options
+
   const cwd = resolve(options.cwd || process.cwd())
   const filter = createDependenciesFilter(
     options.include,
@@ -63,8 +82,14 @@ export async function loadPackages(options: CatalogOptions): Promise<PackageMeta
     options.specifierOptions,
   )
   const packagePaths: string[] = await findPackageJsonPaths(options)
-  if (existsSync(join(cwd, 'pnpm-workspace.yaml')))
+
+  // pnpm workspace
+  if (packageManager === 'pnpm' && existsSync(join(cwd, 'pnpm-workspace.yaml')))
     packagePaths.unshift('pnpm-workspace.yaml')
+
+  // yarn workspace
+  if (packageManager === 'yarn' && existsSync(join(cwd, '.yarnrc.yml')))
+    packagePaths.unshift('.yarnrc.yml')
 
   const packages = (await Promise.all(
     packagePaths.map(relative => loadPackage(relative, options, filter)),

@@ -1,7 +1,7 @@
 {
   "name": "pncat",
   "type": "module",
-  "version": "0.5.4",
+  "version": "0.6.0",
   "packageManager": "pnpm@10.15.1",
   "description": "Enhanced pnpm catalogs management with advanced workspace dependency control.",
   "author": "jinghaihan",
@@ -18,6 +18,9 @@
     "pnpm",
     "pnpm-catalogs",
     "pnpm-workspace",
+    "yarn",
+    "yarn-catalogs",
+    "yarn-workspace",
     "catalog",
     "workspace"
   ],
@@ -59,6 +62,7 @@
     "execa": "catalog:node",
     "fast-npm-meta": "catalog:utils",
     "find-up": "catalog:node",
+    "package-manager-detector": "catalog:utils",
     "pathe": "catalog:node",
     "pkg-types": "catalog:node",
     "pnpm-workspace-yaml": "catalog:utils",

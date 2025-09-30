@@ -72,7 +72,13 @@ export interface PnpmWorkspaceMeta extends BasePackageMeta {
   context: PnpmWorkspaceYaml
 }
 
-export type PackageMeta = PackageJsonMeta | PnpmWorkspaceMeta
+export interface YarnWorkspaceMeta extends Omit<PnpmWorkspaceMeta, 'type'> {
+  type: '.yarnrc.yml'
+}
+
+export type WorkspacePackageMeta = PnpmWorkspaceMeta | YarnWorkspaceMeta
+
+export type PackageMeta = PackageJsonMeta | WorkspacePackageMeta
 
 export interface ParsedSpec {
   name: string

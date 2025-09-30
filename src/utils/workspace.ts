@@ -1,20 +1,20 @@
 import type { PackageJson } from 'pkg-types'
 import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import type { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import type { CatalogManager } from '../catalog-manager'
 import type { CatalogOptions, PackageJsonMeta, RawDep } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { join } from 'pathe'
-import { readPackageJSON as _readPackageJSON, writePackageJSON as _writePackageJSON } from 'pkg-types'
-import { DEPS_FIELDS } from '../constants'
-import { runPnpmInstall } from './process'
+import { basename, join } from 'pathe'
+import { writePackageJSON as _writePackageJSON, readPackageJSON as readPkgJSON } from 'pkg-types'
+import { DEPS_FIELDS, WORKSPACE_FILES } from '../constants'
+import { runInstallCommand } from './process'
 import { diffYAML } from './yaml'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
-  pnpmCatalogManager: PnpmCatalogManager
+  catalogManager: CatalogManager
   workspaceYaml: PnpmWorkspaceYaml
   workspaceYamlPath: string
   updatedPackages?: Record<string, PackageJsonMeta>
@@ -25,7 +25,7 @@ export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbo
 
 export async function confirmWorkspaceChanges(modifier: () => Promise<void>, options: ConfirmationOptions) {
   const {
-    pnpmCatalogManager,
+    catalogManager,
     workspaceYaml,
     workspaceYamlPath,
     updatedPackages,
@@ -36,7 +36,8 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
     completeMessage,
   } = options ?? {}
 
-  const commandOptions = pnpmCatalogManager.getOptions()
+  const commandOptions = catalogManager.getOptions()
+  const workspaceFile = WORKSPACE_FILES[commandOptions.packageManager || 'pnpm']
 
   const rawContent = workspaceYaml.toString()
   await modifier()
@@ -44,11 +45,11 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
 
   if (rawContent === content) {
     if (bailout) {
-      p.outro(c.yellow('no changes to pnpm-workspace.yaml'))
+      p.outro(c.yellow(`no changes to ${workspaceFile}`))
       process.exit(0)
     }
     else {
-      p.log.info(c.green('no changes to pnpm-workspace.yaml'))
+      p.log.info(c.green(`no changes to ${workspaceFile}`))
     }
   }
 
@@ -63,7 +64,7 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
         process.exit(1)
       }
     }
-    await writePnpmWorkspace(workspaceYamlPath, content)
+    await writeWorkspace(workspaceYamlPath, content)
   }
 
   if (updatedPackages)
@@ -72,7 +73,10 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   if (completeMessage) {
     if (commandOptions.install) {
       p.log.info(c.green(completeMessage))
-      await runPnpmInstall({ cwd: pnpmCatalogManager.getCwd() })
+      await runInstallCommand({
+        cwd: catalogManager.getCwd(),
+        packageManager: commandOptions.packageManager,
+      })
     }
     else {
       p.outro(c.green(completeMessage))
@@ -80,8 +84,8 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   }
 }
 
-export async function writePnpmWorkspace(filePath: string, content: string) {
-  p.log.info('writing pnpm-workspace.yaml')
+export async function writeWorkspace(filePath: string, content: string) {
+  p.log.info(`writing ${basename(filePath)}`)
   await writeFile(filePath, content, 'utf-8')
 }
 
@@ -92,7 +96,7 @@ export async function readPackageJSON() {
     process.exit(1)
   }
 
-  const pkgJson = await _readPackageJSON(pkgPath)
+  const pkgJson = await readPkgJSON(pkgPath)
   if (typeof pkgJson.name !== 'string') {
     p.outro(c.red('package.json is missing name, aborting'))
     process.exit(1)
@@ -180,10 +184,14 @@ export function cleanupWorkspaceYAML(workspaceYaml: PnpmWorkspaceYaml) {
 export function removeWorkspaceYAMLDeps(dependencies: RawDep[], workspaceYaml: PnpmWorkspaceYaml) {
   const document = workspaceYaml.getDocument()
   dependencies.forEach((dep) => {
-    if (dep.catalogName === 'default')
-      document.deleteIn(['catalog', dep.name])
+    if (dep.catalogName === 'default') {
+      if (document.getIn(['catalog', dep.name]))
+        document.deleteIn(['catalog', dep.name])
+    }
     else
-      document.deleteIn(['catalogs', dep.catalogName, dep.name])
+      if (document.getIn(['catalogs', dep.catalogName, dep.name])) {
+        document.deleteIn(['catalogs', dep.catalogName, dep.name])
+      }
   })
   cleanupWorkspaceYAML(workspaceYaml)
 }

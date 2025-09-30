@@ -89,6 +89,9 @@ catalogs:
     fast-npm-meta:
       specifier: ^0.4.6
       version: 0.4.6
+    package-manager-detector:
+      specifier: ^1.3.0
+      version: 1.3.0
     pnpm-workspace-yaml:
       specifier: ^1.1.1
       version: 1.1.1
@@ -124,6 +127,9 @@ importers:
       find-up:
         specifier: catalog:node
         version: 7.0.0
+      package-manager-detector:
+        specifier: catalog:utils
+        version: 1.3.0
       pathe:
         specifier: catalog:node
         version: 2.0.3

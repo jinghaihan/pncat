@@ -3,7 +3,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import { execa } from 'execa'
 
-export interface PnpmCommandOptions extends Pick<CatalogOptions, 'cwd' | 'recursive'> {
+export interface PackageManagerCommandOptions extends Pick<CatalogOptions, 'packageManager' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
   silent?: boolean
 }
@@ -58,7 +58,7 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
   return { options, deps }
 }
 
-export function parsePnpmOptions(args: string[]) {
+export function parseCommandOptions(args: string[]) {
   const { deps } = parseArgs(args)
   const isRecursive = ['--recursive', '-r'].some(i => args.includes(i))
   const isDev = ['--save-dev', '-D'].some(i => args.includes(i))
@@ -75,20 +75,20 @@ export function parsePnpmOptions(args: string[]) {
 }
 
 /**
- * Execute pnpm install command
+ * Execute install command
  */
-export async function runPnpmInstall(options: PnpmCommandOptions = {}) {
-  const { cwd = process.cwd(), stdio = 'inherit', silent = false } = options
+export async function runInstallCommand(options: PackageManagerCommandOptions = {}) {
+  const { packageManager = 'pnpm', cwd = process.cwd(), stdio = 'inherit', silent = false } = options
   if (!silent)
-    p.outro('running pnpm install')
-  await execa('pnpm', ['install'], { stdio, cwd })
+    p.outro(`running ${packageManager} install`)
+  await execa(packageManager, ['install'], { stdio, cwd })
 }
 
 /**
- * Execute pnpm add command
+ * Execute add command
  */
-export async function runPnpmRemove(dependencies: string[], options: PnpmCommandOptions = {}) {
-  const { cwd = process.cwd(), recursive = false, stdio = 'inherit' } = options
+export async function runRemoveCommand(dependencies: string[], options: PackageManagerCommandOptions = {}) {
+  const { packageManager = 'pnpm', cwd = process.cwd(), recursive = false, stdio = 'inherit' } = options
 
   if (dependencies.length === 0)
     return
@@ -97,5 +97,5 @@ export async function runPnpmRemove(dependencies: string[], options: PnpmCommand
   if (recursive)
     args.push('--recursive')
 
-  await execa('pnpm', args, { stdio, cwd })
+  await execa(packageManager, args, { stdio, cwd })
 }

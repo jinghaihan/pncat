@@ -2,26 +2,27 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { CatalogManager } from '../catalog-manager'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
-import { PnpmCatalogManager } from '../pnpm-catalog-manager'
+import { runInstallCommand } from '../utils/process'
 import { resolveRevert } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writePnpmWorkspace } from '../utils/workspace'
+import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writeWorkspace } from '../utils/workspace'
 
 export async function revertCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)
 
-  const workspaceYamlPath = await findWorkspaceYAML()
+  const workspaceYamlPath = await findWorkspaceYAML(options.packageManager)
   if (!workspaceYamlPath) {
-    p.outro(c.red('no pnpm-workspace.yaml found, aborting'))
+    p.outro(c.red('no workspace file found, aborting'))
     process.exit(1)
   }
 
-  const { workspaceYaml } = await ensureWorkspaceYAML()
-  const pnpmCatalogManager = new PnpmCatalogManager(options)
+  const { workspaceYaml } = await ensureWorkspaceYAML(options.packageManager)
+  const catalogManager = new CatalogManager(options)
 
   const { isRevertAll, dependencies = [], updatedPackages = {} } = await resolveRevert(args, {
     options,
-    pnpmCatalogManager,
+    catalogManager,
     workspaceYaml,
   })
 
@@ -40,8 +41,19 @@ export async function revertCommand(options: CatalogOptions) {
     document.deleteIn(['catalog'])
     document.deleteIn(['catalogs'])
 
-    await writePnpmWorkspace(workspaceYamlPath, workspaceYaml.toString())
+    await writeWorkspace(workspaceYamlPath, workspaceYaml.toString())
     await writePackageJSONs(updatedPackages)
+
+    if (options.install) {
+      p.log.info(c.green('revert complete'))
+      await runInstallCommand({
+        cwd: catalogManager.getCwd(),
+        packageManager: options.packageManager,
+      })
+    }
+    else {
+      p.outro(c.green('revert complete'))
+    }
   }
   else {
     await confirmWorkspaceChanges(
@@ -49,7 +61,7 @@ export async function revertCommand(options: CatalogOptions) {
         removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
       },
       {
-        pnpmCatalogManager,
+        catalogManager,
         workspaceYaml,
         workspaceYamlPath,
         updatedPackages,

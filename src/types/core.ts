@@ -1,9 +1,13 @@
-import type { DEPS_FIELDS, MODE_CHOICES } from '../constants'
+import type { DEPS_FIELDS, MODE_CHOICES, PACKAGE_MANAGERS } from '../constants'
 import type { CatalogRule, SpecifierOptions } from './rules'
 
 export type RangeMode = typeof MODE_CHOICES[number]
 
 export type DepType = typeof DEPS_FIELDS[number]
+
+export type PackageManager = typeof PACKAGE_MANAGERS[number]
+
+export type WorkspaceFile = 'pnpm-workspace.yaml' | '.yarnrc.yml'
 
 export type DepFieldOptions = Partial<Record<DepType, boolean>>
 
@@ -25,16 +29,17 @@ export interface CommandOptions {
    */
   yes?: boolean
   /**
-   * Run pnpm install after command
+   * Run install after command
    */
   install?: boolean
   /**
-   * Show complete pnpm-workspace.yaml instead of only the diff
+   * Show complete catalogs instead of only the diff
    */
   verbose?: boolean
 }
 
 export interface ConfigOptions {
+  packageManager?: PackageManager
   /**
    * Only included dependencies will be checked for catalog
    */

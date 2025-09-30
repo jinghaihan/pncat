@@ -2,8 +2,8 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { CatalogManager } from '../catalog-manager'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
-import { PnpmCatalogManager } from '../pnpm-catalog-manager'
 import { resolveRemove } from '../utils/resolver'
 import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
 
@@ -14,18 +14,18 @@ export async function removeCommand(options: CatalogOptions) {
     process.exit(1)
   }
 
-  const workspaceYamlPath = await findWorkspaceYAML()
+  const workspaceYamlPath = await findWorkspaceYAML(options.packageManager)
   if (!workspaceYamlPath) {
-    p.outro(c.red('no pnpm-workspace.yaml found, aborting'))
+    p.outro(c.red('no workspace file found, aborting'))
     process.exit(1)
   }
 
-  const { workspaceYaml } = await ensureWorkspaceYAML()
-  const pnpmCatalogManager = new PnpmCatalogManager(options)
+  const { workspaceYaml } = await ensureWorkspaceYAML(options.packageManager)
+  const catalogManager = new CatalogManager(options)
 
   const { dependencies = [], updatedPackages = {} } = await resolveRemove(args, {
     options,
-    pnpmCatalogManager,
+    catalogManager,
     workspaceYaml,
   })
 
@@ -34,7 +34,7 @@ export async function removeCommand(options: CatalogOptions) {
       removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
     },
     {
-      pnpmCatalogManager,
+      catalogManager,
       workspaceYaml,
       workspaceYamlPath,
       updatedPackages,

@@ -1,18 +1,18 @@
-import type { CatalogOptions, PackageJsonMeta, PackageMeta, PnpmWorkspaceMeta, RawDep } from './types'
+import type { CatalogOptions, PackageJsonMeta, PackageMeta, RawDep, WorkspacePackageMeta } from './types'
 import process from 'node:process'
 import { join } from 'pathe'
 import { readPackageJSON } from 'pkg-types'
 import { loadPackages } from './io/packages'
 import { inferCatalogName } from './utils/catalog'
 
-export class PnpmCatalogManager {
+export class CatalogManager {
   private loaded: boolean = false
   private loadTask: Promise<PackageMeta[]> | null = null
 
   private options: CatalogOptions
   private packages: PackageMeta[] = []
   private packageRegistry = new Map<string, PackageJsonMeta>()
-  private catalogRegistry = new Map<string, PnpmWorkspaceMeta>()
+  private catalogRegistry = new Map<string, WorkspacePackageMeta>()
 
   private packageDepIndex = new Map<string, Map<string, RawDep>>()
   private catalogDepIndex = new Map<string, Map<string, RawDep>>()
@@ -200,15 +200,18 @@ export class PnpmCatalogManager {
    * Check if a specifier is a catalog package name
    */
   isCatalogPackageName(pkgName: string): boolean {
-    return pkgName.startsWith('pnpm-catalog:')
+    return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:')
   }
 
   /**
    * Extract the catalog name from a package name
    */
   extractCatalogNameFromPackageName(pkgName: string): string {
-    if (this.isCatalogPackageName(pkgName))
-      return pkgName.replace('pnpm-catalog:', '')
+    if (this.isCatalogPackageName(pkgName)) {
+      return pkgName
+        .replace('pnpm-catalog:', '')
+        .replace('yarn-catalog:', '')
+    }
 
     return ''
   }
@@ -243,9 +246,17 @@ export class PnpmCatalogManager {
     if (!pkgs)
       return null
 
-    const pkgName = `pnpm-catalog:${dep.catalogName}`
-    if (pkgs.has(pkgName)) {
-      const catalogDep = pkgs.get(pkgName)!
+    // pnpm catalog
+    const pnpmPkgName = `pnpm-catalog:${dep.catalogName}`
+    if (pkgs.has(pnpmPkgName)) {
+      const catalogDep = pkgs.get(pnpmPkgName)!
+      return { ...dep, specifier: catalogDep.specifier }
+    }
+
+    // yarn catalog
+    const yarnPkgName = `yarn-catalog:${dep.catalogName}`
+    if (pkgs.has(yarnPkgName)) {
+      const catalogDep = pkgs.get(yarnPkgName)!
       return { ...dep, specifier: catalogDep.specifier }
     }
 
@@ -292,7 +303,7 @@ export class PnpmCatalogManager {
           this.setPackageDepIndex(pkg, pkgDep)
         }
 
-        if (pkg.type === 'pnpm-workspace.yaml') {
+        if (this.isCatalogPackage(pkg)) {
           this.catalogRegistry.set(pkg.name, pkg)
           this.setCatalogDepIndex(pkg, pkgDep)
         }
@@ -312,9 +323,9 @@ export class PnpmCatalogManager {
   }
 
   /**
-   * Set the pnpm workspace dependency index
+   * Set the workspace dependency index
    */
-  private setCatalogDepIndex(pkg: PnpmWorkspaceMeta, dep: RawDep) {
+  private setCatalogDepIndex(pkg: WorkspacePackageMeta, dep: RawDep) {
     if (!this.catalogDepIndex.has(dep.name))
       this.catalogDepIndex.set(dep.name, new Map())
     this.catalogDepIndex.get(dep.name)!.set(pkg.name, dep)
@@ -327,5 +338,9 @@ export class PnpmCatalogManager {
     if (!this.depUsageIndex.has(pkgDep.name))
       this.depUsageIndex.set(pkgDep.name, new Set())
     this.depUsageIndex.get(pkgDep.name)!.add(pkg.name)
+  }
+
+  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
+    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml'
   }
 }

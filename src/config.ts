@@ -1,8 +1,11 @@
 import type { CatalogOptions } from './types'
 import process from 'node:process'
+import * as p from '@clack/prompts'
+import c from 'ansis'
 import deepmerge from 'deepmerge'
+import { detect } from 'package-manager-detector/detect'
 import { createConfigLoader } from 'unconfig'
-import { DEFAULT_CATALOG_OPTIONS } from './constants'
+import { DEFAULT_CATALOG_OPTIONS, PACKAGE_MANAGERS } from './constants'
 import { findWorkspaceRoot } from './io/workspace'
 import { DEFAULT_CATALOG_RULES } from './rules'
 
@@ -39,7 +42,17 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
 
-  merged.cwd = merged.cwd || await findWorkspaceRoot()
+  // detect package manager
+  if (!merged.packageManager) {
+    const packageManager = await detect({ cwd: merged.cwd })
+    merged.packageManager = (packageManager?.name || 'pnpm') as CatalogOptions['packageManager']
+  }
+  if (!PACKAGE_MANAGERS.includes(merged.packageManager as any)) {
+    p.outro(c.red(`Unsupported package manager: ${merged.packageManager}`))
+    process.exit(1)
+  }
+
+  merged.cwd = merged.cwd || await findWorkspaceRoot(merged.packageManager)
   if (typeof merged.catalog === 'boolean')
     delete merged.catalog
 
