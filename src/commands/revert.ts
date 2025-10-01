@@ -4,6 +4,7 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { CatalogManager } from '../catalog-manager'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
+import { updatePnpmWorkspaceOverrides } from '../utils/overrides'
 import { runInstallCommand } from '../utils/process'
 import { resolveRevert } from '../utils/resolver'
 import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writeWorkspace } from '../utils/workspace'
@@ -40,6 +41,11 @@ export async function revertCommand(options: CatalogOptions) {
     const document = workspaceYaml.getDocument()
     document.deleteIn(['catalog'])
     document.deleteIn(['catalogs'])
+
+    // update pnpm-workspace.yaml overrides
+    if (options.packageManager === 'pnpm') {
+      await updatePnpmWorkspaceOverrides(workspaceYaml, catalogManager)
+    }
 
     await writeWorkspace(workspaceYamlPath, workspaceYaml.toString())
     await writePackageJSONs(updatedPackages)

@@ -106,7 +106,7 @@ export class CatalogManager {
     let catalogDeletable = true
     updatedPackages ??= new Map()
 
-    const packages = this.getDepPackages(depName).filter(i => !this.isCatalogPackageName(i))
+    const packages = this.getDepPackages(depName).filter(i => !this.isCatalogPackageName(i) && !this.isPnpmOverridesPackageName(i))
     if (packages.length === 0)
       return { updatedPackages, catalogDeletable }
 
@@ -145,10 +145,7 @@ export class CatalogManager {
       removeDep(name)
     }
 
-    return {
-      updatedPackages,
-      catalogDeletable,
-    }
+    return { updatedPackages, catalogDeletable }
   }
 
   /**
@@ -201,6 +198,10 @@ export class CatalogManager {
    */
   isCatalogPackageName(pkgName: string): boolean {
     return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:')
+  }
+
+  isPnpmOverridesPackageName(pkgName: string): boolean {
+    return pkgName === 'pnpm-workspace:overrides'
   }
 
   /**
@@ -275,6 +276,16 @@ export class CatalogManager {
 
     const deps = Array.from(this.packageDepIndex.get(catalogDep.name)?.values() ?? [])
     return !!deps.find(i => i.catalogName === catalogDep.catalogName)
+  }
+
+  /**
+   * Check if a catalog dependency is in pnpm overrides
+   */
+  isDepInPnpmOverrides(catalogDep: RawDep): boolean {
+    const pkg = this.packages.find(i => i.name === 'pnpm-workspace:overrides')
+    if (!pkg || !pkg.raw.overrides)
+      return false
+    return !!pkg.raw.overrides[catalogDep.name]
   }
 
   /**
