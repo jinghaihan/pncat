@@ -180,7 +180,7 @@ Additionally, when migrating a specific package in a monorepo that uses catalogs
 This project is inspired by and builds upon the excellent work of the following projects:
 
 - [taze](https://github.com/antfu-collective/taze) - provided essential monorepo I/O utilities for reading and parsing `pnpm-workspace.yaml` and `package.json` files across workspace packages
-- [nip](https://github.com/antfu/nip) - inspired the interactive prompts and user experience design for dependency management workflows
+- [@antfu/nip](https://github.com/antfu/nip) - inspired the interactive prompts and user experience design for dependency management workflows
 
 Special thanks to [@antfu](https://github.com/antfu) for his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) which provided great inspiration and guidance during the development of this tool.
 
