@@ -25,10 +25,7 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
     sources: [
       {
         files: ['pncat.config'],
-      },
-      {
-        files: ['.pncatrc'],
-        extensions: ['json', ''],
+        extensions: ['ts'],
       },
     ],
     cwd: options.cwd || process.cwd(),

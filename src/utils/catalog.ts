@@ -3,7 +3,7 @@ import { satisfies } from 'semver'
 import { DEP_TYPE_GROUP_NAME_MAP } from '../constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 
-function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
+export function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
   if (Array.isArray(match)) {
     return match.some(m => (typeof m === 'string' ? depName === m : m.test(depName)))
   }

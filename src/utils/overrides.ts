@@ -55,7 +55,7 @@ export async function updatePnpmWorkspaceOverrides(workspaceYaml: PnpmWorkspaceY
   for (const dep of overrides.deps) {
     const entries = catalogIndex.get(dep.name)
     const match = entries?.find(i => i.specifier === dep.specifier)
-    // if the specifier is already in the catalog, use the catalog specifier
+    // if the specifier is already in the catalog, use the catalog name
     if (match) {
       document.setIn(['overrides', dep.name], `catalog:${match.catalogName}`)
       continue
@@ -65,7 +65,7 @@ export async function updatePnpmWorkspaceOverrides(workspaceYaml: PnpmWorkspaceY
       const catalogName = dep.specifier.replace('catalog:', '')
       const entries = catalogIndex.get(dep.name)
       const match = entries?.find(i => i.catalogName === catalogName)
-      // update the specifier to the catalog specifier
+      // update the specifier to the catalog name
       if (match) {
         document.setIn(['overrides', dep.name], `catalog:${match.catalogName}`)
         continue
