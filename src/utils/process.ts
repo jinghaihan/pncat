@@ -1,5 +1,6 @@
-import type { CatalogOptions } from '../types'
+import type { CatalogOptions, HookFunction } from '../types'
 import process from 'node:process'
+import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import { execa } from 'execa'
 
@@ -98,4 +99,24 @@ export async function runRemoveCommand(dependencies: string[], options: PackageM
     args.push('--recursive')
 
   await execa(packageManager, args, { stdio, cwd })
+}
+
+export async function runHooks(hooks: string | HookFunction | Array<string | HookFunction>, options: { cwd?: string } = {}) {
+  const { cwd = process.cwd() } = options
+
+  for (const hook of toArray(hooks)) {
+    try {
+      if (typeof hook === 'string') {
+        p.log.info(`running hook: ${hook}`)
+        await execa(hook, { shell: true, stdio: 'inherit', cwd })
+      }
+      else if (typeof hook === 'function') {
+        p.log.info('running custom hook function')
+        await hook()
+      }
+    }
+    catch {
+      p.log.warn(`hook failed: ${typeof hook === 'string' ? hook : 'custom function'}`)
+    }
+  }
 }

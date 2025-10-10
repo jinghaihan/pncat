@@ -69,6 +69,11 @@ export interface ConfigOptions {
    * Allowed protocols in specifier to not be converted to catalog
    */
   allowedProtocols?: string[]
+  /**
+   * Hook to run after command completion
+   * Can be a shell command string or a function
+   */
+  postRun?: string | HookFunction | Array<string | HookFunction>
 }
 
 export interface CatalogOptions extends CommandOptions, ConfigOptions {
@@ -81,3 +86,5 @@ export interface CatalogOptions extends CommandOptions, ConfigOptions {
    */
   specifierOptions?: SpecifierOptions
 }
+
+export type HookFunction = () => Promise<void> | void

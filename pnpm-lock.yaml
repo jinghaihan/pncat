@@ -42,12 +42,21 @@ catalogs:
     execa:
       specifier: ^9.6.0
       version: 9.6.0
+    fast-npm-meta:
+      specifier: ^0.4.7
+      version: 0.4.7
     find-up:
       specifier: ^8.0.0
       version: 8.0.0
+    package-manager-detector:
+      specifier: ^1.4.0
+      version: 1.4.0
     pathe:
       specifier: ^2.0.3
       version: 2.0.3
+    pnpm-workspace-yaml:
+      specifier: ^1.2.0
+      version: 1.2.0
     tinyglobby:
       specifier: ^0.2.15
       version: 0.2.15
@@ -86,15 +95,6 @@ catalogs:
     diff:
       specifier: ^8.0.2
       version: 8.0.2
-    fast-npm-meta:
-      specifier: ^0.4.7
-      version: 0.4.7
-    package-manager-detector:
-      specifier: ^1.4.0
-      version: 1.4.0
-    pnpm-workspace-yaml:
-      specifier: ^1.2.0
-      version: 1.2.0
     semver:
       specifier: ^7.7.3
       version: 7.7.3
@@ -125,19 +125,19 @@ importers:
         specifier: catalog:node
         version: 9.6.0
       fast-npm-meta:
-        specifier: catalog:utils
+        specifier: catalog:node
         version: 0.4.7
       find-up:
         specifier: catalog:node
         version: 8.0.0
       package-manager-detector:
-        specifier: catalog:utils
+        specifier: catalog:node
         version: 1.4.0
       pathe:
         specifier: catalog:node
         version: 2.0.3
       pnpm-workspace-yaml:
-        specifier: catalog:utils
+        specifier: catalog:node
         version: 1.2.0
       semver:
         specifier: catalog:utils

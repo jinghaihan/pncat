@@ -10,7 +10,7 @@ import { basename, join } from 'pathe'
 import { DEPS_FIELDS, WORKSPACE_FILES } from '../constants'
 import { readJSON, writeJSON } from '../io/packages'
 import { updatePnpmWorkspaceOverrides } from './overrides'
-import { runInstallCommand } from './process'
+import { runHooks, runInstallCommand } from './process'
 import { diffYAML } from './yaml'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
@@ -74,6 +74,10 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
 
   if (updatedPackages)
     await writePackageJSONs(updatedPackages!)
+
+  if (commandOptions.postRun) {
+    await runHooks(commandOptions.postRun, { cwd: catalogManager.getCwd() })
+  }
 
   if (completeMessage) {
     if (commandOptions.install) {

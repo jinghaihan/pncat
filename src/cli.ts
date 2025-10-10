@@ -23,6 +23,7 @@ try {
     .option('--yes', 'Skip prompt confirmation')
     .option('--install', 'Run install after command')
     .option('--verbose', 'Show complete catalogs instead of only the diff')
+    .option('--post-run <hooks>', 'Hook to run after command completion')
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {

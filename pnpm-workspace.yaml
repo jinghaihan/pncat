@@ -15,8 +15,11 @@ catalogs:
     ansis: ^4.2.0
     cac: ^6.7.14
     execa: ^9.6.0
+    fast-npm-meta: ^0.4.7
     find-up: ^8.0.0
+    package-manager-detector: ^1.4.0
     pathe: ^2.0.3
+    pnpm-workspace-yaml: ^1.2.0
     tinyglobby: ^0.2.15
     unconfig: ^7.3.3
   script:
@@ -33,7 +36,4 @@ catalogs:
     deepmerge: ^4.3.1
     detect-indent: ^7.0.2
     diff: ^8.0.2
-    fast-npm-meta: ^0.4.7
-    package-manager-detector: ^1.4.0
-    pnpm-workspace-yaml: ^1.2.0
     semver: ^7.7.3

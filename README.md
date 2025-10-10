@@ -33,7 +33,7 @@ pncat detect
 Scans your workspace to identify dependencies that could be moved to catalogs.
 
 <p align='center'>
-<img src='./assets/detect.png' />
+<img src='./assets/detect.png' width='600' />
 </p>
 
 ### Migrate
@@ -50,7 +50,7 @@ Automatically groups dependencies by rules (e.g., lint, test, utils), updating b
 Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
 <p align='center'>
-<img src='./assets/migrate.png' />
+<img src='./assets/migrate.png' width='600' />
 </p>
 
 ### Add
@@ -59,12 +59,12 @@ Default rules can be found in `src/rules.ts`. To customize rules, create a `pnca
 pncat add dep
 ```
 
-Add dependencies with prompts and catalogs support (credit to [nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
+Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
 
 You can specify a catalog name using `--catalog name`. When no catalog is specified, dependencies are automatically assigned based on your catalog rules configuration.
 
 <p align='center'>
-<img src='./assets/add.png' />
+<img src='./assets/add.png' width='600' />
 </p>
 
 ### Remove
@@ -78,7 +78,7 @@ Display which catalog group is using the dependency. If confirmed, it will remov
 To remove a dependency from all packages in the monorepo, you can use `pnpm remove dep -r` or `pnpm remove dep --recursive` to recursively remove the dependency from all workspace packages.
 
 <p align='center'>
-<img src='./assets/remove.png' />
+<img src='./assets/remove.png' width='600' />
 </p>
 
 ### Clean
@@ -90,7 +90,7 @@ pncat clean
 Find unused catalog dependencies and remove them from `pnpm-workspace.yaml/.yarnrc.yml`.
 
 <p align='center'>
-<img src='./assets/clean.png' />
+<img src='./assets/clean.png' width='600' />
 </p>
 
 ### Revert
@@ -102,7 +102,7 @@ pncat revert
 Reverts cataloged dependencies to `package.json`. Useful for monorepo restructuring or migration.
 
 <p align='center'>
-<img src='./assets/revert.png' />
+<img src='./assets/revert.png' width='600' />
 </p>
 
 You can also revert specific dependencies using:
@@ -112,7 +112,7 @@ pncat revert dep
 ```
 
 <p align='center'>
-<img src='./assets/revert-d.png' />
+<img src='./assets/revert-d.png' width='600' />
 </p>
 
 ## Configuration
@@ -141,7 +141,9 @@ export default defineConfig({
     skipComplexRanges: true,
     allowPreReleases: true,
     allowWildcards: false
-  }
+  },
+  // Hook to run after command completion (supports string commands, functions, or arrays)
+  postRun: 'eslint --fix .'
 })
 ```
 
