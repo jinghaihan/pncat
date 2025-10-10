@@ -1,5 +1,5 @@
-import type { PackageJson } from 'pkg-types'
 import type { CatalogOptions } from '../src/index'
+import type { PackageJson } from '../src/types'
 import { beforeAll, describe, expect, it } from 'vitest'
 import { resolveConfig } from '../src/config'
 import { DEFAULT_CATALOG_OPTIONS } from '../src/constants'

@@ -1,15 +1,14 @@
-import type { PackageJson } from 'pkg-types'
 import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import type { CatalogManager } from '../catalog-manager'
-import type { CatalogOptions, PackageJsonMeta, RawDep } from '../types'
+import type { CatalogOptions, PackageJson, PackageJsonMeta, RawDep } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { basename, join } from 'pathe'
-import { writePackageJSON as _writePackageJSON, readPackageJSON as readPkgJSON } from 'pkg-types'
 import { DEPS_FIELDS, WORKSPACE_FILES } from '../constants'
+import { readJSON, writeJSON } from '../io/packages'
 import { updatePnpmWorkspaceOverrides } from './overrides'
 import { runInstallCommand } from './process'
 import { diffYAML } from './yaml'
@@ -41,11 +40,12 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   const workspaceFile = WORKSPACE_FILES[commandOptions.packageManager || 'pnpm']
 
   const rawContent = workspaceYaml.toString()
+
   await modifier()
   // update pnpm-workspace.yaml overrides
-  if (commandOptions.packageManager === 'pnpm') {
+  if (commandOptions.packageManager === 'pnpm')
     await updatePnpmWorkspaceOverrides(workspaceYaml, catalogManager)
-  }
+
   const content = workspaceYaml.toString()
 
   if (rawContent === content) {
@@ -69,7 +69,7 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
         process.exit(1)
       }
     }
-    await writeWorkspace(workspaceYamlPath, content)
+    await writeWorkspaceYaml(workspaceYamlPath, content)
   }
 
   if (updatedPackages)
@@ -89,9 +89,9 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   }
 }
 
-export async function writeWorkspace(filePath: string, content: string) {
-  p.log.info(`writing ${basename(filePath)}`)
-  await writeFile(filePath, content, 'utf-8')
+export async function writeWorkspaceYaml(filepath: string, content: string) {
+  p.log.info(`writing ${basename(filepath)}`)
+  await writeFile(filepath, content, 'utf-8')
 }
 
 export async function readPackageJSON() {
@@ -101,7 +101,7 @@ export async function readPackageJSON() {
     process.exit(1)
   }
 
-  const pkgJson = await readPkgJSON(pkgPath)
+  const pkgJson = await readJSON(pkgPath)
   if (typeof pkgJson.name !== 'string') {
     p.outro(c.red('package.json is missing name, aborting'))
     process.exit(1)
@@ -112,7 +112,7 @@ export async function readPackageJSON() {
 
 export async function writePackageJSON(filepath: string, content: PackageJson) {
   p.log.info('writing package.json')
-  await _writePackageJSON(filepath, cleanupPackageJSON(content))
+  await writeJSON(filepath, cleanupPackageJSON(content))
 }
 
 export async function writePackageJSONs(updatedPackages: Record<string, PackageJsonMeta>): Promise<void> {
@@ -121,11 +121,11 @@ export async function writePackageJSONs(updatedPackages: Record<string, PackageJ
 
   p.log.info('writing package.json')
   await Promise.all(
-    Object.values(updatedPackages).map(pkg => _writePackageJSON(pkg.filepath, cleanupPackageJSON(pkg.raw))),
+    Object.values(updatedPackages).map(pkg => writeJSON(pkg.filepath, cleanupPackageJSON(pkg.raw))),
   )
 }
 
-function cleanupPackageJSON(pkgJson: PackageJson) {
+export function cleanupPackageJSON(pkgJson: PackageJson) {
   for (const field of DEPS_FIELDS) {
     const deps = pkgJson[field]
     if (!deps)

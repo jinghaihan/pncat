@@ -7,7 +7,7 @@ import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { updatePnpmWorkspaceOverrides } from '../utils/overrides'
 import { runInstallCommand } from '../utils/process'
 import { resolveRevert } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writeWorkspace } from '../utils/workspace'
+import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writeWorkspaceYaml } from '../utils/workspace'
 
 export async function revertCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)
@@ -47,7 +47,7 @@ export async function revertCommand(options: CatalogOptions) {
       await updatePnpmWorkspaceOverrides(workspaceYaml, catalogManager)
     }
 
-    await writeWorkspace(workspaceYamlPath, workspaceYaml.toString())
+    await writeWorkspaceYaml(workspaceYamlPath, workspaceYaml.toString())
     await writePackageJSONs(updatedPackages)
 
     if (options.install) {

@@ -1,3 +1,4 @@
 export * from './core'
 export * from './meta'
+export * from './package-json'
 export * from './rules'

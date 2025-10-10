@@ -48,9 +48,6 @@ catalogs:
     pathe:
       specifier: ^2.0.3
       version: 2.0.3
-    pkg-types:
-      specifier: ^2.3.0
-      version: 2.3.0
     tinyglobby:
       specifier: ^0.2.15
       version: 0.2.15
@@ -83,6 +80,9 @@ catalogs:
     deepmerge:
       specifier: ^4.3.1
       version: 4.3.1
+    detect-indent:
+      specifier: ^7.0.2
+      version: 7.0.2
     diff:
       specifier: ^8.0.2
       version: 8.0.2
@@ -115,6 +115,9 @@ importers:
       deepmerge:
         specifier: catalog:utils
         version: 4.3.1
+      detect-indent:
+        specifier: catalog:utils
+        version: 7.0.2
       diff:
         specifier: catalog:utils
         version: 8.0.2
@@ -133,9 +136,6 @@ importers:
       pathe:
         specifier: catalog:node
         version: 2.0.3
-      pkg-types:
-        specifier: catalog:node
-        version: 2.3.0
       pnpm-workspace-yaml:
         specifier: catalog:utils
         version: 1.2.0
@@ -1474,6 +1474,10 @@ packages:
 
   destr@2.0.5:
     resolution: {integrity: sha512-ugFTXCtDZunbzasqBxrK93Ik/DRYsO6S/fedkWEMKqt04xZ4csmnmwGDBAb07QWNaGMAmnTIemsYZCksjATwsA==}
+
+  detect-indent@7.0.2:
+    resolution: {integrity: sha512-y+8xyqdGLL+6sh0tVeHcfP/QDd8gUgbasolJJpY7NgeQGSZ739bDtSiaiDgtoicy+mtYB81dKLxO9xRhCyIB3A==}
+    engines: {node: '>=12.20'}
 
   devlop@1.1.0:
     resolution: {integrity: sha512-RWmIqhcFf1lRYBvNmr7qTNuyCt/7/ns2jbpp1+PalgE/rDQcBT0fioSMUpJ93irlUhC5hrg4cYqe6U+0ImW0rA==}
@@ -4191,6 +4195,8 @@ snapshots:
   dequal@2.0.3: {}
 
   destr@2.0.5: {}
+
+  detect-indent@7.0.2: {}
 
   devlop@1.1.0:
     dependencies:

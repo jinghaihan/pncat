@@ -1,8 +1,8 @@
 import type { CatalogOptions, DepType, PackageJsonMeta, RawDep } from '../types'
 import { resolve } from 'pathe'
-import { readPackageJSON } from 'pkg-types'
 import { DEPS_FIELDS } from '../constants'
 import { parseDependencies } from './dependencies'
+import { readJSON } from './packages'
 
 function isDepFieldEnabled(key: DepType, options: CatalogOptions): boolean {
   if (!options.depFields?.[key])
@@ -17,7 +17,7 @@ export async function loadPackageJSON(
   shouldCatalog: (name: string, specifier: string) => boolean,
 ): Promise<PackageJsonMeta[]> {
   const filepath = resolve(options.cwd ?? '', relative)
-  const raw = await readPackageJSON(filepath)
+  const raw = await readJSON(filepath)
   const deps: RawDep[] = []
 
   for (const key of DEPS_FIELDS) {

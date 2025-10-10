@@ -1,8 +1,7 @@
 import type { CatalogOptions, PackageJsonMeta, PackageMeta, RawDep, WorkspacePackageMeta } from './types'
 import process from 'node:process'
 import { join } from 'pathe'
-import { readPackageJSON } from 'pkg-types'
-import { loadPackages } from './io/packages'
+import { loadPackages, readJSON } from './io/packages'
 import { inferCatalogName } from './utils/catalog'
 
 export class CatalogManager {
@@ -133,7 +132,7 @@ export class CatalogManager {
     }
     else {
       const pkgPath = join(process.cwd(), 'package.json')
-      const { name } = await readPackageJSON(pkgPath)
+      const { name } = await readJSON(pkgPath)
       if (!name)
         return { updatedPackages, catalogDeletable }
 

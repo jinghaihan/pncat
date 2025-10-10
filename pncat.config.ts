@@ -9,6 +9,7 @@ export default defineConfig({
         'fast-npm-meta',
         'pnpm-workspace-yaml',
         'package-manager-detector',
+        'detect-indent',
       ],
     },
   ]),

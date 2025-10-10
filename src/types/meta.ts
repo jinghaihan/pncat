@@ -1,6 +1,6 @@
-import type { PackageJson } from 'pkg-types'
 import type { PnpmWorkspaceYaml, PnpmWorkspaceYamlSchema } from 'pnpm-workspace-yaml'
 import type { DepType } from './core'
+import type { PackageJson } from './package-json'
 
 export interface RawDep {
   name: string

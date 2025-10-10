@@ -1,6 +1,8 @@
-import type { CatalogOptions, DepFilter, PackageMeta } from '../types'
+import type { CatalogOptions, DepFilter, PackageJson, PackageMeta } from '../types'
 import { existsSync } from 'node:fs'
+import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
+import detectIndent from 'detect-indent'
 import { findUp } from 'find-up'
 import { dirname, join, resolve } from 'pathe'
 import { glob } from 'tinyglobby'
@@ -9,6 +11,17 @@ import { createDependenciesFilter } from '../utils/filter'
 import { loadPackageJSON } from './package-json'
 import { loadPnpmWorkspace } from './pnpm-workspace'
 import { loadYarnWorkspace } from './yarn-workspace'
+
+export async function readJSON(filepath: string) {
+  return JSON.parse(await readFile(filepath, 'utf-8'))
+}
+
+export async function writeJSON(filepath: string, data: PackageJson) {
+  const content = await readFile(filepath, 'utf-8')
+  const fileIndent = detectIndent(content).indent || '  '
+
+  return await writeFile(filepath, `${JSON.stringify(data, null, fileIndent)}\n`, 'utf-8')
+}
 
 export async function findPackageJsonPaths(options: CatalogOptions): Promise<string[]> {
   const { packageManager = 'pnpm' } = options

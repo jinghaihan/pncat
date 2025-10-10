@@ -1,5 +1,4 @@
-import type { PackageJson } from 'pkg-types'
-import type { RawDep } from '../src/types'
+import type { PackageJson, RawDep } from '../src/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { addCommand } from '../src/commands/add'
 import { resolveConfig } from '../src/config'
