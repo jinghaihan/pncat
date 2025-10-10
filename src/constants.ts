@@ -1,6 +1,6 @@
 import type { CatalogOptions, DepType, PackageManager, WorkspaceFile } from './types'
 
-export const MODE_CHOICES = ['detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
+export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
 export const DEPS_FIELDS = [
   'dependencies',

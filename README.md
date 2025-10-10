@@ -11,6 +11,7 @@ Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> and <samp><b>[yarn
 pnpm add -D pncat
 ```
 
+- **Init** - Initialize configuration with optimized rules
 - **Detect** - Scan workspace to identify catalogable dependencies
 - **Migrate** - Automatically group dependencies by rules
 - **Add** - Install dependencies with catalog support
@@ -23,6 +24,18 @@ pnpm add -D pncat
 </p>
 
 ## Usage
+
+### Init
+
+```bash
+pncat init
+```
+
+Initialize your workspace with an optimized configuration file. Analyzes your current workspace dependencies and generates tailored rules for better project visibility.
+
+<p align='center'>
+<img src='./assets/setup.png' width='600' />
+</p>
 
 ### Detect
 
@@ -117,7 +130,7 @@ pncat revert dep
 
 ## Configuration
 
-Create a `pncat.config.ts` file to customize catalog rules:
+You can use `pncat init` to initialize a configuration file with optimized rules based on your current workspace, or create a `pncat.config.ts` file manually to customize catalog rules:
 
 ```ts
 import { defineConfig, mergeCatalogRules } from 'pncat'

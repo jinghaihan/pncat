@@ -1,7 +1,6 @@
 import { defineConfig, mergeCatalogRules } from './src'
 
 export default defineConfig({
-  postRun: 'eslint --fix .',
   catalogRules: mergeCatalogRules([
     {
       name: 'node',
@@ -19,4 +18,5 @@ export default defineConfig({
       ],
     },
   ]),
+  postRun: 'eslint --fix .',
 })

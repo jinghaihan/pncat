@@ -5,7 +5,7 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
 import { name, version } from '../package.json'
-import { addCommand, cleanCommand, detectCommand, migrateCommand, removeCommand, revertCommand } from './commands'
+import { addCommand, cleanCommand, detectCommand, initCommand, migrateCommand, removeCommand, revertCommand } from './commands'
 import { resolveConfig } from './config'
 import { MODE_CHOICES } from './constants'
 
@@ -28,7 +28,7 @@ try {
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {
         if (!MODE_CHOICES.includes(mode)) {
-          console.error(`Invalid mode: ${mode}. Please use one of the following: ${MODE_CHOICES.join('|')}`)
+          console.error(`Invalid mode: ${mode}. Please use one of the following: ${MODE_CHOICES.join(', ')}`)
           process.exit(1)
         }
         options.mode = mode
@@ -38,6 +38,9 @@ try {
       const config = await resolveConfig(options)
 
       switch (config.mode) {
+        case 'init':
+          await initCommand(config)
+          break
         case 'detect':
           await detectCommand(config)
           break

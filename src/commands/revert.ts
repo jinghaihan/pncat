@@ -1,13 +1,12 @@
 import type { CatalogOptions } from '../types'
+import type { ConfirmationOptions } from '../utils/workspace'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { CatalogManager } from '../catalog-manager'
 import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
-import { updatePnpmWorkspaceOverrides } from '../utils/overrides'
-import { runInstallCommand } from '../utils/process'
 import { resolveRevert } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps, writePackageJSONs, writeWorkspaceYaml } from '../utils/workspace'
+import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
 
 export async function revertCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)
@@ -27,6 +26,17 @@ export async function revertCommand(options: CatalogOptions) {
     workspaceYaml,
   })
 
+  const confirmationOptions: ConfirmationOptions = {
+    catalogManager,
+    workspaceYaml,
+    workspaceYamlPath,
+    updatedPackages,
+    yes: options.yes,
+    verbose: options.verbose,
+    bailout: true,
+    completeMessage: 'revert complete',
+  }
+
   if (isRevertAll) {
     if (!options.yes) {
       const result = await p.confirm({
@@ -38,44 +48,21 @@ export async function revertCommand(options: CatalogOptions) {
       }
     }
 
-    const document = workspaceYaml.getDocument()
-    document.deleteIn(['catalog'])
-    document.deleteIn(['catalogs'])
-
-    // update pnpm-workspace.yaml overrides
-    if (options.packageManager === 'pnpm') {
-      await updatePnpmWorkspaceOverrides(workspaceYaml, catalogManager)
-    }
-
-    await writeWorkspaceYaml(workspaceYamlPath, workspaceYaml.toString())
-    await writePackageJSONs(updatedPackages)
-
-    if (options.install) {
-      p.log.info(c.green('revert complete'))
-      await runInstallCommand({
-        cwd: catalogManager.getCwd(),
-        packageManager: options.packageManager,
-      })
-    }
-    else {
-      p.outro(c.green('revert complete'))
-    }
+    await confirmWorkspaceChanges(
+      async () => {
+        const document = workspaceYaml.getDocument()
+        document.deleteIn(['catalog'])
+        document.deleteIn(['catalogs'])
+      },
+      confirmationOptions,
+    )
   }
   else {
     await confirmWorkspaceChanges(
       async () => {
         removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
       },
-      {
-        catalogManager,
-        workspaceYaml,
-        workspaceYamlPath,
-        updatedPackages,
-        yes: options.yes,
-        verbose: options.verbose,
-        bailout: true,
-        completeMessage: 'revert complete',
-      },
+      confirmationOptions,
     )
   }
 }

@@ -303,6 +303,13 @@ export class CatalogManager {
   }
 
   /**
+   * Get the names of dependencies
+   */
+  getDepNames(): string[] {
+    return Array.from(this.depUsageIndex.keys())
+  }
+
+  /**
    * Create indexes for the loaded packages
    */
   private createIndexes() {
