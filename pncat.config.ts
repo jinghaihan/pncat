@@ -3,9 +3,18 @@ import { defineConfig, mergeCatalogRules } from './src'
 export default defineConfig({
   catalogRules: mergeCatalogRules([
     {
+      name: 'npm',
+      match: [
+        '@npmcli/config',
+        'npm-package-arg',
+        'npm-registry-fetch',
+        'fast-npm-meta',
+      ],
+      priority: 0,
+    },
+    {
       name: 'node',
       match: [
-        'fast-npm-meta',
         'pnpm-workspace-yaml',
         'package-manager-detector',
       ],
@@ -15,6 +24,7 @@ export default defineConfig({
       match: [
         'diff',
         'detect-indent',
+        'ufo',
       ],
     },
   ]),

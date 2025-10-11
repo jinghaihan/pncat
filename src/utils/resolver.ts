@@ -4,6 +4,7 @@ import type { CatalogOptions, PackageJsonMeta, ParsedSpec, RawDep } from '../typ
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { getLatestVersion } from './npm'
 import { parseCommandOptions, runRemoveCommand } from './process'
 import { parseSpec, sortSpecs } from './specifier'
 
@@ -82,8 +83,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
     if (!dep.specifier) {
       const spinner = p.spinner({ indicator: 'dots' })
       spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
-      const { getLatestVersion } = await import('fast-npm-meta')
-      const { version } = await getLatestVersion(dep.name)
+      const version = await getLatestVersion(dep.name)
       if (version) {
         dep.specifier = `^${version}`
         dep.specifierSource ||= 'npm'
