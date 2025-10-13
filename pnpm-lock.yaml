@@ -114,6 +114,9 @@ catalogs:
     semver:
       specifier: ^7.7.3
       version: 7.7.3
+    tildify:
+      specifier: ^3.0.0
+      version: 3.0.0
     ufo:
       specifier: ^1.6.1
       version: 1.6.1
@@ -143,9 +146,6 @@ importers:
       tinyexec:
         specifier: catalog:node
         version: 1.0.1
-      tinyglobby:
-        specifier: catalog:node
-        version: 0.2.15
       unconfig:
         specifier: catalog:node
         version: 7.3.3
@@ -213,6 +213,12 @@ importers:
       taze:
         specifier: catalog:cli
         version: 19.7.0
+      tildify:
+        specifier: catalog:utils
+        version: 3.0.0
+      tinyglobby:
+        specifier: catalog:node
+        version: 0.2.15
       tsx:
         specifier: catalog:script
         version: 4.20.6
@@ -2819,6 +2825,10 @@ packages:
   taze@19.7.0:
     resolution: {integrity: sha512-+iQhlg/O0XLTYvJFpyTq8MiXBlZx6IWPOUeMHm/abE971LW4REA7IgQSCqyi9Cd9WPziL0J8IiHQhpJd5Z0PpA==}
     hasBin: true
+
+  tildify@3.0.0:
+    resolution: {integrity: sha512-9ZLMl75qnTLr7oSEmWJbKemFS/fP4TMBiF6PFwGwLpgobebU1ehXoGbadJ+7jT8fjaz2G82JgN9G4taz+o1j1w==}
+    engines: {node: ^12.20.0 || ^14.13.1 || >=16.0.0}
 
   tinybench@2.9.0:
     resolution: {integrity: sha512-0+DUvqWMValLmha6lr4kD8iAMK1HzV0/aKnCtWb9v9641TnP/MFb7Pc2bxoxQjTXAErryXVgUOfv2YqNllqGeg==}
@@ -5936,6 +5946,8 @@ snapshots:
       tinyexec: 1.0.1
       tinyglobby: 0.2.15
       unconfig: 7.3.3
+
+  tildify@3.0.0: {}
 
   tinybench@2.9.0: {}
 

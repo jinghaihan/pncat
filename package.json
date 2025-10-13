@@ -60,7 +60,6 @@
     "pathe": "catalog:node",
     "pnpm-workspace-yaml": "catalog:node",
     "tinyexec": "catalog:node",
-    "tinyglobby": "catalog:node",
     "unconfig": "catalog:node"
   },
   "devDependencies": {
@@ -85,6 +84,8 @@
     "semver": "catalog:utils",
     "simple-git-hooks": "catalog:lint",
     "taze": "catalog:cli",
+    "tildify": "catalog:utils",
+    "tinyglobby": "catalog:node",
     "tsx": "catalog:script",
     "typescript": "catalog:tsc",
     "ufo": "catalog:utils",

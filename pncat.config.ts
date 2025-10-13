@@ -25,6 +25,7 @@ export default defineConfig({
         'diff',
         'detect-indent',
         'ufo',
+        'tildify',
       ],
     },
   ]),

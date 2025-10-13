@@ -1,6 +1,6 @@
 import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta } from '../types'
-import { loadWorkspace } from './workspace'
+import { loadWorkspaceYaml } from './workspace-yaml'
 
 export async function loadPnpmWorkspace(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<PnpmWorkspaceMeta[]> {
-  return await loadWorkspace(relative, options, shouldCatalog) as PnpmWorkspaceMeta[]
+  return await loadWorkspaceYaml(relative, options, shouldCatalog) as PnpmWorkspaceMeta[]
 }

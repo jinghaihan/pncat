@@ -2,10 +2,9 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { CatalogManager } from '../catalog-manager'
-import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { resolveRemove } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
+import { confirmWorkspaceChanges } from '../utils/workspace'
+import { Workspace } from '../workspace-manager'
 
 export async function removeCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)
@@ -14,29 +13,19 @@ export async function removeCommand(options: CatalogOptions) {
     process.exit(1)
   }
 
-  const workspaceYamlPath = await findWorkspaceYAML(options.packageManager)
-  if (!workspaceYamlPath) {
-    p.outro(c.red('no workspace file found, aborting'))
-    process.exit(1)
-  }
-
-  const { workspaceYaml } = await ensureWorkspaceYAML(options.packageManager)
-  const catalogManager = new CatalogManager(options)
+  const workspace = new Workspace(options)
 
   const { dependencies = [], updatedPackages = {} } = await resolveRemove(args, {
     options,
-    catalogManager,
-    workspaceYaml,
+    workspace,
   })
 
   await confirmWorkspaceChanges(
     async () => {
-      removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
+      await workspace.catalog.removePackages(dependencies)
     },
     {
-      catalogManager,
-      workspaceYaml,
-      workspaceYamlPath,
+      workspace,
       updatedPackages,
       yes: options.yes,
       verbose: options.verbose,

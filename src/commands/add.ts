@@ -2,10 +2,9 @@ import type { CatalogOptions, PackageJsonMeta } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { CatalogManager } from '../catalog-manager'
-import { ensureWorkspaceYAML } from '../io/workspace'
 import { resolveAdd } from '../utils/resolver'
 import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
+import { Workspace } from '../workspace-manager'
 
 export async function addCommand(options: CatalogOptions) {
   const args = process.argv.slice(3)
@@ -15,13 +14,12 @@ export async function addCommand(options: CatalogOptions) {
   }
 
   const { pkgJson, pkgPath } = await readPackageJSON()
-  const { workspaceYaml, workspaceYamlPath } = await ensureWorkspaceYAML(options.packageManager)
-  const catalogManager = new CatalogManager(options)
+  const workspace = new Workspace(options)
+  await workspace.catalog.ensureWorkspace()
 
   const { isDev = false, dependencies = [] } = await resolveAdd(args, {
     options,
-    catalogManager,
-    workspaceYaml,
+    workspace,
   })
 
   const depsName = isDev ? 'devDependencies' : 'dependencies'
@@ -42,13 +40,11 @@ export async function addCommand(options: CatalogOptions) {
     async () => {
       for (const dep of dependencies) {
         if (dep.catalogName)
-          workspaceYaml.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
+          await workspace.catalog.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
       }
     },
     {
-      catalogManager,
-      workspaceYaml,
-      workspaceYamlPath,
+      workspace,
       updatedPackages,
       yes: options.yes,
       verbose: options.verbose,

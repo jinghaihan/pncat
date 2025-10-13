@@ -2,22 +2,21 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { CatalogManager } from '../catalog-manager'
-import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { resolveClean } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
+import { confirmWorkspaceChanges } from '../utils/workspace'
+import { Workspace } from '../workspace-manager'
 
 export async function cleanCommand(options: CatalogOptions) {
-  const workspaceYamlPath = await findWorkspaceYAML(options.packageManager)
-  if (!workspaceYamlPath) {
+  const workspace = new Workspace(options)
+  const filepath = await workspace.catalog.findWorkspaceFile()
+  if (!filepath) {
     p.outro(c.red('no workspace file found, aborting'))
     process.exit(1)
   }
 
-  const catalogManager = new CatalogManager(options)
   const { dependencies = [] } = await resolveClean({
     options,
-    catalogManager,
+    workspace,
   })
 
   if (!dependencies.length) {
@@ -25,17 +24,15 @@ export async function cleanCommand(options: CatalogOptions) {
     process.exit(0)
   }
 
-  const { workspaceYaml } = await ensureWorkspaceYAML(options.packageManager)
+  await workspace.catalog.ensureWorkspace()
   p.log.info(`📦 Found ${c.yellow(dependencies.length)} dependencies not in package.json`)
 
   await confirmWorkspaceChanges(
     async () => {
-      removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
+      await workspace.catalog.removePackages(dependencies)
     },
     {
-      catalogManager,
-      workspaceYaml,
-      workspaceYamlPath,
+      workspace,
       yes: options.yes,
       verbose: options.verbose,
       bailout: true,

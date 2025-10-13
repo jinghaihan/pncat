@@ -1,4 +1,4 @@
-import type { CatalogOptions, DepType, PackageManager, WorkspaceFile } from './types'
+import type { CatalogOptions, DepType, PackageManager, WorkspaceMeta } from './types'
 
 export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
@@ -63,17 +63,15 @@ export const DEP_TYPE_GROUP_NAME_MAP: Partial<Record<DepType, string>> = {
 
 export const PACKAGE_MANAGERS = ['pnpm', 'yarn'] as const
 
-export const WORKSPACE_FILES: Record<PackageManager, WorkspaceFile> = {
-  pnpm: 'pnpm-workspace.yaml',
-  yarn: '.yarnrc.yml',
-}
-
-export const WORKSPACE_DEFAULT_CONTENT: Record<PackageManager, string> = {
-  pnpm: 'packages: []',
-  yarn: 'defaultProtocol: "npm:"',
-}
-
-export const PACKAGE_MANAGER_LOCK_FILE: Record<PackageManager, string> = {
-  pnpm: 'pnpm-lock.yaml',
-  yarn: 'yarn.lock',
+export const WORKSPACE_META: Record<PackageManager, WorkspaceMeta> = {
+  pnpm: {
+    workspaceFile: 'pnpm-workspace.yaml',
+    lockFile: 'pnpm-lock.yaml',
+    yamlContent: 'packages: []',
+  },
+  yarn: {
+    workspaceFile: '.yarnrc.yml',
+    lockFile: 'yarn.lock',
+    yamlContent: 'defaultProtocol: "npm:"',
+  },
 }

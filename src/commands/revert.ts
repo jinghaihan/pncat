@@ -3,33 +3,28 @@ import type { ConfirmationOptions } from '../utils/workspace'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { CatalogManager } from '../catalog-manager'
-import { ensureWorkspaceYAML, findWorkspaceYAML } from '../io/workspace'
 import { resolveRevert } from '../utils/resolver'
-import { confirmWorkspaceChanges, removeWorkspaceYAMLDeps } from '../utils/workspace'
+import { confirmWorkspaceChanges } from '../utils/workspace'
+import { Workspace } from '../workspace-manager'
 
 export async function revertCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)
 
-  const workspaceYamlPath = await findWorkspaceYAML(options.packageManager)
-  if (!workspaceYamlPath) {
+  const workspace = new Workspace(options)
+  const filepath = await workspace.catalog.findWorkspaceFile()
+  if (!filepath) {
     p.outro(c.red('no workspace file found, aborting'))
     process.exit(1)
   }
-
-  const { workspaceYaml } = await ensureWorkspaceYAML(options.packageManager)
-  const catalogManager = new CatalogManager(options)
+  await workspace.catalog.ensureWorkspace()
 
   const { isRevertAll, dependencies = [], updatedPackages = {} } = await resolveRevert(args, {
     options,
-    catalogManager,
-    workspaceYaml,
+    workspace,
   })
 
   const confirmationOptions: ConfirmationOptions = {
-    catalogManager,
-    workspaceYaml,
-    workspaceYamlPath,
+    workspace,
     updatedPackages,
     yes: options.yes,
     verbose: options.verbose,
@@ -50,9 +45,7 @@ export async function revertCommand(options: CatalogOptions) {
 
     await confirmWorkspaceChanges(
       async () => {
-        const document = workspaceYaml.getDocument()
-        document.deleteIn(['catalog'])
-        document.deleteIn(['catalogs'])
+        await workspace.catalog.clearCatalogs()
       },
       confirmationOptions,
     )
@@ -60,7 +53,7 @@ export async function revertCommand(options: CatalogOptions) {
   else {
     await confirmWorkspaceChanges(
       async () => {
-        removeWorkspaceYAMLDeps(dependencies, workspaceYaml)
+        await workspace.catalog.removePackages(dependencies)
       },
       confirmationOptions,
     )

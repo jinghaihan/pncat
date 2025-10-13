@@ -17,12 +17,6 @@ vi.mock('../src/utils/resolver', () => ({
 }))
 
 vi.mock('../src/io/workspace', () => ({
-  ensureWorkspaceYAML: vi.fn().mockResolvedValue({
-    workspaceYaml: {
-      setPackage: vi.fn(),
-    },
-    workspaceYamlPath: 'pnpm-workspace.yaml',
-  }),
   findWorkspaceRoot: vi.fn().mockResolvedValue('/test/workspace'),
 }))
 
@@ -31,8 +25,8 @@ vi.mock('../src/utils/process', () => ({
   runInstallCommand: vi.fn(),
 }))
 
-vi.mock('../src/pnpm-catalog-manager', () => ({
-  CatalogManager: vi.fn().mockImplementation(() => ({
+vi.mock('../src/workspace', () => ({
+  Workspace: vi.fn().mockImplementation(() => ({
     getCwd: vi.fn().mockReturnValue('/test/cwd'),
   })),
 }))

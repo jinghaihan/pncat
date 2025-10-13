@@ -1,0 +1,182 @@
+import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema, WorkspaceYaml } from '../types'
+import { readFile, writeFile } from 'node:fs/promises'
+import process from 'node:process'
+import * as p from '@clack/prompts'
+import c from 'ansis'
+import { findUp } from 'find-up-simple'
+import { dirname, join } from 'pathe'
+import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
+import { WORKSPACE_META } from '../constants'
+
+export class YamlCatalog implements CatalogHandler {
+  public options: CatalogOptions
+
+  private workspaceYaml: WorkspaceYaml | null = null
+  private workspaceYamlPath: string | null = null
+
+  constructor(options: CatalogOptions) {
+    this.options = options
+  }
+
+  async findWorkspaceFile(): Promise<string | undefined> {
+    if (this.options.packageManager === 'pnpm')
+      return await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
+    if (this.options.packageManager === 'yarn')
+      return await findUp('.yarnrc.yml', { cwd: process.cwd() })
+  }
+
+  async ensureWorkspace(): Promise<void> {
+    const packageManager = this.options.packageManager ?? 'pnpm'
+    const workspaceMeta = WORKSPACE_META[packageManager]
+
+    let workspaceYamlPath = await this.findWorkspaceFile()
+    const workspaceFile = workspaceMeta.workspaceFile
+
+    if (!workspaceYamlPath) {
+      let root = await findUp('.git', { cwd: process.cwd() })
+      if (root) {
+        root = dirname(root)
+      }
+      else {
+        const lockFile = workspaceMeta.lockFile
+        const lockPath = await findUp(lockFile, { cwd: process.cwd() })
+        root = lockPath ? dirname(lockPath) : process.cwd()
+      }
+
+      p.log.warn(c.yellow(`no ${workspaceFile} found`))
+
+      const result = await p.confirm({
+        message: `do you want to create it under project root ${c.dim(root)} ?`,
+      })
+      if (!result) {
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      }
+
+      workspaceYamlPath = join(root, workspaceFile)
+      await writeFile(workspaceYamlPath, workspaceMeta.yamlContent)
+    }
+
+    this.workspaceYaml = parsePnpmWorkspaceYaml(await readFile(workspaceYamlPath, 'utf-8'))
+    this.workspaceYamlPath = workspaceYamlPath
+  }
+
+  async toJSON(): Promise<WorkspaceSchema> {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    return workspaceYaml.toJSON()
+  }
+
+  async toString(): Promise<string> {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    return workspaceYaml.toString()
+  }
+
+  async setPackage(catalog: 'default' | (string & {}), packageName: string, specifier: string) {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    workspaceYaml.setPackage(catalog, packageName, specifier)
+  }
+
+  async removePackages(deps: RawDep[]) {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    const document = workspaceYaml.getDocument()
+    deps.forEach((dep) => {
+      if (dep.catalogName === 'default') {
+        if (document.getIn(['catalog', dep.name]))
+          document.deleteIn(['catalog', dep.name])
+      }
+      else
+        if (document.getIn(['catalogs', dep.catalogName, dep.name])) {
+          document.deleteIn(['catalogs', dep.catalogName, dep.name])
+        }
+    })
+    this.cleanupCatalogs()
+  }
+
+  async getPackageCatalogs(name: string): Promise<string[]> {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    return workspaceYaml.getPackageCatalogs(name)
+  }
+
+  async generateCatalogs(deps: RawDep[]) {
+    const workspaceYaml = await this.getWorkspaceYaml()
+
+    const document = workspaceYaml.getDocument()
+    document.deleteIn(['catalog'])
+    document.deleteIn(['catalogs'])
+
+    const catalogs: Record<string, Record<string, string>> = {}
+    for (const dep of deps) {
+      if (!catalogs[dep.catalogName])
+        catalogs[dep.catalogName] = {}
+      catalogs[dep.catalogName][dep.name] = dep.specifier
+    }
+
+    Object.entries(catalogs)
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .forEach(([catalogName, deps]) => {
+        Object.entries(deps).forEach(([name, specifier]) => {
+          if (catalogName === 'default')
+            workspaceYaml.setPath(['catalog', name], specifier)
+          else
+            workspaceYaml.setPath(['catalogs', catalogName, name], specifier)
+        })
+      })
+  }
+
+  async cleanupCatalogs() {
+    const workspaceYaml = await this.getWorkspaceYaml()
+
+    const document = workspaceYaml.getDocument()
+    const workspaceJson = workspaceYaml.toJSON()
+
+    if (workspaceJson.catalog && !Object.keys(workspaceJson.catalog).length)
+      document.deleteIn(['catalog'])
+
+    if (workspaceJson.catalogs) {
+      const emptyCatalogs: string[] = []
+      for (const [catalogKey, catalogValue] of Object.entries(workspaceJson.catalogs)) {
+        if (!catalogValue || Object.keys(catalogValue).length === 0)
+          emptyCatalogs.push(catalogKey)
+      }
+
+      emptyCatalogs.forEach((key) => {
+        document.deleteIn(['catalogs', key])
+      })
+    }
+
+    const updatedWorkspaceJson = workspaceYaml.toJSON()
+    if (!updatedWorkspaceJson.catalogs || Object.keys(updatedWorkspaceJson.catalogs).length === 0) {
+      document.deleteIn(['catalogs'])
+    }
+  }
+
+  async clearCatalogs() {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    const document = workspaceYaml.getDocument()
+    document.deleteIn(['catalog'])
+    document.deleteIn(['catalogs'])
+  }
+
+  async getWorkspacePath(): Promise<string> {
+    if (this.workspaceYamlPath)
+      return this.workspaceYamlPath
+
+    await this.ensureWorkspace()
+    return this.workspaceYamlPath!
+  }
+
+  async writeWorkspace() {
+    const workspaceYaml = await this.getWorkspaceYaml()
+    const workspaceYamlPath = await this.getWorkspacePath()
+
+    await writeFile(workspaceYamlPath, workspaceYaml.toString(), 'utf-8')
+  }
+
+  async getWorkspaceYaml(): Promise<WorkspaceYaml> {
+    if (this.workspaceYaml)
+      return this.workspaceYaml
+
+    await this.ensureWorkspace()
+    return this.workspaceYaml!
+  }
+}

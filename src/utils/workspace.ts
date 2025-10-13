@@ -1,22 +1,18 @@
-import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import type { CatalogManager } from '../catalog-manager'
-import type { CatalogOptions, PackageJson, PackageJsonMeta, RawDep } from '../types'
+import type { CatalogOptions, PackageJson, PackageJsonMeta } from '../types'
+import type { Workspace } from '../workspace-manager'
 import { existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { basename, join } from 'pathe'
-import { DEPS_FIELDS, WORKSPACE_FILES } from '../constants'
+import tildify from 'tildify'
+import { DEPS_FIELDS, WORKSPACE_META } from '../constants'
 import { readJSON, writeJSON } from '../io/packages'
-import { updatePnpmWorkspaceOverrides } from './overrides'
 import { runHooks, runInstallCommand } from './process'
 import { diffYAML } from './yaml'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
-  catalogManager: CatalogManager
-  workspaceYaml: PnpmWorkspaceYaml
-  workspaceYamlPath: string
+  workspace: Workspace
   updatedPackages?: Record<string, PackageJsonMeta>
   bailout?: boolean
   confirmMessage?: string
@@ -25,9 +21,7 @@ export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbo
 
 export async function confirmWorkspaceChanges(modifier: () => Promise<void>, options: ConfirmationOptions) {
   const {
-    catalogManager,
-    workspaceYaml,
-    workspaceYamlPath,
+    workspace,
     updatedPackages,
     yes = false,
     verbose = false,
@@ -36,17 +30,19 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
     completeMessage,
   } = options ?? {}
 
-  const commandOptions = catalogManager.getOptions()
-  const workspaceFile = WORKSPACE_FILES[commandOptions.packageManager || 'pnpm']
+  const catalogOptions = workspace.getOptions()
+  const workspaceFile = WORKSPACE_META[catalogOptions.packageManager || 'pnpm'].workspaceFile
 
-  const rawContent = workspaceYaml.toString()
+  const rawContent = await workspace.catalog.toString()
 
   await modifier()
   // update pnpm-workspace.yaml overrides
-  if (commandOptions.packageManager === 'pnpm')
-    await updatePnpmWorkspaceOverrides(workspaceYaml, catalogManager)
+  if (catalogOptions.packageManager === 'pnpm') {
+    const packages = await workspace.loadPackages()
+    await workspace.catalog.updateWorkspaceOverrides?.(packages)
+  }
 
-  const content = workspaceYaml.toString()
+  const content = await workspace.catalog.toString()
 
   if (rawContent === content) {
     if (bailout) {
@@ -61,7 +57,8 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   const diff = diffYAML(rawContent, content, { verbose })
 
   if (diff) {
-    p.note(c.reset(diff), c.dim(workspaceYamlPath))
+    const filepath = await workspace.catalog.getWorkspacePath()
+    p.note(c.reset(diff), c.dim(tildify(filepath)))
     if (!yes) {
       const result = await p.confirm({ message: confirmMessage })
       if (!result || p.isCancel(result)) {
@@ -69,33 +66,29 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
         process.exit(1)
       }
     }
-    await writeWorkspaceYaml(workspaceYamlPath, content)
+    p.log.info(`writing ${basename(filepath)}`)
+    await workspace.catalog.writeWorkspace()
   }
 
   if (updatedPackages)
     await writePackageJSONs(updatedPackages!)
 
-  if (commandOptions.postRun) {
-    await runHooks(commandOptions.postRun, { cwd: catalogManager.getCwd() })
+  if (catalogOptions.postRun) {
+    await runHooks(catalogOptions.postRun, { cwd: workspace.getCwd() })
   }
 
   if (completeMessage) {
-    if (commandOptions.install) {
+    if (catalogOptions.install) {
       p.log.info(c.green(completeMessage))
       await runInstallCommand({
-        cwd: catalogManager.getCwd(),
-        packageManager: commandOptions.packageManager,
+        cwd: workspace.getCwd(),
+        packageManager: catalogOptions.packageManager,
       })
     }
     else {
       p.outro(c.green(completeMessage))
     }
   }
-}
-
-export async function writeWorkspaceYaml(filepath: string, content: string) {
-  p.log.info(`writing ${basename(filepath)}`)
-  await writeFile(filepath, content, 'utf-8')
 }
 
 export async function readPackageJSON() {
@@ -112,11 +105,6 @@ export async function readPackageJSON() {
   }
 
   return { pkgPath, pkgJson }
-}
-
-export async function writePackageJSON(filepath: string, content: PackageJson) {
-  p.log.info('writing package.json')
-  await writeJSON(filepath, cleanupPackageJSON(content))
 }
 
 export async function writePackageJSONs(updatedPackages: Record<string, PackageJsonMeta>): Promise<void> {
@@ -139,68 +127,4 @@ export function cleanupPackageJSON(pkgJson: PackageJson) {
       delete pkgJson[field]
   }
   return pkgJson
-}
-
-export function generateWorkspaceYAML(dependencies: RawDep[], workspaceYaml: PnpmWorkspaceYaml) {
-  const document = workspaceYaml.getDocument()
-  document.deleteIn(['catalog'])
-  document.deleteIn(['catalogs'])
-
-  const catalogs: Record<string, Record<string, string>> = {}
-  for (const dep of dependencies) {
-    if (!catalogs[dep.catalogName])
-      catalogs[dep.catalogName] = {}
-    catalogs[dep.catalogName][dep.name] = dep.specifier
-  }
-
-  Object.entries(catalogs)
-    .sort((a, b) => a[0].localeCompare(b[0]))
-    .forEach(([catalogName, deps]) => {
-      Object.entries(deps).forEach(([name, specifier]) => {
-        if (catalogName === 'default')
-          workspaceYaml.setPath(['catalog', name], specifier)
-        else
-          workspaceYaml.setPath(['catalogs', catalogName, name], specifier)
-      })
-    })
-}
-
-export function cleanupWorkspaceYAML(workspaceYaml: PnpmWorkspaceYaml) {
-  const document = workspaceYaml.getDocument()
-  const workspaceJson = workspaceYaml.toJSON()
-
-  if (workspaceJson.catalog && !Object.keys(workspaceJson.catalog).length)
-    document.deleteIn(['catalog'])
-
-  if (workspaceJson.catalogs) {
-    const emptyCatalogs: string[] = []
-    for (const [catalogKey, catalogValue] of Object.entries(workspaceJson.catalogs)) {
-      if (!catalogValue || Object.keys(catalogValue).length === 0)
-        emptyCatalogs.push(catalogKey)
-    }
-
-    emptyCatalogs.forEach((key) => {
-      document.deleteIn(['catalogs', key])
-    })
-  }
-
-  const updatedWorkspaceJson = workspaceYaml.toJSON()
-  if (!updatedWorkspaceJson.catalogs || Object.keys(updatedWorkspaceJson.catalogs).length === 0) {
-    document.deleteIn(['catalogs'])
-  }
-}
-
-export function removeWorkspaceYAMLDeps(dependencies: RawDep[], workspaceYaml: PnpmWorkspaceYaml) {
-  const document = workspaceYaml.getDocument()
-  dependencies.forEach((dep) => {
-    if (dep.catalogName === 'default') {
-      if (document.getIn(['catalog', dep.name]))
-        document.deleteIn(['catalog', dep.name])
-    }
-    else
-      if (document.getIn(['catalogs', dep.catalogName, dep.name])) {
-        document.deleteIn(['catalogs', dep.catalogName, dep.name])
-      }
-  })
-  cleanupWorkspaceYAML(workspaceYaml)
 }

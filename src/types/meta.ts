@@ -1,6 +1,10 @@
 import type { PnpmWorkspaceYaml, PnpmWorkspaceYamlSchema } from 'pnpm-workspace-yaml'
-import type { DepType } from './core'
+import type { DepType, WorkspaceFile } from './core'
 import type { PackageJson } from './package-json'
+
+export type WorkspaceYaml = PnpmWorkspaceYaml
+
+export type WorkspaceSchema = PnpmWorkspaceYamlSchema
 
 export interface RawDep {
   name: string
@@ -68,8 +72,8 @@ export interface PackageJsonMeta extends BasePackageMeta {
 
 export interface PnpmWorkspaceMeta extends BasePackageMeta {
   type: 'pnpm-workspace.yaml'
-  raw: PnpmWorkspaceYamlSchema
-  context: PnpmWorkspaceYaml
+  raw: WorkspaceSchema
+  context: WorkspaceYaml
 }
 
 export interface YarnWorkspaceMeta extends Omit<PnpmWorkspaceMeta, 'type'> {
@@ -85,4 +89,10 @@ export interface ParsedSpec {
   specifier?: string
   catalogName?: string
   specifierSource?: 'user' | 'catalog' | 'workspace' | 'npm'
+}
+
+export interface WorkspaceMeta {
+  workspaceFile: WorkspaceFile
+  lockFile: string
+  yamlContent: string
 }

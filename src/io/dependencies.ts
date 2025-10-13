@@ -21,6 +21,10 @@ export function getByPath(obj: any, path: string) {
   return flatten(path.split('.').reduce((o, i) => o?.[i], obj))
 }
 
+function isCatalog(type: DepType) {
+  return type === 'pnpm-workspace' || type === 'yarn-workspace'
+}
+
 export function parseDependency(
   name: string,
   specifier: string,
@@ -35,13 +39,13 @@ export function parseDependency(
     specifier,
     parents,
     source: type,
-    catalog: type === 'pnpm-workspace' || type === 'yarn-workspace' || specifier.startsWith('catalog:'),
+    catalog: isCatalog(type) || specifier.startsWith('catalog:'),
     catalogable: shouldCatalog(name, specifier),
   }
 
   return {
     ...dep,
-    catalogName: type === 'pnpm-workspace' || type === 'yarn-workspace'
+    catalogName: isCatalog(type)
       ? packageName!
           .replace('pnpm-catalog:', '')
           .replace('yarn-catalog:', '')

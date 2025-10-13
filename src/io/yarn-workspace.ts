@@ -1,6 +1,6 @@
 import type { CatalogOptions, DepFilter, YarnWorkspaceMeta } from '../types'
-import { loadWorkspace } from './workspace'
+import { loadWorkspaceYaml } from './workspace-yaml'
 
 export async function loadYarnWorkspace(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<YarnWorkspaceMeta[]> {
-  return await loadWorkspace(relative, options, shouldCatalog) as YarnWorkspaceMeta[]
+  return await loadWorkspaceYaml(relative, options, shouldCatalog) as YarnWorkspaceMeta[]
 }

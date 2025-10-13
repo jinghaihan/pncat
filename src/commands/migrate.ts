@@ -1,27 +1,23 @@
 import type { CatalogOptions } from '../types'
-import { CatalogManager } from '../catalog-manager'
-import { ensureWorkspaceYAML } from '../io/workspace'
 import { resolveMigrate } from '../utils/resolver'
-import { confirmWorkspaceChanges, generateWorkspaceYAML } from '../utils/workspace'
+import { confirmWorkspaceChanges } from '../utils/workspace'
+import { Workspace } from '../workspace-manager'
 
 export async function migrateCommand(options: CatalogOptions) {
-  const catalogManager = new CatalogManager(options)
+  const workspace = new Workspace(options)
 
+  await workspace.catalog.ensureWorkspace()
   const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
     options,
-    catalogManager,
+    workspace,
   })
-
-  const { workspaceYaml, workspaceYamlPath } = await ensureWorkspaceYAML(options.packageManager)
 
   await confirmWorkspaceChanges(
     async () => {
-      generateWorkspaceYAML(dependencies, workspaceYaml)
+      await workspace.catalog.generateCatalogs(dependencies)
     },
     {
-      catalogManager,
-      workspaceYaml,
-      workspaceYamlPath,
+      workspace,
       updatedPackages,
       yes: options.yes,
       verbose: options.verbose,

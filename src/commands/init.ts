@@ -6,13 +6,13 @@ import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
-import { CatalogManager } from '../catalog-manager'
 import { DEFAULT_CATALOG_RULES } from '../rules'
 import { isDepMatched } from '../utils/catalog'
+import { Workspace } from '../workspace-manager'
 
 export async function initCommand(options: CatalogOptions) {
-  const catalogManager = new CatalogManager(options)
-  const cwd = catalogManager.getCwd()
+  const workspace = new Workspace(options)
+  const cwd = workspace.getCwd()
 
   if (existsSync(join(cwd, 'pncat.config.ts'))) {
     const result = await p.confirm({
@@ -25,8 +25,8 @@ export async function initCommand(options: CatalogOptions) {
     }
   }
 
-  await catalogManager.loadPackages()
-  const deps = catalogManager.getDepNames()
+  await workspace.loadPackages()
+  const deps = workspace.getDepNames()
 
   const rulesMap = new Map<string, CatalogRule>()
   const rules = options.catalogRules?.length ? options.catalogRules : DEFAULT_CATALOG_RULES

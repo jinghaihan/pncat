@@ -1,6 +1,5 @@
-import type { PnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import type { CatalogManager } from '../catalog-manager'
 import type { CatalogOptions, PackageJsonMeta, ParsedSpec, RawDep } from '../types'
+import type { Workspace } from '../workspace-manager'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
@@ -10,8 +9,7 @@ import { parseSpec, sortSpecs } from './specifier'
 
 interface ResolveContext {
   options: CatalogOptions
-  catalogManager: CatalogManager
-  workspaceYaml?: PnpmWorkspaceYaml
+  workspace: Workspace
 }
 
 interface ResolveResult {
@@ -25,8 +23,8 @@ interface ResolveResult {
  * Resolve the dependencies to add
  */
 export async function resolveAdd(args: string[], context: ResolveContext): Promise<ResolveResult> {
-  const { options, workspaceYaml, catalogManager } = context
-  await catalogManager.loadPackages()
+  const { options, workspace } = context
+  await workspace.loadPackages()
 
   const { deps, isDev } = parseCommandOptions(args)
   if (!deps.length) {
@@ -35,8 +33,8 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
   }
 
   const parsed: ParsedSpec[] = deps.map(x => x.trim()).filter(Boolean).map(parseSpec)
-  const workspaceJson = workspaceYaml!.toJSON()
-  const workspacePackages: string[] = catalogManager.getWorkspacePackages()
+  const workspaceJson = await workspace.catalog.toJSON()
+  const workspacePackages: string[] = workspace.getWorkspacePackages()
 
   const createDep = (dep: ParsedSpec): RawDep => {
     return {
@@ -64,7 +62,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
       dep.specifierSource ||= 'user'
 
     if (!dep.specifier) {
-      const catalogs = workspaceYaml!.getPackageCatalogs(dep.name)
+      const catalogs = await workspace.catalog.getPackageCatalogs(dep.name)
       if (catalogs[0]) {
         dep.catalogName = catalogs[0]
         dep.specifierSource ||= 'catalog'
@@ -97,7 +95,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
     }
 
     if (!dep.catalogName) {
-      dep.catalogName = options.catalog || catalogManager.inferCatalogName(createDep(dep))
+      dep.catalogName = options.catalog || workspace.inferCatalogName(createDep(dep))
     }
   }
 
@@ -108,17 +106,17 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
  * Resolve the dependencies to clean
  */
 export async function resolveClean(context: ResolveContext): Promise<ResolveResult> {
-  const { catalogManager } = context
+  const { workspace } = context
 
-  const packages = await catalogManager.loadPackages()
+  const packages = await workspace.loadPackages()
   const dependencies: RawDep[] = []
 
   for (const pkg of packages) {
     if (pkg.type === 'package.json')
       continue
     for (const dep of pkg.deps) {
-      const resolvedDep = catalogManager.resolveDep(dep, false)
-      if (!catalogManager.isDepInPackage(resolvedDep)) {
+      const resolvedDep = workspace.resolveDep(dep, false)
+      if (!workspace.isDepInPackage(resolvedDep)) {
         dependencies.push(resolvedDep)
       }
     }
@@ -131,8 +129,8 @@ export async function resolveClean(context: ResolveContext): Promise<ResolveResu
  * Resolve the dependencies to migrate
  */
 export async function resolveMigrate(context: ResolveContext): Promise<ResolveResult> {
-  const { options, catalogManager } = context
-  const packages = await catalogManager.loadPackages()
+  const { options, workspace } = context
+  const packages = await workspace.loadPackages()
 
   const dependencies: Map<string, Map<string, RawDep[]>> = new Map()
   const updatedPackages: Map<string, PackageJsonMeta> = new Map()
@@ -156,13 +154,13 @@ export async function resolveMigrate(context: ResolveContext): Promise<ResolveRe
   }
 
   for (const pkg of packages) {
-    if (catalogManager.isCatalogPackage(pkg))
+    if (workspace.isCatalogPackage(pkg))
       continue
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue
 
-      const resolvedDep = catalogManager.resolveDep(dep)
+      const resolvedDep = workspace.resolveDep(dep)
       setDep(resolvedDep)
 
       if (resolvedDep.update)
@@ -237,10 +235,10 @@ export async function resolveConflict(dependencies: Map<string, Map<string, RawD
  * Resolve the dependencies to remove
  */
 export async function resolveRemove(args: string[], context: ResolveContext): Promise<ResolveResult> {
-  const { catalogManager } = context
-  await catalogManager.loadPackages()
+  const { workspace } = context
+  await workspace.loadPackages()
 
-  const commandOptions = catalogManager.getOptions()
+  const catalogOptions = workspace.getOptions()
 
   // must provide `--recursive` or `-r` to remove recursive
   const { deps, isRecursive } = parseCommandOptions(args)
@@ -249,22 +247,33 @@ export async function resolveRemove(args: string[], context: ResolveContext): Pr
     process.exit(1)
   }
 
-  const nonCatalogDeps: string[] = []
+  const filepath = await workspace.catalog.findWorkspaceFile()
+  if (!filepath) {
+    p.outro(c.red('no workspace file found'))
+    await runRemoveCommand(deps, {
+      cwd: process.cwd(),
+      packageManager: catalogOptions.packageManager,
+      recursive: isRecursive,
+    })
+    return { dependencies: [], updatedPackages: {} }
+  }
+
+  const unCatalogDeps: string[] = []
   const dependencies: RawDep[] = []
   const updatedPackages: Map<string, PackageJsonMeta> = new Map()
 
   for (const dep of deps) {
-    const packages = catalogManager.getDepPackages(dep)
+    const packages = workspace.getDepPackages(dep)
     if (!packages.length) {
       p.outro(c.red(`${dep} is not used in any package, aborting`))
       process.exit(1)
     }
 
-    let catalogPkgs = packages.filter(i => catalogManager.isCatalogPackageName(i))
+    let catalogPkgs = packages.filter(i => workspace.isCatalogPackageName(i))
 
     // remove it from the package.json
     if (catalogPkgs.length === 0) {
-      nonCatalogDeps.push(dep)
+      unCatalogDeps.push(dep)
     }
 
     // if found in multiple catalogs, select the catalog to remove it from
@@ -285,20 +294,20 @@ export async function resolveRemove(args: string[], context: ResolveContext): Pr
     }
 
     await Promise.all(catalogPkgs.map(async (catalog) => {
-      const rawDep = catalogManager.getCatalogDep(dep, catalog)
+      const rawDep = workspace.getCatalogDep(dep, catalog)
       if (rawDep) {
-        const { catalogDeletable } = await catalogManager.removePackageDep(dep, rawDep.catalogName, isRecursive, updatedPackages)
+        const { catalogDeletable } = await workspace.removePackageDep(dep, rawDep.catalogName, isRecursive, updatedPackages)
         if (catalogDeletable)
           dependencies.push(rawDep)
       }
     }))
   }
 
-  if (nonCatalogDeps.length) {
-    p.outro(c.yellow(`${nonCatalogDeps.join(', ')} is not used in any catalog`))
-    await runRemoveCommand(nonCatalogDeps, {
+  if (unCatalogDeps.length) {
+    p.outro(c.yellow(`${unCatalogDeps.join(', ')} is not used in any catalog`))
+    await runRemoveCommand(unCatalogDeps, {
       cwd: process.cwd(),
-      packageManager: commandOptions.packageManager,
+      packageManager: catalogOptions.packageManager,
       recursive: isRecursive,
     })
   }
@@ -313,7 +322,7 @@ export async function resolveRemove(args: string[], context: ResolveContext): Pr
  * Resolve the dependencies to revert
  */
 export async function resolveRevert(args: string[], context: ResolveContext): Promise<ResolveResult> {
-  const { catalogManager } = context
+  const { workspace } = context
 
   const { deps } = parseCommandOptions(args)
 
@@ -324,7 +333,7 @@ export async function resolveRevert(args: string[], context: ResolveContext): Pr
     return deps.includes(depName)
   }
 
-  const packages = await catalogManager.loadPackages()
+  const packages = await workspace.loadPackages()
   const dependencies: RawDep[] = []
   const updatedPackages: Map<string, PackageJsonMeta> = new Map()
 
@@ -337,13 +346,13 @@ export async function resolveRevert(args: string[], context: ResolveContext): Pr
   }
 
   for (const pkg of packages) {
-    if (catalogManager.isCatalogPackage(pkg))
+    if (workspace.isCatalogPackage(pkg))
       continue
     for (const dep of pkg.deps) {
       if (!depFilter(dep.name))
         continue
 
-      const resolvedDep = catalogManager.resolveDep(dep)
+      const resolvedDep = workspace.resolveDep(dep)
       dependencies.push(resolvedDep)
       setPackage(resolvedDep, pkg)
     }

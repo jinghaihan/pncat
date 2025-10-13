@@ -2,16 +2,16 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { CatalogManager } from '../catalog-manager'
 import { renderChanges } from '../utils/render'
 import { resolveMigrate } from '../utils/resolver'
+import { Workspace } from '../workspace-manager'
 
 export async function detectCommand(options: CatalogOptions) {
-  const catalogManager = new CatalogManager(options)
+  const workspace = new Workspace(options)
 
   const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
     options,
-    catalogManager,
+    workspace,
   })
   const deps = dependencies.filter(i => i.update)
 

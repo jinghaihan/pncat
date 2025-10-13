@@ -1,10 +1,13 @@
-import type { CatalogOptions, PackageJsonMeta, PackageMeta, RawDep, WorkspacePackageMeta } from './types'
+import type { CatalogHandler, CatalogOptions, PackageJsonMeta, PackageMeta, RawDep, WorkspacePackageMeta } from './types'
 import process from 'node:process'
 import { join } from 'pathe'
+import { createCatalogHandler } from './catalog-handler'
 import { loadPackages, readJSON } from './io/packages'
 import { inferCatalogName } from './utils/catalog'
 
-export class CatalogManager {
+export class Workspace {
+  public catalog: CatalogHandler
+
   private loaded: boolean = false
   private loadTask: Promise<PackageMeta[]> | null = null
 
@@ -19,6 +22,7 @@ export class CatalogManager {
 
   constructor(options: CatalogOptions) {
     this.options = options
+    this.catalog = createCatalogHandler(options)
   }
 
   /**
