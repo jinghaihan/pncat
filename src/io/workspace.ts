@@ -3,10 +3,10 @@ import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { findUp } from 'find-up'
+import { findUp } from 'find-up-simple'
 import { dirname, join, resolve } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import { WORKSPACE_DEFAULT_CONTENT, WORKSPACE_FILES } from '../constants'
+import { PACKAGE_MANAGER_LOCK_FILE, WORKSPACE_DEFAULT_CONTENT, WORKSPACE_FILES } from '../constants'
 import { parseDependency } from './dependencies'
 
 export async function findWorkspaceRoot(packageManager: PackageManager = 'pnpm'): Promise<string> {
@@ -29,8 +29,16 @@ export async function ensureWorkspaceYAML(packageManager: PackageManager = 'pnpm
   const workspaceFile = WORKSPACE_FILES[packageManager]
 
   if (!workspaceYamlPath) {
-    const root = await findUp(['.git', 'pnpm-lock.yaml', 'yarn.lock'], { cwd: process.cwd() })
-      .then(r => r ? dirname(r) : process.cwd())
+    let root = await findUp('.git', { cwd: process.cwd() })
+    if (root) {
+      root = dirname(root)
+    }
+    else {
+      const lockFile = PACKAGE_MANAGER_LOCK_FILE[packageManager]
+      const lockPath = await findUp(lockFile, { cwd: process.cwd() })
+      root = lockPath ? dirname(lockPath) : process.cwd()
+    }
+
     p.log.warn(c.yellow(`no ${workspaceFile} found`))
 
     const result = await p.confirm({

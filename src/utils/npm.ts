@@ -63,10 +63,10 @@ export async function getLatestVersion(spec: string) {
     return version
   }
 
-  const fetch = await import('npm-registry-fetch')
-  const url = joinURL(fetch.pickRegistry(spec, npmConfigs), name)
+  const npmRegistryFetch = await import('npm-registry-fetch')
+  const url = joinURL(npmRegistryFetch.pickRegistry(spec, npmConfigs), name)
 
-  const { 'dist-tags': { latest } } = await fetch.json(url, {
+  const { 'dist-tags': { latest } } = await npmRegistryFetch.json(url, {
     ...npmConfigs,
     headers: {
       headers: {

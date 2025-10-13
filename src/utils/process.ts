@@ -2,7 +2,7 @@ import type { CatalogOptions, HookFunction } from '../types'
 import process from 'node:process'
 import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
-import { execa } from 'execa'
+import { x } from 'tinyexec'
 
 export interface PackageManagerCommandOptions extends Pick<CatalogOptions, 'packageManager' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
@@ -82,7 +82,12 @@ export async function runInstallCommand(options: PackageManagerCommandOptions = 
   const { packageManager = 'pnpm', cwd = process.cwd(), stdio = 'inherit', silent = false } = options
   if (!silent)
     p.outro(`running ${packageManager} install`)
-  await execa(packageManager, ['install'], { stdio, cwd })
+  await x(packageManager, ['install'], {
+    nodeOptions: {
+      cwd,
+      stdio,
+    },
+  })
 }
 
 /**
@@ -98,7 +103,12 @@ export async function runRemoveCommand(dependencies: string[], options: PackageM
   if (recursive)
     args.push('--recursive')
 
-  await execa(packageManager, args, { stdio, cwd })
+  await x(packageManager, args, {
+    nodeOptions: {
+      cwd,
+      stdio,
+    },
+  })
 }
 
 export async function runHooks(hooks: string | HookFunction | Array<string | HookFunction>, options: { cwd?: string } = {}) {
@@ -108,7 +118,13 @@ export async function runHooks(hooks: string | HookFunction | Array<string | Hoo
     try {
       if (typeof hook === 'string') {
         p.log.info(`running hook: ${hook}`)
-        await execa(hook, { shell: true, stdio: 'inherit', cwd })
+        await x(hook, [], {
+          nodeOptions: {
+            cwd,
+            stdio: 'inherit',
+            shell: true,
+          },
+        })
       }
       else if (typeof hook === 'function') {
         p.log.info('running custom hook function')

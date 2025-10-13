@@ -72,3 +72,8 @@ export const WORKSPACE_DEFAULT_CONTENT: Record<PackageManager, string> = {
   pnpm: 'packages: []',
   yarn: 'defaultProtocol: "npm:"',
 }
+
+export const PACKAGE_MANAGER_LOCK_FILE: Record<PackageManager, string> = {
+  pnpm: 'pnpm-lock.yaml',
+  yarn: 'yarn.lock',
+}

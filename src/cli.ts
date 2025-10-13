@@ -4,13 +4,13 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
-import { name, version } from '../package.json'
+import pkgJson from '../package.json'
 import { addCommand, cleanCommand, detectCommand, initCommand, migrateCommand, removeCommand, revertCommand } from './commands'
 import { resolveConfig } from './config'
 import { MODE_CHOICES } from './constants'
 
 try {
-  const cli: CAC = cac(name)
+  const cli: CAC = cac(pkgJson.name)
 
   cli
     .command('[mode]', 'Enhanced pnpm/yarn catalogs management with advanced workspace dependency control')
@@ -34,7 +34,7 @@ try {
         options.mode = mode
       }
 
-      p.intro(`${c.yellow`${name} `}${c.dim`v${version}`}`)
+      p.intro(`${c.yellow`${pkgJson.name} `}${c.dim`v${pkgJson.version}`}`)
       const config = await resolveConfig(options)
 
       switch (config.mode) {
@@ -63,7 +63,7 @@ try {
     })
 
   cli.help()
-  cli.version(version)
+  cli.version(pkgJson.version)
   cli.parse()
 }
 catch (error) {
