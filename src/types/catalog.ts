@@ -1,7 +1,9 @@
+import type { Workspace } from '../workspace-manager'
 import type { CatalogOptions } from './core'
-import type { PackageMeta, RawDep, WorkspaceSchema } from './meta'
+import type { RawDep, WorkspaceSchema } from './meta'
 
 export interface CatalogHandler {
+  readonly workspace: Workspace
   readonly options: CatalogOptions
 
   /**
@@ -68,6 +70,6 @@ export interface CatalogHandler {
   /**
    * Update the workspace overrides
    */
-  updateWorkspaceOverrides?: (packages: PackageMeta[]) => Promise<void>
+  updateWorkspaceOverrides?: () => Promise<void>
 
 }

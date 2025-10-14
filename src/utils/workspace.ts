@@ -8,8 +8,8 @@ import { basename, join } from 'pathe'
 import tildify from 'tildify'
 import { DEPS_FIELDS, WORKSPACE_META } from '../constants'
 import { readJSON, writeJSON } from '../io/packages'
+import { diffHighlight } from './diff'
 import { runHooks, runInstallCommand } from './process'
-import { diffYAML } from './yaml'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
   workspace: Workspace
@@ -17,6 +17,7 @@ export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbo
   bailout?: boolean
   confirmMessage?: string
   completeMessage?: string
+  showDiff?: boolean
 }
 
 export async function confirmWorkspaceChanges(modifier: () => Promise<void>, options: ConfirmationOptions) {
@@ -28,36 +29,36 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
     bailout = true,
     confirmMessage = 'continue?',
     completeMessage,
+    showDiff = true,
   } = options ?? {}
 
   const catalogOptions = workspace.getOptions()
-  const workspaceFile = WORKSPACE_META[catalogOptions.packageManager || 'pnpm'].workspaceFile
+  const workspaceType = WORKSPACE_META[catalogOptions.packageManager || 'pnpm'].type
 
   const rawContent = await workspace.catalog.toString()
 
   await modifier()
   // update pnpm-workspace.yaml overrides
   if (catalogOptions.packageManager === 'pnpm') {
-    const packages = await workspace.loadPackages()
-    await workspace.catalog.updateWorkspaceOverrides?.(packages)
+    await workspace.catalog.updateWorkspaceOverrides?.()
   }
 
   const content = await workspace.catalog.toString()
 
   if (rawContent === content) {
     if (bailout) {
-      p.outro(c.yellow(`no changes to ${workspaceFile}`))
+      p.outro(c.yellow(`no changes to ${workspaceType}`))
       process.exit(0)
     }
     else {
-      p.log.info(c.green(`no changes to ${workspaceFile}`))
+      p.log.info(c.green(`no changes to ${workspaceType}`))
     }
   }
 
-  const diff = diffYAML(rawContent, content, { verbose })
+  const filepath = await workspace.catalog.getWorkspacePath()
+  const diff = diffHighlight(rawContent, content, { verbose })
 
-  if (diff) {
-    const filepath = await workspace.catalog.getWorkspacePath()
+  if (showDiff && diff) {
     p.note(c.reset(diff), c.dim(tildify(filepath)))
     if (!yes) {
       const result = await p.confirm({ message: confirmMessage })
@@ -66,12 +67,15 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
         process.exit(1)
       }
     }
-    p.log.info(`writing ${basename(filepath)}`)
-    await workspace.catalog.writeWorkspace()
   }
 
   if (updatedPackages)
     await writePackageJSONs(updatedPackages!)
+
+  if (diff) {
+    p.log.info(`writing ${basename(filepath)}`)
+    await workspace.catalog.writeWorkspace()
+  }
 
   if (catalogOptions.postRun) {
     await runHooks(catalogOptions.postRun, { cwd: workspace.getCwd() })

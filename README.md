@@ -5,7 +5,7 @@
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> and <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> <code>catalog:</code> management with advanced workspace dependency control.
+Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> · <samp><b>[bun](https://bun.sh/docs/install/catalogs)</b></samp> <code>catalog:</code> management with advanced workspace dependency control.
 
 ```bash
 pnpm add -D pncat
@@ -34,7 +34,7 @@ pncat init
 Initialize your workspace with an optimized configuration file. Analyzes your current workspace dependencies and generates tailored rules for better project visibility.
 
 <p align='center'>
-<img src='./assets/setup.png' width='600' />
+<img src='./assets/init.png' width='600' />
 </p>
 
 ### Detect
@@ -58,7 +58,7 @@ pncat migrate
 > [!NOTE]
 > To update catalog groups according to rules, run `pncat migrate -f`, or do a clean migration with `pncat revert` → `pncat migrate`.
 
-Automatically groups dependencies by rules (e.g., lint, test, utils), updating both `pnpm-workspace.yaml/.yarnrc.yml` and relevant `package.json`.
+Automatically groups dependencies by rules (e.g., lint, test, utils), updating both workspace catalog configuration and relevant `package.json`.
 
 Default rules can be found in `src/rules.ts`. To customize rules, create a `pncat.config.ts` file in the root directory.
 
@@ -86,7 +86,7 @@ You can specify a catalog name using `--catalog name`. When no catalog is specif
 pncat remove dep
 ```
 
-Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both `pnpm-workspace.yaml/.yarnrc.yml` and `package.json`.
+Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both workspace catalog configuration and `package.json`.
 
 To remove a dependency from all packages in the monorepo, you can use `pnpm remove dep -r` or `pnpm remove dep --recursive` to recursively remove the dependency from all workspace packages.
 
@@ -100,7 +100,7 @@ To remove a dependency from all packages in the monorepo, you can use `pnpm remo
 pncat clean
 ```
 
-Find unused catalog dependencies and remove them from `pnpm-workspace.yaml/.yarnrc.yml`.
+Find unused catalog dependencies and remove them from workspace catalog configuration.
 
 <p align='center'>
 <img src='./assets/clean.png' width='600' />
@@ -188,13 +188,13 @@ For monorepo repositories, maintaining consistent dependency versions across mul
 
 Currently, pnpm's catalog support is limited. For example, there is no built-in feature for adding or migrating dependencies into specific groups. Managing the catalog manually across the entire project can be time-consuming and error-prone. To address this, pncat was developed.
 
-Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the `pnpm-workspace.yaml` file. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
+Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the workspace catalog configuration. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
 
 ## Inspiration
 
 This project is inspired by and builds upon the excellent work of the following projects:
 
-- [taze](https://github.com/antfu-collective/taze) - provided essential monorepo I/O utilities for reading and parsing `pnpm-workspace.yaml` and `package.json` files across workspace packages
+- [taze](https://github.com/antfu-collective/taze) - provided essential monorepo I/O utilities for reading and parsing workspace configuration and `package.json` files across workspace packages
 - [@antfu/nip](https://github.com/antfu/nip) - inspired the interactive prompts and user experience design for dependency management workflows
 
 Special thanks to [@antfu](https://github.com/antfu) for his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) which provided great inspiration and guidance during the development of this tool.

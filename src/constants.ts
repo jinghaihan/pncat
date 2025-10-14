@@ -12,6 +12,7 @@ export const DEPS_FIELDS = [
   'overrides',
   'pnpm-workspace',
   'yarn-workspace',
+  'bun-workspace',
 ] as const
 
 export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
@@ -24,6 +25,7 @@ export const DEPENDENCIES_TYPE_SHORT_MAP: Record<DepType, string> = {
   'pnpm.overrides': 'pnpm-overrides',
   'pnpm-workspace': 'pnpm-workspace',
   'yarn-workspace': 'yarn-workspace',
+  'bun-workspace': 'bun-workspace',
 }
 
 export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
@@ -61,17 +63,22 @@ export const DEP_TYPE_GROUP_NAME_MAP: Partial<Record<DepType, string>> = {
   optionalDependencies: 'optional',
 }
 
-export const PACKAGE_MANAGERS = ['pnpm', 'yarn'] as const
+export const PACKAGE_MANAGERS = ['pnpm', 'yarn', 'bun'] as const
 
 export const WORKSPACE_META: Record<PackageManager, WorkspaceMeta> = {
   pnpm: {
-    workspaceFile: 'pnpm-workspace.yaml',
+    type: 'pnpm-workspace.yaml',
     lockFile: 'pnpm-lock.yaml',
-    yamlContent: 'packages: []',
+    defaultContent: 'packages: []',
   },
   yarn: {
-    workspaceFile: '.yarnrc.yml',
+    type: '.yarnrc.yml',
     lockFile: 'yarn.lock',
-    yamlContent: 'defaultProtocol: "npm:"',
+    defaultContent: 'defaultProtocol: "npm:"',
+  },
+  bun: {
+    type: 'bun-workspace',
+    lockFile: 'bun.lockb',
+    defaultContent: '',
   },
 }

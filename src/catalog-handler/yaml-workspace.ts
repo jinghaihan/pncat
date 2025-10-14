@@ -1,4 +1,5 @@
 import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema, WorkspaceYaml } from '../types'
+import type { Workspace } from '../workspace-manager'
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
@@ -9,30 +10,33 @@ import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { WORKSPACE_META } from '../constants'
 
 export class YamlCatalog implements CatalogHandler {
+  public workspace: Workspace
   public options: CatalogOptions
+  public packageManager: 'pnpm' | 'yarn'
 
   private workspaceYaml: WorkspaceYaml | null = null
   private workspaceYamlPath: string | null = null
 
-  constructor(options: CatalogOptions) {
-    this.options = options
+  constructor(workspace: Workspace) {
+    this.options = workspace.getOptions()
+    this.packageManager = (this.options.packageManager || 'pnpm') as 'pnpm' | 'yarn'
+    this.workspace = workspace
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.options.packageManager === 'pnpm')
+    if (this.packageManager === 'pnpm')
       return await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
-    if (this.options.packageManager === 'yarn')
+    if (this.packageManager === 'yarn')
       return await findUp('.yarnrc.yml', { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
-    const packageManager = this.options.packageManager ?? 'pnpm'
-    const workspaceMeta = WORKSPACE_META[packageManager]
+    const workspaceMeta = WORKSPACE_META[this.packageManager]
 
-    let workspaceYamlPath = await this.findWorkspaceFile()
-    const workspaceFile = workspaceMeta.workspaceFile
+    let filepath = await this.findWorkspaceFile()
+    const workspaceFile = workspaceMeta.type
 
-    if (!workspaceYamlPath) {
+    if (!filepath) {
       let root = await findUp('.git', { cwd: process.cwd() })
       if (root) {
         root = dirname(root)
@@ -53,12 +57,12 @@ export class YamlCatalog implements CatalogHandler {
         process.exit(1)
       }
 
-      workspaceYamlPath = join(root, workspaceFile)
-      await writeFile(workspaceYamlPath, workspaceMeta.yamlContent)
+      filepath = join(root, workspaceFile)
+      await writeFile(filepath, workspaceMeta.defaultContent)
     }
 
-    this.workspaceYaml = parsePnpmWorkspaceYaml(await readFile(workspaceYamlPath, 'utf-8'))
-    this.workspaceYamlPath = workspaceYamlPath
+    this.workspaceYaml = parsePnpmWorkspaceYaml(await readFile(filepath, 'utf-8'))
+    this.workspaceYamlPath = filepath
   }
 
   async toJSON(): Promise<WorkspaceSchema> {
@@ -98,11 +102,8 @@ export class YamlCatalog implements CatalogHandler {
   }
 
   async generateCatalogs(deps: RawDep[]) {
+    await this.clearCatalogs()
     const workspaceYaml = await this.getWorkspaceYaml()
-
-    const document = workspaceYaml.getDocument()
-    document.deleteIn(['catalog'])
-    document.deleteIn(['catalogs'])
 
     const catalogs: Record<string, Record<string, string>> = {}
     for (const dep of deps) {
@@ -167,9 +168,9 @@ export class YamlCatalog implements CatalogHandler {
 
   async writeWorkspace() {
     const workspaceYaml = await this.getWorkspaceYaml()
-    const workspaceYamlPath = await this.getWorkspacePath()
+    const filepath = await this.getWorkspacePath()
 
-    await writeFile(workspaceYamlPath, workspaceYaml.toString(), 'utf-8')
+    await writeFile(filepath, workspaceYaml.toString(), 'utf-8')
   }
 
   async getWorkspaceYaml(): Promise<WorkspaceYaml> {

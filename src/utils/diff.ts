@@ -1,12 +1,12 @@
 import c from 'ansis'
 import { diffLines } from 'diff'
 
-interface DiffYAMLOptions {
+interface DiffHighlightOptions {
   indentSize?: number
   verbose?: boolean
 }
 
-function highlightYAMLContent(content: string, indentSize: number = 2, highlight: boolean = false): string {
+function highlight(content: string, indentSize: number = 2, highlight: boolean = false): string {
   if (content.trim() === '') {
     return content
   }
@@ -42,7 +42,7 @@ function highlightYAMLContent(content: string, indentSize: number = 2, highlight
   }
 }
 
-export function diffYAML(original: string, updated: string, options: DiffYAMLOptions = {}) {
+export function diffHighlight(original: string, updated: string, options: DiffHighlightOptions = {}) {
   const { indentSize = 2, verbose = false } = options
 
   const changed = diffLines(original, updated, {
@@ -168,16 +168,16 @@ export function diffYAML(original: string, updated: string, options: DiffYAMLOpt
 
       let coloredLine = line.content
       if (line.type === 'added') {
-        const highlightedContent = highlightYAMLContent(line.content, indentSize, verbose)
-        coloredLine = c.green(`+ ${highlightedContent}`)
+        const highlighted = highlight(line.content, indentSize, verbose)
+        coloredLine = c.green(`+ ${highlighted}`)
       }
       else if (line.type === 'removed') {
-        const highlightedContent = highlightYAMLContent(line.content, indentSize, verbose)
-        coloredLine = c.red(`- ${highlightedContent}`)
+        const highlighted = highlight(line.content, indentSize, verbose)
+        coloredLine = c.red(`- ${highlighted}`)
       }
       else {
-        const highlightedContent = highlightYAMLContent(line.content, indentSize, verbose)
-        coloredLine = `  ${highlightedContent}`
+        const highlighted = highlight(line.content, indentSize, verbose)
+        coloredLine = `  ${highlighted}`
       }
 
       result.push(coloredLine)

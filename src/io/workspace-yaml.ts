@@ -7,7 +7,7 @@ import { parseDependency } from './dependencies'
 
 export async function loadWorkspaceYaml(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<WorkspacePackageMeta[]> {
   const { packageManager = 'pnpm' } = options
-  const workspaceFile = WORKSPACE_META[packageManager].workspaceFile
+  const type = WORKSPACE_META[packageManager].type
 
   const filepath = resolve(options.cwd ?? '', relative)
   const rawText = await readFile(filepath, 'utf-8')
@@ -32,7 +32,7 @@ export async function loadWorkspaceYaml(relative: string, options: CatalogOption
       name,
       private: true,
       version: '',
-      type: workspaceFile,
+      type,
       relative,
       filepath,
       raw,

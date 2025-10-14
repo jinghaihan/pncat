@@ -22,7 +22,7 @@ export class Workspace {
 
   constructor(options: CatalogOptions) {
     this.options = options
-    this.catalog = createCatalogHandler(options)
+    this.catalog = createCatalogHandler(this)
   }
 
   /**
@@ -200,7 +200,7 @@ export class Workspace {
    * Check if a specifier is a catalog package name
    */
   isCatalogPackageName(pkgName: string): boolean {
-    return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:')
+    return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:') || pkgName.startsWith('bun-catalog:')
   }
 
   isPnpmOverridesPackageName(pkgName: string): boolean {
@@ -215,6 +215,7 @@ export class Workspace {
       return pkgName
         .replace('pnpm-catalog:', '')
         .replace('yarn-catalog:', '')
+        .replace('bun-catalog:', '')
     }
 
     return ''
@@ -261,6 +262,13 @@ export class Workspace {
     const yarnPkgName = `yarn-catalog:${dep.catalogName}`
     if (pkgs.has(yarnPkgName)) {
       const catalogDep = pkgs.get(yarnPkgName)!
+      return { ...dep, specifier: catalogDep.specifier }
+    }
+
+    // bun catalog
+    const bunPkgName = `bun-catalog:${dep.catalogName}`
+    if (pkgs.has(bunPkgName)) {
+      const catalogDep = pkgs.get(bunPkgName)!
       return { ...dep, specifier: catalogDep.specifier }
     }
 
@@ -362,6 +370,6 @@ export class Workspace {
   }
 
   isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml'
+    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml' || pkg.type === 'bun-workspace'
   }
 }

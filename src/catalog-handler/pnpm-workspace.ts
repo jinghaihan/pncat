@@ -1,9 +1,10 @@
-import type { PackageMeta, WorkspaceSchema } from '../types'
+import type { WorkspaceSchema } from '../types'
 import { createCatalogIndex } from '../utils/helper'
 import { YamlCatalog } from './yaml-workspace'
 
 export class PnpmCatalog extends YamlCatalog {
-  async updateWorkspaceOverrides(packages: PackageMeta[]): Promise<void> {
+  async updateWorkspaceOverrides(): Promise<void> {
+    const packages = await this.workspace.loadPackages()
     const workspaceYaml = await this.getWorkspaceYaml()
 
     const overrides = packages.find(i => i.name === 'pnpm-workspace:overrides')

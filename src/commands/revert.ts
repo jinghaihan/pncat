@@ -47,7 +47,7 @@ export async function revertCommand(options: CatalogOptions) {
       async () => {
         await workspace.catalog.clearCatalogs()
       },
-      confirmationOptions,
+      { ...confirmationOptions, showDiff: false },
     )
   }
   else {

@@ -2,24 +2,28 @@ import type { CatalogOptions, DepFilter, PackageJson, PackageMeta } from '../typ
 import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
-import detectIndent from 'detect-indent'
+import detect from 'detect-indent'
 import { findUp } from 'find-up-simple'
 import { dirname, join, resolve } from 'pathe'
 import { glob } from 'tinyglobby'
 import { DEFAULT_IGNORE_PATHS } from '../constants'
 import { createDependenciesFilter } from '../utils/filter'
+import { loadBunWorkspace } from './bun-workspace'
 import { loadPackageJSON } from './package-json'
 import { loadPnpmWorkspace } from './pnpm-workspace'
 import { loadYarnWorkspace } from './yarn-workspace'
+
+export async function detectIndent(filepath: string) {
+  const content = await readFile(filepath, 'utf-8')
+  return detect(content).indent || '  '
+}
 
 export async function readJSON(filepath: string) {
   return JSON.parse(await readFile(filepath, 'utf-8'))
 }
 
 export async function writeJSON(filepath: string, data: PackageJson) {
-  const content = await readFile(filepath, 'utf-8')
-  const fileIndent = detectIndent(content).indent || '  '
-
+  const fileIndent = await detectIndent(filepath)
   return await writeFile(filepath, `${JSON.stringify(data, null, fileIndent)}\n`, 'utf-8')
 }
 
@@ -54,15 +58,15 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
         if (gitDir && dirname(gitDir) !== cwd)
           return []
 
+        // pnpm workspace
         if (packageManager === 'pnpm') {
-          // pnpm workspace
           const pnpmWorkspace = await findUp('pnpm-workspace.yaml', { cwd: absolute, stopAt: cwd })
           if (pnpmWorkspace && dirname(pnpmWorkspace) !== cwd)
             return []
         }
 
+        // yarn workspace
         if (packageManager === 'yarn') {
-          // yarn workspace
           const yarnWorkspace = await findUp('.yarnrc.yml', { cwd: absolute, stopAt: cwd })
           if (yarnWorkspace && dirname(yarnWorkspace) !== cwd)
             return []
@@ -79,8 +83,34 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
 export async function loadPackage(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<PackageMeta[]> {
   if (relative.endsWith('pnpm-workspace.yaml'))
     return loadPnpmWorkspace(relative, options, shouldCatalog)
+
   if (relative.endsWith('.yarnrc.yml'))
     return loadYarnWorkspace(relative, options, shouldCatalog)
+
+  // Check if this package.json contains Bun workspaces with catalogs
+  if (relative.endsWith('package.json')) {
+    const filepath = resolve(options.cwd ?? '', relative)
+    try {
+      const packageJsonRaw = await readJSON(filepath)
+      const workspaces = packageJsonRaw?.workspaces
+
+      // Only process Bun catalogs if we detect Bun is being used
+      if (workspaces && (workspaces.catalog || workspaces.catalogs)) {
+        const cwd = resolve(options.cwd || process.cwd())
+        const hasBunLock = existsSync(join(cwd, 'bun.lockb')) || existsSync(join(cwd, 'bun.lock'))
+
+        if (hasBunLock) {
+          const bunWorkspaces = await loadBunWorkspace(relative, options, shouldCatalog)
+          const packageJson = await loadPackageJSON(relative, options, shouldCatalog)
+          return [...bunWorkspaces, ...packageJson]
+        }
+      }
+    }
+    catch {
+      // Safe guard: If we can't read the file, fall back to normal package.json loading
+    }
+  }
+
   return loadPackageJSON(relative, options, shouldCatalog)
 }
 

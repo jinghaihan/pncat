@@ -7,8 +7,6 @@ export type DepType = typeof DEPS_FIELDS[number]
 
 export type PackageManager = typeof PACKAGE_MANAGERS[number]
 
-export type WorkspaceFile = 'pnpm-workspace.yaml' | '.yarnrc.yml'
-
 export type DepFieldOptions = Partial<Record<DepType, boolean>>
 
 export type DepFilter = (name: string, specifier: string) => boolean

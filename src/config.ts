@@ -1,4 +1,4 @@
-import type { CatalogOptions } from './types'
+import type { CatalogOptions, PackageManager } from './types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
@@ -44,7 +44,7 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
     const packageManager = await detect({ cwd: merged.cwd })
     merged.packageManager = (packageManager?.name || 'pnpm') as CatalogOptions['packageManager']
   }
-  if (!PACKAGE_MANAGERS.includes(merged.packageManager as any)) {
+  if (!PACKAGE_MANAGERS.includes(merged.packageManager as PackageManager)) {
     p.outro(c.red(`Unsupported package manager: ${merged.packageManager}`))
     process.exit(1)
   }

@@ -1,8 +1,4 @@
-/**
- * TypeScript definitions for package.json
- * Adapted from unjs/pkg-types
- * @see https://github.com/unjs/pkg-types/blob/main/src/packagejson/types.ts
- */
+// ported from: https://github.com/unjs/pkg-types/blob/main/src/packagejson/types.ts
 
 export interface PackageJson {
   /**
@@ -212,6 +208,13 @@ export interface PackageJson {
        * - https://classic.yarnpkg.com/blog/2018/02/15/nohoist/
        */
       nohoist?: string[]
+
+      /**
+       * Docs:
+       * - https://bun.sh/docs/install/catalogs
+       */
+      catalog?: Record<string, string>
+      catalogs?: Record<string, Record<string, string>>
     }
 
   /**
