@@ -44,7 +44,7 @@
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
     "test": "vitest",
-    "release": "bumpp && pnpm publish --no-git-checks",
+    "release": "bumpp",
     "bootstrap": "pnpm install",
     "prepare": "npx simple-git-hooks",
     "preinstall": "npx only-allow pnpm",
