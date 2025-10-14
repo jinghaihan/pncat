@@ -100,6 +100,6 @@ export interface ParsedSpec {
 
 export interface WorkspaceMeta {
   type: WorkspaceType
-  lockFile: string
+  lockFile: string | string[]
   defaultContent: string
 }

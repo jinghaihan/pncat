@@ -5,9 +5,10 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { findUp } from 'find-up-simple'
-import { dirname, join } from 'pathe'
+import { join } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { WORKSPACE_META } from '../constants'
+import { findWorkspaceRoot } from '../io/workspace'
 
 export class YamlCatalog implements CatalogHandler {
   public workspace: Workspace
@@ -37,16 +38,7 @@ export class YamlCatalog implements CatalogHandler {
     const workspaceFile = workspaceMeta.type
 
     if (!filepath) {
-      let root = await findUp('.git', { cwd: process.cwd() })
-      if (root) {
-        root = dirname(root)
-      }
-      else {
-        const lockFile = workspaceMeta.lockFile
-        const lockPath = await findUp(lockFile, { cwd: process.cwd() })
-        root = lockPath ? dirname(lockPath) : process.cwd()
-      }
-
+      const root = await findWorkspaceRoot(this.packageManager)
       p.log.warn(c.yellow(`no ${workspaceFile} found`))
 
       const result = await p.confirm({

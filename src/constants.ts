@@ -78,7 +78,7 @@ export const WORKSPACE_META: Record<PackageManager, WorkspaceMeta> = {
   },
   bun: {
     type: 'bun-workspace',
-    lockFile: 'bun.lockb',
+    lockFile: ['bun.lockb', 'bun.lock'],
     defaultContent: '',
   },
 }
