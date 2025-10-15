@@ -33,7 +33,11 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('express'), config)).toBe('backend')
     expect(inferCatalogName(createDep('@vueuse/core'), config)).toBe('utils')
     expect(inferCatalogName(createDep('pathe'), config)).toBe('node')
+    expect(inferCatalogName(createDep('cli-spinner'), config)).toBe('node')
     expect(inferCatalogName(createDep('typeorm'), config)).toBe('database')
+
+    expect(inferCatalogName(createDep('@types/vscode'), config)).toBe('types')
+    expect(inferCatalogName(createDep('reactive-vscode'), config)).toBe('vscode')
   })
 
   it('should name with catalog rules order', () => {
@@ -53,7 +57,8 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('tsc')
     expect(inferCatalogName(createDep('babel-core', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
     expect(inferCatalogName(createDep('node-pty', '^1.0.0', 'optionalDependencies'), config)).toBe('optional')
-    expect(inferCatalogName(createDep('vsce', '^1.0.0', 'resolutions'), config)).toBe('default')
+    expect(inferCatalogName(createDep('vsce', '^1.0.0', 'resolutions'), config)).toBe('cli')
+    expect(inferCatalogName(createDep('ffmpeg', '^1.0.0', 'resolutions'), config)).toBe('default')
   })
 
   it('specifier rules should work', () => {

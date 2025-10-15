@@ -8,6 +8,7 @@ import c from 'ansis'
 import { join } from 'pathe'
 import { DEFAULT_CATALOG_RULES } from '../rules'
 import { isDepMatched } from '../utils/catalog'
+import { containsVSCodeExtension } from '../utils/vscode'
 import { Workspace } from '../workspace-manager'
 
 export async function initCommand(options: CatalogOptions) {
@@ -25,7 +26,7 @@ export async function initCommand(options: CatalogOptions) {
     }
   }
 
-  await workspace.loadPackages()
+  const packages = await workspace.loadPackages()
   const deps = workspace.getDepNames()
 
   const rulesMap = new Map<string, CatalogRule>()
@@ -101,11 +102,12 @@ export async function initCommand(options: CatalogOptions) {
     `import { defineConfig } from 'pncat'`,
     ``,
     `export default defineConfig({`,
+    containsVSCodeExtension(packages) ? `  exclude: ['@types/vscode'],` : '',
     `  catalogRules: [`,
     catalogRulesContent,
     `  ],`,
     `})`,
-  ].join('\n')
+  ].filter((line, index) => index === 1 || Boolean(line)).join('\n')
 
   p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `📋 Found ${c.yellow(catalogRules.length)} rules match current workspace`)
   if (!options.yes) {

@@ -9,7 +9,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'monorepo',
-    match: [/lerna/, /nx/, /turbo/],
+    match: [/lerna/, /turbo/, 'nx'],
     priority: 20,
   },
   {
@@ -28,7 +28,10 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /commitizen/,
       /cz-git/,
       /czg/,
+      /ovsx/,
+      /vsce/,
       /pncat/,
+      /vsxpub/,
     ],
     priority: 20,
   },
@@ -84,7 +87,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'network',
-    match: [/websocket/, /ws/, /axios/, /fetch/, /qs/],
+    match: [/axios/, /undici/, /fetch/, /websocket/, 'ws', 'qs'],
     priority: 50,
   },
   {
@@ -94,7 +97,17 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'markdown',
-    match: [/markdown-it/, /markdown/, /turndown/],
+    match: [/markdown/, /turndown/],
+    priority: 50,
+  },
+  {
+    name: 'vscode',
+    match: [/vscode/],
+    priority: 50,
+  },
+  {
+    name: 'raycast',
+    match: [/raycast/],
     priority: 50,
   },
   {
@@ -122,6 +135,8 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /cheerio/,
       /deepmerge/,
       /defu/,
+      /p-limit/,
+      /lru-cache/,
       /utils/,
       /use/,
     ],
@@ -130,13 +145,15 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'node',
     match: [
-      /cac/,
-      /synckit/,
+      'cac',
+      'synckit',
+      'consola',
+      'unconfig',
+      'tildify',
+      'restore-cursor',
       /rimraf/,
       /ora/,
-      /consola/,
       /chalk/,
-      /unconfig/,
       /env/,
       /path/,
       /exec/,
@@ -144,6 +161,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /resolve/,
       /ansi/,
       /prompts/,
+      /cli-/,
       /find-/,
       /fs(?=-)|(?<=-)fs/,
       /pkg(?=-)|(?<=-)pkg/,
