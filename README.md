@@ -11,13 +11,19 @@ Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn]
 pnpm add -D pncat
 ```
 
-- **Init** - Initialize configuration with optimized rules
-- **Detect** - Scan workspace to identify catalogable dependencies
-- **Migrate** - Automatically group dependencies by rules
-- **Add** - Install dependencies with catalog support
-- **Remove** - Safely remove dependencies with catalog awareness
-- **Clean** - Find and remove unused catalog dependencies
-- **Revert** - Revert cataloged dependencies to package.json
+<samp><b>🚀 Init</b></samp> - Initialize configuration with optimized rules
+
+<samp><b>🔍 Detect</b></samp> - Scan workspace to identify catalogable dependencies
+
+<samp><b>📦 Migrate</b></samp> - Automatically group dependencies by rules
+
+<samp><b>➕ Add</b></samp> - Install dependencies with catalog and workspace support
+
+<samp><b>➖ Remove</b></samp> - Safely remove dependencies and worksspace catalogs
+
+<samp><b>🧹 Clean</b></samp> - Find and remove unused catalog entries
+
+<samp><b>↩️ Revert</b></samp> - Revert cataloged dependencies to package.json
 
 <p align='center'>
 <img src='./assets/help.png' />
@@ -70,6 +76,8 @@ Default rules can be found in `src/rules.ts`. To customize rules, create a `pnca
 
 ```bash
 pncat add dep
+pncat install dep
+pncat i dep
 ```
 
 Add dependencies with prompts and catalogs support (credit to [@antfu/nip](https://github.com/antfu/nip)). It also supports adding monorepo workspace packages using the `workspace:` protocol.
@@ -84,6 +92,9 @@ You can specify a catalog name using `--catalog name`. When no catalog is specif
 
 ```bash
 pncat remove dep
+pncat rm dep
+pncat uninstall dep
+pncat un dep
 ```
 
 Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both workspace catalog configuration and `package.json`.

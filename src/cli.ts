@@ -7,7 +7,7 @@ import { cac } from 'cac'
 import pkgJson from '../package.json'
 import { addCommand, cleanCommand, detectCommand, initCommand, migrateCommand, removeCommand, revertCommand } from './commands'
 import { resolveConfig } from './config'
-import { MODE_CHOICES } from './constants'
+import { ADD_MODE_ALIAS, MODE_CHOICES, REMOVE_MODE_ALIAS } from './constants'
 
 try {
   const cli: CAC = cac(pkgJson.name)
@@ -27,6 +27,11 @@ try {
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {
+        if (ADD_MODE_ALIAS.includes(mode))
+          mode = 'add'
+        else if (REMOVE_MODE_ALIAS.includes(mode))
+          mode = 'remove'
+
         if (!MODE_CHOICES.includes(mode)) {
           console.error(`Invalid mode: ${mode}. Please use one of the following: ${MODE_CHOICES.join(', ')}`)
           process.exit(1)
