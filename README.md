@@ -1,4 +1,4 @@
-# pncat
+# <samp><b>pncat</b></samp>
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
@@ -11,27 +11,21 @@ Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn]
 pnpm add -D pncat
 ```
 
-<samp><b>🚀 Init</b></samp> - Initialize configuration with optimized rules
-
-<samp><b>🔍 Detect</b></samp> - Scan workspace to identify catalogable dependencies
-
-<samp><b>📦 Migrate</b></samp> - Automatically group dependencies by rules
-
-<samp><b>➕ Add</b></samp> - Install dependencies with catalog and workspace support
-
-<samp><b>➖ Remove</b></samp> - Safely remove dependencies and worksspace catalogs
-
-<samp><b>🧹 Clean</b></samp> - Find and remove unused catalog entries
-
-<samp><b>↩️ Revert</b></samp> - Revert cataloged dependencies to package.json
+- <samp><b>🚀 Init</b></samp> - Initialize configuration with optimized rules
+- <samp><b>🔍 Detect</b></samp> - Scan workspace to identify catalogable dependencies
+- <samp><b>📦 Migrate</b></samp> - Automatically group dependencies by rules
+- <samp><b>➕ Add</b></samp> - Install dependencies with catalog and workspace support
+- <samp><b>➖ Remove</b></samp> - Safely remove dependencies and worksspace catalogs
+- <samp><b>🧹 Clean</b></samp> - Find and remove unused catalog entries
+- <samp><b>↩️ Revert</b></samp> - Revert cataloged dependencies to package.json
 
 <p align='center'>
 <img src='./assets/help.png' />
 </p>
 
-## Usage
+## <samp><b>Usage</b></samp>
 
-### Init
+### <samp><b>Init</b></samp>
 
 ```bash
 pncat init
@@ -43,7 +37,7 @@ Initialize your workspace with an optimized configuration file. Analyzes your cu
 <img src='./assets/init.png' width='600' />
 </p>
 
-### Detect
+### <samp><b>Detect</b></samp>
 
 ```bash
 pncat detect
@@ -55,7 +49,7 @@ Scans your workspace to identify dependencies that could be moved to catalogs.
 <img src='./assets/detect.png' width='600' />
 </p>
 
-### Migrate
+### <samp><b>Migrate</b></samp>
 
 ```bash
 pncat migrate
@@ -72,7 +66,7 @@ Default rules can be found in `src/rules.ts`. To customize rules, create a `pnca
 <img src='./assets/migrate.png' width='600' />
 </p>
 
-### Add
+### <samp><b>Add</b></samp>
 
 ```bash
 pncat add dep
@@ -88,7 +82,7 @@ You can specify a catalog name using `--catalog name`. When no catalog is specif
 <img src='./assets/add.png' width='600' />
 </p>
 
-### Remove
+### <samp><b>Remove</b></samp>
 
 ```bash
 pncat remove dep
@@ -105,7 +99,7 @@ To remove a dependency from all packages in the monorepo, you can use `pnpm remo
 <img src='./assets/remove.png' width='600' />
 </p>
 
-### Clean
+### <samp><b>Clean</b></samp>
 
 ```bash
 pncat clean
@@ -117,7 +111,7 @@ Find unused catalog dependencies and remove them from workspace catalog configur
 <img src='./assets/clean.png' width='600' />
 </p>
 
-### Revert
+### <samp><b>Revert</b></samp>
 
 ```bash
 pncat revert
@@ -139,7 +133,7 @@ pncat revert dep
 <img src='./assets/revert-d.png' width='600' />
 </p>
 
-## Configuration
+## <samp><b>Configuration</b></samp>
 
 You can use `pncat init` to initialize a configuration file with optimized rules based on your current workspace, or create a `pncat.config.ts` file manually to customize catalog rules:
 
@@ -167,11 +161,11 @@ export default defineConfig({
     allowWildcards: false
   },
   // Hook to run after command completion (supports string commands, functions, or arrays)
-  postRun: 'eslint --fix .'
+  postRun: 'eslint --fix "**/package.json" "**/pnpm-workspace.yaml"'
 })
 ```
 
-**Catalog Rules:**
+<samp><b>Catalog Rules:</b></samp>
 - `name`: catalog name (required)
 - `match`: packages to include, supports RegExp (required)
 - `priority`: smaller numbers represent higher priority (optional)
@@ -181,7 +175,7 @@ export default defineConfig({
   - `name`: complete catalog name (takes priority over suffix)
   - `suffix`: catalog suffix (e.g., "legacy", "modern")
 
-**Specifier Options (optional):**
+<samp><b>Specifier Options (optional):</b></samp>
 - `skipComplexRanges`: Skip complex ranges like "||", "-", ">=" (default: true)
 - `skipRangeTypes`: Specific range types to skip (overrides skipComplexRanges)
   - `'||'`: Logical OR (e.g., "^3.0.0 || ^4.0.0")
@@ -193,7 +187,7 @@ export default defineConfig({
 - `allowPreReleases`: Allow beta/alpha/rc versions (default: true)
 - `allowWildcards`: Allow wildcard versions like "3.x", "*" (default: false)
 
-## Why pncat?
+## <samp><b>Why pncat?</b></samp>
 
 For monorepo repositories, maintaining consistent dependency versions across multiple packages is crucial. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project's structure.
 
@@ -201,7 +195,7 @@ Currently, pnpm's catalog support is limited. For example, there is no built-in 
 
 Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the workspace catalog configuration. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
 
-## Inspiration
+## <samp><b>Inspiration</b></samp>
 
 This project is inspired by and builds upon the excellent work of the following projects:
 
@@ -210,11 +204,11 @@ This project is inspired by and builds upon the excellent work of the following 
 
 Special thanks to [@antfu](https://github.com/antfu) for his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) which provided great inspiration and guidance during the development of this tool.
 
-## Related Projects
+## <samp><b>Related Projects</b></samp>
 
 + [eslint-plugin-pnpm-catalog](https://github.com/onmax/eslint-plugin-pnpm-catalog) by [@onmax](https://github.com/onmax) - ESLint plugin that enforces the use of named catalogs in pnpm workspaces
 
-## License
+## <samp><b>License</b></samp>
 
 [MIT](./LICENSE) License © [jinghaihan](https://github.com/jinghaihan)
 

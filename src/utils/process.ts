@@ -64,14 +64,19 @@ export function parseCommandOptions(args: string[]) {
   const isRecursive = ['--recursive', '-r'].some(i => args.includes(i))
   const isDev = ['--save-dev', '-D'].some(i => args.includes(i))
   const isOptional = ['--save-optional', '-O'].some(i => args.includes(i))
-  const isProd = ['--save-prod', '-P'].some(i => args.includes(i))
+  /**
+   * diffrent with pnpm --save-peer and --save-prod
+   * https://pnpm.io/cli/add
+   */
+  const isPeer = ['--save-peer', '-P'].some(i => args.includes(i))
+  const isProd = ['--save-prod'].some(i => args.includes(i))
 
   return {
     deps,
     isRecursive,
-    isDev,
-    isOptional,
-    isProd,
+    isDev: !isProd && isDev,
+    isOptional: !isProd && isOptional,
+    isPeer: !isProd && isPeer,
   }
 }
 

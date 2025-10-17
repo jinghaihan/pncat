@@ -3,6 +3,7 @@ import type { Workspace } from '../workspace-manager'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { getDepSource, normalizeCatalogName } from './helper'
 import { getLatestVersion } from './npm'
 import { parseCommandOptions, runRemoveCommand } from './process'
 import { parseSpec, sortSpecs } from './specifier'
@@ -14,6 +15,8 @@ interface ResolveContext {
 
 interface ResolveResult {
   isDev?: boolean
+  isPeer?: boolean
+  isOptional?: boolean
   isRevertAll?: boolean
   dependencies?: RawDep[]
   updatedPackages?: Record<string, PackageJsonMeta>
@@ -26,7 +29,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
   const { options, workspace } = context
   await workspace.loadPackages()
 
-  const { deps, isDev } = parseCommandOptions(args)
+  const { deps, isDev, isOptional, isPeer } = parseCommandOptions(args)
   if (!deps.length) {
     p.outro(c.red('no dependencies provided, aborting'))
     process.exit(1)
@@ -40,7 +43,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
     return {
       name: dep.name,
       specifier: dep.specifier,
-      source: isDev ? 'devDependencies' : 'dependencies',
+      source: getDepSource(isDev, isOptional, isPeer),
       catalog: false,
       catalogable: true,
       catalogName: dep.catalogName,
@@ -99,7 +102,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
     }
   }
 
-  return { isDev, dependencies: parsed.map(dep => createDep(dep)) }
+  return { isDev, isPeer, isOptional, dependencies: parsed.map(dep => createDep(dep)) }
 }
 
 /**
@@ -150,7 +153,7 @@ export async function resolveMigrate(context: ResolveContext): Promise<ResolveRe
       updatedPackages.set(pkg.name, structuredClone(pkg))
 
     const pkgJson = updatedPackages.get(pkg.name)!
-    pkgJson.raw[dep.source][dep.name] = dep.catalogName === 'default' ? 'catalog:' : `catalog:${dep.catalogName}`
+    pkgJson.raw[dep.source][dep.name] = normalizeCatalogName(dep.catalogName)
   }
 
   for (const pkg of packages) {

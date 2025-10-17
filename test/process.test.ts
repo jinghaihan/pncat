@@ -16,8 +16,8 @@ describe('parseCommandOptions', () => {
       deps: ['vue'],
       isRecursive: false,
       isDev: false,
+      isPeer: false,
       isOptional: false,
-      isProd: false,
     })
   })
 
@@ -26,8 +26,8 @@ describe('parseCommandOptions', () => {
       deps: ['vue'],
       isRecursive: true,
       isDev: false,
+      isPeer: false,
       isOptional: false,
-      isProd: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-r'])).toEqual(expected)
@@ -39,12 +39,25 @@ describe('parseCommandOptions', () => {
       deps: ['vue'],
       isRecursive: false,
       isDev: true,
+      isPeer: false,
       isOptional: false,
-      isProd: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-D'])).toEqual(expected)
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-dev'])).toEqual(expected)
+  })
+
+  it('should parse pnpm options with peer', () => {
+    const expected = {
+      deps: ['vue'],
+      isRecursive: false,
+      isDev: false,
+      isPeer: true,
+      isOptional: false,
+    }
+
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-peer'])).toEqual(expected)
   })
 
   it('should parse pnpm options with optional', () => {
@@ -52,8 +65,8 @@ describe('parseCommandOptions', () => {
       deps: ['vue'],
       isRecursive: false,
       isDev: false,
+      isPeer: false,
       isOptional: true,
-      isProd: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-O'])).toEqual(expected)
@@ -65,11 +78,10 @@ describe('parseCommandOptions', () => {
       deps: ['vue'],
       isRecursive: false,
       isDev: false,
+      isPeer: false,
       isOptional: false,
-      isProd: true,
     }
 
-    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-prod'])).toEqual(expected)
   })
 })

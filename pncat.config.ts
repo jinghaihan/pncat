@@ -29,5 +29,5 @@ export default defineConfig({
       ],
     },
   ]),
-  postRun: 'eslint --fix .',
+  postRun: 'eslint --fix "**/package.json" "**/pnpm-workspace.yaml"',
 })

@@ -1,5 +1,17 @@
 import type { WorkspaceSchema } from '../types'
 
+export function normalizeCatalogName(catalogName: string) {
+  return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+}
+
+export function getDepSource(isDev: boolean = false, isOptional: boolean = false, isPeer: boolean = false) {
+  return isDev
+    ? 'devDependencies'
+    : isOptional
+      ? 'optionalDependencies'
+      : isPeer ? 'peerDependencies' : 'dependencies'
+}
+
 export function createCatalogIndex(workspaceJson?: WorkspaceSchema) {
   const catalogIndex = new Map<string, { catalogName: string, specifier: string }[]>()
   if (!workspaceJson)

@@ -5,11 +5,15 @@ export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clea
 export const ADD_MODE_ALIAS = ['install', 'i']
 export const REMOVE_MODE_ALIAS = ['uninstall', 'rm', 'un']
 
-export const DEPS_FIELDS = [
+export const COMMON_DEPS_FIELDS = [
   'dependencies',
   'devDependencies',
   'peerDependencies',
   'optionalDependencies',
+] as const
+
+export const DEPS_FIELDS = [
+  ...COMMON_DEPS_FIELDS,
   'pnpm.overrides',
   'resolutions',
   'overrides',

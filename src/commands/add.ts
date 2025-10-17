@@ -2,6 +2,8 @@ import type { CatalogOptions, PackageJsonMeta } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { COMMON_DEPS_FIELDS } from '../constants'
+import { getDepSource, normalizeCatalogName } from '../utils/helper'
 import { resolveAdd } from '../utils/resolver'
 import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
@@ -17,19 +19,20 @@ export async function addCommand(options: CatalogOptions) {
   const workspace = new Workspace(options)
   await workspace.catalog.ensureWorkspace()
 
-  const { isDev = false, dependencies = [] } = await resolveAdd(args, {
+  const { isDev = false, isPeer = false, isOptional = false, dependencies = [] } = await resolveAdd(args, {
     options,
     workspace,
   })
 
-  const depsName = isDev ? 'devDependencies' : 'dependencies'
-  const depNameOppsite = isDev ? 'dependencies' : 'devDependencies'
+  const depsSource = getDepSource(isDev, isOptional, isPeer)
 
-  const deps = pkgJson[depsName] ||= {}
+  const deps = pkgJson[depsSource] ||= {}
   for (const dep of dependencies) {
-    deps[dep.name] = dep.catalogName ? (dep.catalogName === 'default' ? 'catalog:' : `catalog:${dep.catalogName}`) : dep.specifier || '^0.0.0'
-    if (pkgJson[depNameOppsite]?.[dep.name])
-      delete pkgJson[depNameOppsite][dep.name]
+    COMMON_DEPS_FIELDS.forEach((field) => {
+      if (pkgJson[field]?.[dep.name])
+        delete pkgJson[field][dep.name]
+    })
+    deps[dep.name] = dep.catalogName ? normalizeCatalogName(dep.catalogName) : dep.specifier || '^0.0.0'
   }
 
   const updatedPackages: Record<string, PackageJsonMeta> = {
