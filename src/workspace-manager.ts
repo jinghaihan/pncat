@@ -197,12 +197,22 @@ export class Workspace {
   }
 
   /**
+   * Check if a package is a catalog package
+   */
+  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
+    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml' || pkg.type === 'bun-workspace'
+  }
+
+  /**
    * Check if a specifier is a catalog package name
    */
   isCatalogPackageName(pkgName: string): boolean {
     return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:') || pkgName.startsWith('bun-catalog:')
   }
 
+  /**
+   * Check if is a pnpm overrides
+   */
   isPnpmOverridesPackageName(pkgName: string): boolean {
     return pkgName === 'pnpm-workspace:overrides'
   }
@@ -367,9 +377,5 @@ export class Workspace {
     if (!this.depUsageIndex.has(pkgDep.name))
       this.depUsageIndex.set(pkgDep.name, new Set())
     this.depUsageIndex.get(pkgDep.name)!.add(pkg.name)
-  }
-
-  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml' || pkg.type === 'bun-workspace'
   }
 }

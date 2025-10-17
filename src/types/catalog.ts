@@ -8,7 +8,6 @@ export interface CatalogHandler {
 
   /**
    * Find the workspace file
-   * @returns
    */
   findWorkspaceFile: () => Promise<string | undefined>
 
@@ -71,5 +70,4 @@ export interface CatalogHandler {
    * Update the workspace overrides
    */
   updateWorkspaceOverrides?: () => Promise<void>
-
 }

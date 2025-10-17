@@ -19,15 +19,6 @@ export default defineConfig({
         'package-manager-detector',
       ],
     },
-    {
-      name: 'utils',
-      match: [
-        'diff',
-        'detect-indent',
-        'ufo',
-        'tildify',
-      ],
-    },
   ]),
   postRun: 'eslint --fix "**/package.json" "**/pnpm-workspace.yaml"',
 })

@@ -1,4 +1,4 @@
-import type { CatalogOptions, CatalogRule, SpecifierRule } from '../types'
+import type { CatalogOptions, CatalogRule, PackageManager, SpecifierRule } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -8,12 +8,19 @@ import c from 'ansis'
 import { join } from 'pathe'
 import { DEFAULT_CATALOG_RULES } from '../rules'
 import { isDepMatched } from '../utils/catalog'
-import { containsVSCodeExtension } from '../utils/vscode'
+import { containsESLint, containsVSCodeExtension } from '../utils/contains'
 import { Workspace } from '../workspace-manager'
+
+const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
+  pnpm: '"**/package.json" "**/pnpm-workspace.yaml"',
+  yarn: '"**/package.json" "**/.yarnrc.yml"',
+  bun: '"**/package.json"',
+}
 
 export async function initCommand(options: CatalogOptions) {
   const workspace = new Workspace(options)
   const cwd = workspace.getCwd()
+  const packageManager = options.packageManager || 'pnpm'
 
   if (existsSync(join(cwd, 'pncat.config.ts'))) {
     const result = await p.confirm({
@@ -98,7 +105,7 @@ export async function initCommand(options: CatalogOptions) {
     return formatRuleObject(fields)
   }).join(',\n')
 
-  const content = [
+  const lines = [
     `import { defineConfig } from 'pncat'`,
     ``,
     `export default defineConfig({`,
@@ -106,8 +113,12 @@ export async function initCommand(options: CatalogOptions) {
     `  catalogRules: [`,
     catalogRulesContent,
     `  ],`,
+    containsESLint(packages) ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
     `})`,
-  ].filter((line, index) => index === 1 || Boolean(line)).join('\n')
+    ``,
+  ]
+
+  const content = lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
 
   p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `📋 Found ${c.yellow(catalogRules.length)} rules match current workspace`)
   if (!options.yes) {
@@ -120,6 +131,6 @@ export async function initCommand(options: CatalogOptions) {
 
   await writeFile(join(cwd, 'pncat.config.ts'), content)
 
-  p.log.info(c.green(`setup complete`))
+  p.log.info(c.green(`init complete`))
   p.outro(`Now you can update the dependencies by run ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''}\n`)
 }

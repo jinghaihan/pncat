@@ -123,6 +123,9 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'utils',
     match: [
+      'diff',
+      'detect-indent',
+      'ufo',
       /lodash/,
       /ramda/,
       /zod/,
