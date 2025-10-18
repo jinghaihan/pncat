@@ -1,3 +1,4 @@
+import type { PromptGroup } from '@clack/prompts'
 import type { CatalogOptions, CatalogRule, PackageManager, SpecifierRule } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
@@ -11,27 +12,46 @@ import { isDepMatched } from '../utils/catalog'
 import { containsESLint, containsVSCodeExtension } from '../utils/contains'
 import { Workspace } from '../workspace-manager'
 
+interface PromptResults {
+  mode?: string | symbol
+  eslint?: boolean | symbol
+}
+
 const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
   pnpm: '"**/package.json" "**/pnpm-workspace.yaml"',
   yarn: '"**/package.json" "**/.yarnrc.yml"',
   bun: '"**/package.json"',
 }
 
-export async function initCommand(options: CatalogOptions) {
-  const workspace = new Workspace(options)
-  const cwd = workspace.getCwd()
+function generateContent(lines: string[]): string {
+  return lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
+}
+
+async function generateExtendConfig(workspace: Workspace, results: PromptResults): Promise<string> {
+  const { eslint = false } = results
+  const options = workspace.getOptions()
   const packageManager = options.packageManager || 'pnpm'
 
-  if (existsSync(join(cwd, 'pncat.config.ts'))) {
-    const result = await p.confirm({
-      message: `${c.yellow('pncat.config.ts')} already exists, do you want to overwrite it?`,
-      initialValue: false,
-    })
-    if (!result || p.isCancel(result)) {
-      p.outro(c.red('aborting'))
-      process.exit(1)
-    }
-  }
+  const packages = await workspace.loadPackages()
+
+  const lines = [
+    `import { defineConfig, mergeCatalogRules } from 'pncat'`,
+    ``,
+    `export default defineConfig({`,
+    containsVSCodeExtension(packages) ? `  exclude: ['@types/vscode'],` : '',
+    `  catalogRules: mergeCatalogRules([]),`,
+    eslint ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
+    `})`,
+    ``,
+  ]
+
+  return generateContent(lines)
+}
+
+async function genereateMinimalConfig(workspace: Workspace, results: PromptResults): Promise<string> {
+  const { eslint = false } = results
+  const options = workspace.getOptions()
+  const packageManager = options.packageManager || 'pnpm'
 
   const packages = await workspace.loadPackages()
   const deps = workspace.getDepNames()
@@ -113,12 +133,10 @@ export async function initCommand(options: CatalogOptions) {
     `  catalogRules: [`,
     catalogRulesContent,
     `  ],`,
-    containsESLint(packages) ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
+    eslint ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
     `})`,
     ``,
   ]
-
-  const content = lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
 
   p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `📋 Found ${c.yellow(catalogRules.length)} rules match current workspace`)
   if (!options.yes) {
@@ -128,6 +146,65 @@ export async function initCommand(options: CatalogOptions) {
       process.exit(1)
     }
   }
+
+  return generateContent(lines)
+}
+
+export async function initCommand(options: CatalogOptions) {
+  const workspace = new Workspace(options)
+  const cwd = workspace.getCwd()
+
+  if (existsSync(join(cwd, 'pncat.config.ts'))) {
+    const result = await p.confirm({
+      message: `${c.yellow('pncat.config.ts')} already exists, do you want to overwrite it?`,
+      initialValue: false,
+    })
+    if (!result || p.isCancel(result)) {
+      p.outro(c.red('aborting'))
+      process.exit(1)
+    }
+  }
+
+  const prompts: PromptGroup<PromptResults> = {
+    mode: () => p.select({
+      message: `Select configuration mode`,
+      options: [
+        {
+          value: 'extend',
+          label: 'Extend',
+          hint: 'Extend default rules with workspace-specific rules',
+        },
+        {
+          value: 'minimal',
+          label: 'Minimal',
+          hint: 'Only include rules that match current workspace dependencies',
+        },
+      ],
+      initialValue: 'extend',
+    }),
+    eslint: () => p.confirm({
+      message: 'Do you want to run eslint --fix after command complete?',
+      initialValue: true,
+    }),
+  }
+
+  const packages = await workspace.loadPackages()
+  if (!containsESLint(packages))
+    delete prompts.eslint
+
+  const results: PromptResults = await p.group(
+    prompts,
+    {
+      onCancel: () => {
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      },
+    },
+  )
+
+  const content = results.mode === 'extend'
+    ? await generateExtendConfig(workspace, results)
+    : await genereateMinimalConfig(workspace, results)
 
   await writeFile(join(cwd, 'pncat.config.ts'), content)
 
