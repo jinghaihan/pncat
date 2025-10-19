@@ -15,8 +15,8 @@ export class YamlCatalog implements CatalogHandler {
   public options: CatalogOptions
   public packageManager: 'pnpm' | 'yarn'
 
-  private workspaceYaml: WorkspaceYaml | null = null
-  private workspaceYamlPath: string | null = null
+  public workspaceYaml: WorkspaceYaml | null = null
+  public workspaceYamlPath: string | null = null
 
   constructor(workspace: Workspace) {
     this.options = workspace.getOptions()

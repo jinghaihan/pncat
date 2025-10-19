@@ -1,49 +1,58 @@
-import type { BunWorkspaceMeta, CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '../types'
+import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '../types'
 import type { Workspace } from '../workspace-manager'
-import { readFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
+import process from 'node:process'
+import * as p from '@clack/prompts'
+import c from 'ansis'
+import { findUp } from 'find-up-simple'
 import { join } from 'pathe'
+import { WORKSPACE_META } from '../constants'
 import { detectIndent, writeJSON } from '../io/packages'
 import { findWorkspaceRoot } from '../io/workspace'
 
 export class JsonCatalog implements CatalogHandler {
   public workspace: Workspace
   public options: CatalogOptions
-  public packageManager: 'bun'
+  public packageManager: 'bun' | 'vlt'
 
-  private workspaceJson: WorkspaceSchema | null = null
-  private workspaceJsonPath: string | null = null
+  public workspaceJson: WorkspaceSchema | null = null
+  public workspaceJsonPath: string | null = null
 
   constructor(workspace: Workspace) {
     this.workspace = workspace
     this.options = workspace.getOptions()
-    this.packageManager = (this.options.packageManager || 'bun') as 'bun'
+    this.packageManager = (this.options.packageManager || 'bun') as 'bun' | 'vlt'
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.packageManager === 'bun') {
-      const { filepath } = await this.findBunWorkspace() ?? {}
-      return filepath
-    }
+    if (this.packageManager === 'vlt')
+      return await findUp('vlt.json', { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
-    const filepath = await this.findWorkspaceFile()
-    if (filepath) {
-      this.workspaceJsonPath = filepath
-    }
-    else {
-      const workspaceRoot = await findWorkspaceRoot(this.packageManager)
-      this.workspaceJsonPath = join(workspaceRoot, 'package.json')
+    const workspaceMeta = WORKSPACE_META[this.packageManager]
+
+    let filepath = await this.findWorkspaceFile()
+    const workspaceFile = workspaceMeta.type
+
+    if (!filepath) {
+      const root = await findWorkspaceRoot(this.packageManager)
+      p.log.warn(c.yellow(`no ${workspaceFile} found`))
+
+      const result = await p.confirm({
+        message: `do you want to create it under project root ${c.dim(root)} ?`,
+      })
+      if (!result) {
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      }
+
+      filepath = join(root, workspaceFile)
+      await writeFile(filepath, workspaceMeta.defaultContent)
     }
 
-    if (this.packageManager === 'bun') {
-      const bunWorkspace = await this.findBunWorkspace()
-      const workspaces = bunWorkspace?.raw.workspaces ?? {}
-      if (!Array.isArray(workspaces))
-        this.workspaceJson = workspaces as unknown as WorkspaceSchema
-      else
-        this.workspaceJson = {}
-    }
+    this.workspaceJson = JSON.parse(await readFile(filepath, 'utf-8'))
+    this.workspaceJsonPath = filepath
   }
 
   async toJSON(): Promise<WorkspaceSchema> {
@@ -185,7 +194,15 @@ export class JsonCatalog implements CatalogHandler {
     const rawContent = await readFile(filepath, 'utf-8')
     const raw = JSON.parse(rawContent)
 
-    raw.workspaces = await this.getWorkspaceJson()
+    const workspaceJson = await this.getWorkspaceJson()
+
+    if (this.packageManager === 'bun') {
+      raw.workspaces = workspaceJson
+    }
+    else {
+      raw.catalog = workspaceJson.catalog
+      raw.catalogs = workspaceJson.catalogs
+    }
 
     await writeJSON(filepath, raw)
   }
@@ -196,10 +213,5 @@ export class JsonCatalog implements CatalogHandler {
 
     await this.ensureWorkspace()
     return this.workspaceJson!
-  }
-
-  private async findBunWorkspace(): Promise<BunWorkspaceMeta | undefined> {
-    const packages = await this.workspace.loadPackages()
-    return packages.find(i => i.type === 'bun-workspace') as BunWorkspaceMeta
   }
 }

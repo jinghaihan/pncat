@@ -2,6 +2,7 @@ import type { CatalogHandler, CatalogOptions, PackageJsonMeta, PackageMeta, RawD
 import process from 'node:process'
 import { join } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
+import { extractCatalogName } from './io/dependencies'
 import { loadPackages, readJSON } from './io/packages'
 import { inferCatalogName } from './utils/catalog'
 
@@ -200,14 +201,20 @@ export class Workspace {
    * Check if a package is a catalog package
    */
   isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return pkg.type === 'pnpm-workspace.yaml' || pkg.type === '.yarnrc.yml' || pkg.type === 'bun-workspace'
+    return pkg.type === 'pnpm-workspace.yaml'
+      || pkg.type === '.yarnrc.yml'
+      || pkg.type === 'bun-workspace'
+      || pkg.type === 'vlt.json'
   }
 
   /**
    * Check if a specifier is a catalog package name
    */
   isCatalogPackageName(pkgName: string): boolean {
-    return pkgName.startsWith('pnpm-catalog:') || pkgName.startsWith('yarn-catalog:') || pkgName.startsWith('bun-catalog:')
+    return pkgName.startsWith('pnpm-catalog:')
+      || pkgName.startsWith('yarn-catalog:')
+      || pkgName.startsWith('bun-catalog:')
+      || pkgName.startsWith('vlt-catalog:')
   }
 
   /**
@@ -221,13 +228,8 @@ export class Workspace {
    * Extract the catalog name from a package name
    */
   extractCatalogNameFromPackageName(pkgName: string): string {
-    if (this.isCatalogPackageName(pkgName)) {
-      return pkgName
-        .replace('pnpm-catalog:', '')
-        .replace('yarn-catalog:', '')
-        .replace('bun-catalog:', '')
-    }
-
+    if (this.isCatalogPackageName(pkgName))
+      return extractCatalogName(pkgName)
     return ''
   }
 
@@ -279,6 +281,13 @@ export class Workspace {
     const bunPkgName = `bun-catalog:${dep.catalogName}`
     if (pkgs.has(bunPkgName)) {
       const catalogDep = pkgs.get(bunPkgName)!
+      return { ...dep, specifier: catalogDep.specifier }
+    }
+
+    // vlt catalog
+    const vltPkgName = `vlt-catalog:${dep.catalogName}`
+    if (pkgs.has(vltPkgName)) {
+      const catalogDep = pkgs.get(vltPkgName)!
       return { ...dep, specifier: catalogDep.specifier }
     }
 

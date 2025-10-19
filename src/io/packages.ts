@@ -11,6 +11,7 @@ import { createDependenciesFilter } from '../utils/filter'
 import { loadBunWorkspace } from './bun-workspace'
 import { loadPackageJSON } from './package-json'
 import { loadPnpmWorkspace } from './pnpm-workspace'
+import { loadVltWorkspace } from './vlt-workspace'
 import { loadYarnWorkspace } from './yarn-workspace'
 
 export async function detectIndent(filepath: string) {
@@ -72,6 +73,13 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
             return []
         }
 
+        // vlt workspace
+        if (packageManager === 'vlt') {
+          const vltWorkspace = await findUp('vlt.json', { cwd: absolute, stopAt: cwd })
+          if (vltWorkspace && dirname(vltWorkspace) !== cwd)
+            return []
+        }
+
         return [packagePath]
       }),
     )).flat()
@@ -86,6 +94,9 @@ export async function loadPackage(relative: string, options: CatalogOptions, sho
 
   if (relative.endsWith('.yarnrc.yml'))
     return loadYarnWorkspace(relative, options, shouldCatalog)
+
+  if (relative.endsWith('vlt.json'))
+    return loadVltWorkspace(relative, options, shouldCatalog)
 
   // Check if this package.json contains Bun workspaces with catalogs
   if (relative.endsWith('package.json')) {
@@ -133,6 +144,10 @@ export async function loadPackages(options: CatalogOptions): Promise<PackageMeta
   // yarn workspace
   if (packageManager === 'yarn' && existsSync(join(cwd, '.yarnrc.yml')))
     packagePaths.unshift('.yarnrc.yml')
+
+  // vlt workspace
+  if (packageManager === 'vlt' && existsSync(join(cwd, 'vlt.json')))
+    packagePaths.unshift('vlt.json')
 
   const packages = (await Promise.all(
     packagePaths.map(relative => loadPackage(relative, options, filter)),

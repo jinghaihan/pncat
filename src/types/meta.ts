@@ -6,7 +6,7 @@ export type WorkspaceYaml = PnpmWorkspaceYaml
 
 export type WorkspaceSchema = PnpmWorkspaceYamlSchema
 
-export type WorkspaceType = 'pnpm-workspace.yaml' | '.yarnrc.yml' | 'bun-workspace'
+export type WorkspaceType = 'pnpm-workspace.yaml' | '.yarnrc.yml' | 'bun-workspace' | 'vlt.json'
 
 export interface RawDep {
   name: string
@@ -87,7 +87,12 @@ export interface BunWorkspaceMeta extends BasePackageMeta {
   raw: PackageJson
 }
 
-export type WorkspacePackageMeta = PnpmWorkspaceMeta | YarnWorkspaceMeta | BunWorkspaceMeta
+export interface VltWorkspaceMeta extends BasePackageMeta {
+  type: 'vlt.json'
+  raw: WorkspaceSchema
+}
+
+export type WorkspacePackageMeta = PnpmWorkspaceMeta | YarnWorkspaceMeta | BunWorkspaceMeta | VltWorkspaceMeta
 
 export type PackageMeta = PackageJsonMeta | WorkspacePackageMeta
 
@@ -100,6 +105,6 @@ export interface ParsedSpec {
 
 export interface WorkspaceMeta {
   type: WorkspaceType
-  lockFile: string | string[]
+  lock: string | string[]
   defaultContent: string
 }

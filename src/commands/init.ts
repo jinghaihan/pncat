@@ -21,6 +21,7 @@ const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
   pnpm: '"**/package.json" "**/pnpm-workspace.yaml"',
   yarn: '"**/package.json" "**/.yarnrc.yml"',
   bun: '"**/package.json"',
+  vlt: '"**/package.json" "**/vlt.json"',
 }
 
 function generateContent(lines: string[]): string {
@@ -167,23 +168,21 @@ export async function initCommand(options: CatalogOptions) {
 
   const prompts: PromptGroup<PromptResults> = {
     mode: () => p.select({
-      message: `Select configuration mode`,
+      message: `select configuration mode`,
       options: [
         {
           value: 'extend',
-          label: 'Extend',
-          hint: 'Extend default rules with workspace-specific rules',
+          hint: 'extend default rules with workspace-specific rules',
         },
         {
           value: 'minimal',
-          label: 'Minimal',
-          hint: 'Only include rules that match current workspace dependencies',
+          hint: 'only include rules that match current workspace dependencies',
         },
       ],
       initialValue: 'extend',
     }),
     eslint: () => p.confirm({
-      message: 'Do you want to run eslint --fix after command complete?',
+      message: 'do you want to run eslint --fix after command complete?',
       initialValue: true,
     }),
   }
@@ -209,5 +208,5 @@ export async function initCommand(options: CatalogOptions) {
   await writeFile(join(cwd, 'pncat.config.ts'), content)
 
   p.log.info(c.green(`init complete`))
-  p.outro(`Now you can update the dependencies by run ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''}\n`)
+  p.outro(`now you can update the dependencies by run ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''}\n`)
 }

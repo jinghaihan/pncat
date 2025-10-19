@@ -5,7 +5,7 @@
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> · <samp><b>[bun](https://bun.sh/docs/install/catalogs)</b></samp> <code>catalog:</code> management with advanced workspace dependency control.
+Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> · <samp><b>[bun](https://bun.sh/docs/install/catalogs)</b></samp> · <samp><b>[vlt](https://docs.vlt.sh/cli/catalogs)</b></samp> <code>catalog:</code> management with advanced workspace dependency control.
 
 ```bash
 pnpm add -D pncat

@@ -40,17 +40,13 @@ export async function loadBunWorkspace(relative: string, options: CatalogOptions
   if (workspaces) {
     // Check if workspaces has catalog (singular)
     if (workspaces.catalog) {
-      catalogs.push(
-        createBunWorkspaceEntry('bun-catalog:default', workspaces.catalog),
-      )
+      catalogs.push(createBunWorkspaceEntry('bun-catalog:default', workspaces.catalog))
     }
 
     // Check if workspaces has catalogs (plural)
     if (workspaces.catalogs) {
       for (const key of Object.keys(workspaces.catalogs)) {
-        catalogs.push(
-          createBunWorkspaceEntry(`bun-catalog:${key}`, workspaces.catalogs[key]),
-        )
+        catalogs.push(createBunWorkspaceEntry(`bun-catalog:${key}`, workspaces.catalogs[key]))
       }
     }
   }

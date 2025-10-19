@@ -10,7 +10,7 @@ export async function findWorkspaceRoot(packageManager: PackageManager = 'pnpm')
   if (root)
     return dirname(root)
 
-  const files = toArray(WORKSPACE_META[packageManager].lockFile)
+  const files = toArray(WORKSPACE_META[packageManager].lock)
   for (const file of files) {
     const filepath = await findUp(file, { cwd: process.cwd() })
     if (filepath)
