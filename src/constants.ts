@@ -92,7 +92,7 @@ export const WORKSPACE_META: Record<PackageManager, WorkspaceMeta> = {
   },
   vlt: {
     type: 'vlt.json',
-    lock: 'vlt.lock.json',
+    lock: 'vlt-lock.json',
     defaultContent: '{}',
   },
 }

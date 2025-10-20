@@ -13,6 +13,10 @@ export async function detectPackageManager(cwd: string = process.cwd()): Promise
   if (packageManager && PACKAGE_MANAGERS.includes(name))
     return name
 
+  // vlt workspace
+  if (await findUp('vlt.json', { cwd }))
+    return 'vlt'
+
   const files = toArray(WORKSPACE_META.vlt.lock)
   for (const file of files) {
     const filepath = await findUp(file, { cwd })
