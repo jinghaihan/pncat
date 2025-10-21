@@ -24,37 +24,45 @@ const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
   vlt: '"**/package.json" "**/vlt.json"',
 }
 
-function generateContent(lines: string[]): string {
+function generateConfigContent(lines: string[]): string {
   return lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
 }
 
-async function generateExtendConfig(workspace: Workspace, results: PromptResults): Promise<string> {
+async function generateConfigLines(lines: string[], workspace: Workspace, results: PromptResults): Promise<string[]> {
   const { eslint = false } = results
   const options = workspace.getOptions()
   const packageManager = options.packageManager || 'pnpm'
 
   const packages = await workspace.loadPackages()
 
-  const lines = [
+  const start = lines.findIndex(line => line === `export default defineConfig({`)
+  const end = lines.findIndex(line => line === `})`)
+
+  if (eslint)
+    lines.splice(end, 0, `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',`)
+
+  if (containsVSCodeExtension(packages))
+    lines.splice(start + 1, 0, `  exclude: ['@types/vscode'],`)
+
+  return lines
+}
+
+async function generateExtendConfig(workspace: Workspace, results: PromptResults): Promise<string> {
+  const lines = await generateConfigLines([
     `import { defineConfig, mergeCatalogRules } from 'pncat'`,
     ``,
     `export default defineConfig({`,
-    containsVSCodeExtension(packages) ? `  exclude: ['@types/vscode'],` : '',
     `  catalogRules: mergeCatalogRules([]),`,
-    eslint ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
     `})`,
     ``,
-  ]
+  ], workspace, results)
 
-  return generateContent(lines)
+  return generateConfigContent(lines)
 }
 
 async function genereateMinimalConfig(workspace: Workspace, results: PromptResults): Promise<string> {
-  const { eslint = false } = results
   const options = workspace.getOptions()
-  const packageManager = options.packageManager || 'pnpm'
 
-  const packages = await workspace.loadPackages()
   const deps = workspace.getDepNames()
 
   const rulesMap = new Map<string, CatalogRule>()
@@ -126,18 +134,16 @@ async function genereateMinimalConfig(workspace: Workspace, results: PromptResul
     return formatRuleObject(fields)
   }).join(',\n')
 
-  const lines = [
+  const lines = await generateConfigLines([
     `import { defineConfig } from 'pncat'`,
     ``,
     `export default defineConfig({`,
-    containsVSCodeExtension(packages) ? `  exclude: ['@types/vscode'],` : '',
     `  catalogRules: [`,
     catalogRulesContent,
     `  ],`,
-    eslint ? `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',` : '',
     `})`,
     ``,
-  ]
+  ], workspace, results)
 
   p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `📋 Found ${c.yellow(catalogRules.length)} rules match current workspace`)
   if (!options.yes) {
@@ -148,7 +154,7 @@ async function genereateMinimalConfig(workspace: Workspace, results: PromptResul
     }
   }
 
-  return generateContent(lines)
+  return generateConfigContent(lines)
 }
 
 export async function initCommand(options: CatalogOptions) {

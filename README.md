@@ -89,6 +89,7 @@ pncat remove dep
 pncat rm dep
 pncat uninstall dep
 pncat un dep
+pncat u dep
 ```
 
 Display which catalog group is using the dependency. If confirmed, it will remove the dependency from both workspace catalog configuration and `package.json`.

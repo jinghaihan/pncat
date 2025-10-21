@@ -43,5 +43,6 @@ catalogs:
     deepmerge: ^4.3.1
     detect-indent: ^7.0.2
     diff: ^8.0.2
+    p-retry: ^7.1.0
     semver: ^7.7.3
     ufo: ^1.6.1

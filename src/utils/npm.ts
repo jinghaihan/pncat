@@ -2,6 +2,7 @@
 
 import type { Recordable } from '@npmcli/config'
 import process from 'node:process'
+import pRetry from 'p-retry'
 import { dirname, join } from 'pathe'
 import { joinURL } from 'ufo'
 
@@ -47,7 +48,7 @@ export function getNpmConfig() {
   return _cache
 }
 
-export async function getLatestVersion(spec: string) {
+async function _getLatestVersion(spec: string) {
   const npmConfigs = await getNpmConfig()
   const { default: npa } = await import('npm-package-arg')
   const { name, scope } = npa(spec)
@@ -79,4 +80,16 @@ export async function getLatestVersion(spec: string) {
   }) as unknown as { 'dist-tags': { latest: string } & Record<string, string> }
 
   return latest
+}
+
+export async function getLatestVersion(spec: string) {
+  return await pRetry(
+    async () => {
+      const version = await _getLatestVersion(spec)
+      if (version)
+        return version
+      throw new Error(`failed to resolve ${spec} from npm`)
+    },
+    { retries: 3 },
+  )
 }

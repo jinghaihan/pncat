@@ -17,7 +17,9 @@
   "keywords": [
     "pnpm",
     "yarn",
+    "berry",
     "bun",
+    "vlt",
     "catalog",
     "catalogs",
     "workspace"
@@ -54,6 +56,7 @@
     "ansis": "catalog:node",
     "cac": "catalog:node",
     "find-up-simple": "catalog:node",
+    "p-retry": "catalog:utils",
     "package-manager-detector": "catalog:node",
     "pathe": "catalog:node",
     "pnpm-workspace-yaml": "catalog:node",

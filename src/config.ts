@@ -17,10 +17,7 @@ function normalizeConfig(options: Partial<CatalogOptions>) {
   return options
 }
 
-export async function resolveConfig(options: Partial<CatalogOptions>): Promise<CatalogOptions> {
-  const defaults = structuredClone(DEFAULT_CATALOG_OPTIONS)
-  options = normalizeConfig(options)
-
+export async function readConfig(options: Partial<CatalogOptions>) {
   const loader = createConfigLoader<CatalogOptions>({
     sources: [
       {
@@ -32,8 +29,14 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
     merge: false,
   })
   const config = await loader.load()
-  const configOptions = config.sources.length ? normalizeConfig(config.config) : {}
+  return config.sources.length ? normalizeConfig(config.config) : {}
+}
 
+export async function resolveConfig(options: Partial<CatalogOptions>): Promise<CatalogOptions> {
+  const defaults = structuredClone(DEFAULT_CATALOG_OPTIONS)
+  options = normalizeConfig(options)
+
+  const configOptions = await readConfig(options)
   const catalogRules = configOptions.catalogRules || structuredClone(DEFAULT_CATALOG_RULES) || []
   delete configOptions.catalogRules
 
