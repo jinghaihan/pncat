@@ -1,4 +1,9 @@
 import type { CatalogOptions, DepType, PackageManager, WorkspaceMeta } from './types'
+import pkgJson from '../package.json'
+
+export const NAME = pkgJson.name
+
+export const VERSION = pkgJson.version
 
 export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 

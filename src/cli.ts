@@ -4,16 +4,15 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
-import pkgJson from '../package.json'
 import { addCommand, cleanCommand, detectCommand, initCommand, migrateCommand, removeCommand, revertCommand } from './commands'
 import { resolveConfig } from './config'
-import { ADD_MODE_ALIAS, MODE_CHOICES, REMOVE_MODE_ALIAS } from './constants'
+import { ADD_MODE_ALIAS, MODE_CHOICES, NAME, REMOVE_MODE_ALIAS, VERSION } from './constants'
 
 try {
-  const cli: CAC = cac(pkgJson.name)
+  const cli: CAC = cac(NAME)
 
   cli
-    .command('[mode]', 'Enhanced pnpm/yarn catalogs management with advanced workspace dependency control')
+    .command('[mode]', 'A unified cli tool that enhances package managers catalogs feature')
     .option('--catalog [name]', 'Install from a specific catalog, auto detect if not provided')
     .option('--recursive, -r', 'Recursively search for package.json in subdirectories')
     .option('--force, -f', 'Force cataloging according to rules, ignoring original configurations')
@@ -39,7 +38,7 @@ try {
         options.mode = mode
       }
 
-      p.intro(`${c.yellow`${pkgJson.name} `}${c.dim`v${pkgJson.version}`}`)
+      p.intro(`${c.yellow`${NAME} `}${c.dim`v${VERSION}`}`)
       const config = await resolveConfig(options)
 
       switch (config.mode) {
@@ -68,7 +67,7 @@ try {
     })
 
   cli.help()
-  cli.version(pkgJson.version)
+  cli.version(VERSION)
   cli.parse()
 }
 catch (error) {

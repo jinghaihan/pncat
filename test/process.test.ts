@@ -8,6 +8,92 @@ describe('parseArgs', () => {
       deps: ['vue'],
     })
   })
+
+  it('should parse recursive flag', () => {
+    expect(parseArgs(['vue', 'eslint', '-r'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { r: true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '--recursive'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { recursive: true },
+    })
+  })
+
+  it('should parse args with dev flag', () => {
+    expect(parseArgs(['vue', 'eslint', '-D'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { D: true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '--save-dev'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { 'save-dev': true },
+    })
+  })
+
+  it('should parse args with optional flag', () => {
+    expect(parseArgs(['vue', 'eslint', '-O'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { O: true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '--save-optional'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { 'save-optional': true },
+    })
+  })
+
+  it('should parse args with peer flag', () => {
+    expect(parseArgs(['vue', 'eslint', '-P'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { P: true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '--save-peer'])).toEqual({
+      deps: ['vue', 'eslint'],
+      options: { 'save-peer': true },
+    })
+  })
+
+  it('parse flag correctly regardless of their position', () => {
+    expect(parseArgs(['vue', '-r', 'eslint', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { r: true },
+    })
+    expect(parseArgs(['vue', 'eslint', '--recursive', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { recursive: true },
+    })
+
+    expect(parseArgs(['vue', '-D', 'eslint', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { D: true },
+    })
+    expect(parseArgs(['vue', 'eslint', '--save-dev', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { 'save-dev': true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '-O', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { O: true },
+    })
+    expect(parseArgs(['vue', 'eslint', '--save-optional', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { 'save-optional': true },
+    })
+
+    expect(parseArgs(['vue', 'eslint', '-P', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { P: true },
+    })
+    expect(parseArgs(['vue', 'eslint', '--save-peer', 'lodash-es'])).toEqual({
+      deps: ['vue', 'eslint', 'lodash-es'],
+      options: { 'save-peer': true },
+    })
+  })
 })
 
 describe('parseCommandOptions', () => {

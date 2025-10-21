@@ -1,15 +1,17 @@
-# <samp><b>pncat</b></samp>
+<h1 align="center"><samp><b>pncat</b></samp></h1>
+
+<p align="center">A unified cli tool that enhances package managers <code>catalog:</code> feature</p>
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
 [![JSDocs][jsdocs-src]][jsdocs-href]
 [![License][license-src]][license-href]
 
-Enhanced <samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> · <samp><b>[bun](https://bun.sh/docs/install/catalogs)</b></samp> · <samp><b>[vlt](https://docs.vlt.sh/cli/catalogs)</b></samp> <code>catalog:</code> management with advanced workspace dependency control.
-
-```bash
+```sh
 pnpm add -D pncat
 ```
+
+<samp><b>[pnpm](https://pnpm.io/catalogs)</b></samp> · <samp><b>[yarn](https://yarnpkg.com/features/catalogs)</b></samp> · <samp><b>[bun](https://bun.sh/docs/install/catalogs)</b></samp> · <samp><b>[vlt](https://docs.vlt.sh/cli/catalogs)</b></samp>
 
 - <samp><b>🚀 Init</b></samp> - Initialize configuration with optimized rules
 - <samp><b>🔍 Detect</b></samp> - Scan workspace to identify catalogable dependencies
@@ -23,11 +25,11 @@ pnpm add -D pncat
 <img src='./assets/help.png' />
 </p>
 
-## <samp><b>Usage</b></samp>
+## Usage
 
-### <samp><b>Init</b></samp>
+### Init
 
-```bash
+```sh
 pncat init
 ```
 
@@ -37,9 +39,9 @@ Initialize your workspace with an optimized configuration file. Analyzes your cu
 <img src='./assets/init.png' width='600' />
 </p>
 
-### <samp><b>Detect</b></samp>
+### Detect
 
-```bash
+```sh
 pncat detect
 ```
 
@@ -49,9 +51,9 @@ Scans your workspace to identify dependencies that could be moved to catalogs.
 <img src='./assets/detect.png' width='600' />
 </p>
 
-### <samp><b>Migrate</b></samp>
+### Migrate
 
-```bash
+```sh
 pncat migrate
 ```
 
@@ -66,9 +68,9 @@ Default rules can be found in `src/rules.ts`. To customize rules, create a `pnca
 <img src='./assets/migrate.png' width='600' />
 </p>
 
-### <samp><b>Add</b></samp>
+### Add
 
-```bash
+```sh
 pncat add dep
 pncat install dep
 pncat i dep
@@ -82,9 +84,9 @@ You can specify a catalog name using `--catalog name`. When no catalog is specif
 <img src='./assets/add.png' width='600' />
 </p>
 
-### <samp><b>Remove</b></samp>
+### Remove
 
-```bash
+```sh
 pncat remove dep
 pncat rm dep
 pncat uninstall dep
@@ -100,9 +102,9 @@ To remove a dependency from all packages in the monorepo, you can use `pnpm remo
 <img src='./assets/remove.png' width='600' />
 </p>
 
-### <samp><b>Clean</b></samp>
+### Clean
 
-```bash
+```sh
 pncat clean
 ```
 
@@ -112,9 +114,9 @@ Find unused catalog dependencies and remove them from workspace catalog configur
 <img src='./assets/clean.png' width='600' />
 </p>
 
-### <samp><b>Revert</b></samp>
+### Revert
 
-```bash
+```sh
 pncat revert
 ```
 
@@ -126,7 +128,7 @@ Reverts cataloged dependencies to `package.json`. Useful for monorepo restructur
 
 You can also revert specific dependencies using:
 
-```bash
+```sh
 pncat revert dep
 ```
 
@@ -134,7 +136,7 @@ pncat revert dep
 <img src='./assets/revert-d.png' width='600' />
 </p>
 
-## <samp><b>Configuration</b></samp>
+## Configuration
 
 You can use `pncat init` to initialize a configuration file with optimized rules based on your current workspace, or create a `pncat.config.ts` file manually to customize catalog rules:
 
@@ -188,7 +190,7 @@ export default defineConfig({
 - `allowPreReleases`: Allow beta/alpha/rc versions (default: true)
 - `allowWildcards`: Allow wildcard versions like "3.x", "*" (default: false)
 
-## <samp><b>Why pncat?</b></samp>
+## Why pncat?
 
 For monorepo repositories, maintaining consistent dependency versions across multiple packages is crucial. Grouping dependencies can significantly improve project understanding, making it easier to collaborate within teams or keep track of the project's structure.
 
@@ -196,7 +198,7 @@ Currently, pnpm's catalog support is limited. For example, there is no built-in 
 
 Additionally, when migrating a specific package in a monorepo that uses catalogs, it's important to also migrate the workspace catalog configuration. This requires manually comparing which catalogs need to be removed. To streamline this process, the `clean` and `revert` commands were introduced to automate this task.
 
-## <samp><b>Inspiration</b></samp>
+## Inspiration
 
 This project is inspired by and builds upon the excellent work of the following projects:
 
@@ -205,11 +207,15 @@ This project is inspired by and builds upon the excellent work of the following 
 
 Special thanks to [@antfu](https://github.com/antfu) for his article [Categorizing Dependencies](https://antfu.me/posts/categorize-deps) which provided great inspiration and guidance during the development of this tool.
 
-## <samp><b>Related Projects</b></samp>
+## Related Projects
 
 + [eslint-plugin-pnpm-catalog](https://github.com/onmax/eslint-plugin-pnpm-catalog) by [@onmax](https://github.com/onmax) - ESLint plugin that enforces the use of named catalogs in pnpm workspaces
 
-## <samp><b>License</b></samp>
+## Contributors
+
+[![Contributors](https://contrib.rocks/image?repo=jinghaihan/pncat)](https://github.com/jinghaihan/pncat/graphs/contributors)
+
+## License
 
 [MIT](./LICENSE) License © [jinghaihan](https://github.com/jinghaihan)
 

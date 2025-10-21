@@ -46,3 +46,6 @@ catalogs:
     p-retry: ^7.1.0
     semver: ^7.7.3
     ufo: ^1.6.1
+onlyBuiltDependencies:
+  - esbuild
+  - simple-git-hooks

@@ -38,6 +38,9 @@ describe('inferCatalogName', () => {
 
     expect(inferCatalogName(createDep('@types/vscode'), config)).toBe('types')
     expect(inferCatalogName(createDep('reactive-vscode'), config)).toBe('vscode')
+
+    expect(inferCatalogName(createDep('p-limit'), config)).toBe('utils')
+    expect(inferCatalogName(createDep('p-retry'), config)).toBe('utils')
   })
 
   it('should name with catalog rules order', () => {

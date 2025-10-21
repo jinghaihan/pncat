@@ -3,7 +3,7 @@
   "type": "module",
   "version": "0.7.3",
   "packageManager": "pnpm@10.18.3",
-  "description": "Enhanced catalogs feature with PNPM, Yarn, Bun and Vlt support.",
+  "description": "A unified cli tool that enhances package managers catalogs feature.",
   "author": "jinghaihan",
   "license": "MIT",
   "homepage": "https://github.com/jinghaihan/pncat#readme",
@@ -48,7 +48,7 @@
     "test": "vitest",
     "release": "bumpp",
     "bootstrap": "pnpm install",
-    "prepare": "npx simple-git-hooks",
+    "prepare": "simple-git-hooks",
     "prepublishOnly": "pnpm build"
   },
   "dependencies": {

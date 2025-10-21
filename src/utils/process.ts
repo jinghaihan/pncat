@@ -4,6 +4,10 @@ import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import { x } from 'tinyexec'
 
+const BOOLEAN_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'recursive'])
+
+const BOOLEAN_SHORT_FLAGS = new Set(['D', 'P', 'O', 'r'])
+
 export interface PackageManagerCommandOptions extends Pick<CatalogOptions, 'packageManager' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
   silent?: boolean
@@ -29,6 +33,10 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
         options[key.slice(3)] = false
         i++
       }
+      else if (BOOLEAN_FLAGS.has(key)) {
+        options[key] = true
+        i++
+      }
       else if (i + 1 < args.length && !args[i + 1].startsWith('-')) {
         options[key] = args[i + 1]
         i += 2
@@ -41,7 +49,11 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
     else if (arg.startsWith('-') && arg.length === 2) {
       const key = arg.slice(1)
 
-      if (i + 1 < args.length && !args[i + 1].startsWith('-')) {
+      if (BOOLEAN_SHORT_FLAGS.has(key)) {
+        options[key] = true
+        i++
+      }
+      else if (i + 1 < args.length && !args[i + 1].startsWith('-')) {
         options[key] = args[i + 1]
         i += 2
       }
