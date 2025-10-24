@@ -1,7 +1,9 @@
+import type { Agent } from 'package-manager-detector'
 import type { CatalogOptions, HookFunction } from '../types'
 import process from 'node:process'
 import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
+import { resolveCommand } from 'package-manager-detector'
 import { x } from 'tinyexec'
 
 const BOOLEAN_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'recursive'])
@@ -76,10 +78,8 @@ export function parseCommandOptions(args: string[]) {
   const isRecursive = ['--recursive', '-r'].some(i => args.includes(i))
   const isDev = ['--save-dev', '-D'].some(i => args.includes(i))
   const isOptional = ['--save-optional', '-O'].some(i => args.includes(i))
-  /**
-   * diffrent with pnpm --save-peer and --save-prod
-   * https://pnpm.io/cli/add
-   */
+
+  // diffrent with pnpm: https://pnpm.io/cli/add
   const isPeer = ['--save-peer', '-P'].some(i => args.includes(i))
   const isProd = ['--save-prod'].some(i => args.includes(i))
 
@@ -99,12 +99,25 @@ export async function runInstallCommand(options: PackageManagerCommandOptions = 
   const { packageManager = 'pnpm', cwd = process.cwd(), stdio = 'inherit', silent = false } = options
   if (!silent)
     p.outro(`running ${packageManager} install`)
-  await x(packageManager, ['install'], {
+
+  const execOptions = {
     nodeOptions: {
       cwd,
       stdio,
     },
-  })
+  }
+  const execCommand = async () => await x(packageManager, ['install'], execOptions)
+
+  try {
+    const resolved = resolveCommand(packageManager as Agent, 'install', [])
+    if (resolved)
+      await x(resolved.command, resolved.args, execOptions)
+    else
+      await execCommand()
+  }
+  catch {
+    await execCommand()
+  }
 }
 
 /**
@@ -112,20 +125,31 @@ export async function runInstallCommand(options: PackageManagerCommandOptions = 
  */
 export async function runRemoveCommand(dependencies: string[], options: PackageManagerCommandOptions = {}) {
   const { packageManager = 'pnpm', cwd = process.cwd(), recursive = false, stdio = 'inherit' } = options
-
   if (dependencies.length === 0)
     return
 
-  const args = ['remove', ...dependencies]
+  const args = [...dependencies]
   if (recursive)
     args.push('--recursive')
 
-  await x(packageManager, args, {
+  const execOptions = {
     nodeOptions: {
       cwd,
       stdio,
     },
-  })
+  }
+  const execCommand = async () => await x(packageManager, ['remove', ...args], execOptions)
+
+  try {
+    const resolved = resolveCommand(packageManager as Agent, 'uninstall', args)
+    if (resolved)
+      await x(resolved.command, resolved.args, execOptions)
+    else
+      await execCommand()
+  }
+  catch {
+    await execCommand()
+  }
 }
 
 export async function runHooks(hooks: string | HookFunction | Array<string | HookFunction>, options: { cwd?: string } = {}) {

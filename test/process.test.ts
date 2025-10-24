@@ -1,5 +1,17 @@
-import { describe, expect, it } from 'vitest'
-import { parseArgs, parseCommandOptions } from '../src/utils/process'
+import { describe, expect, it, vi } from 'vitest'
+import { parseArgs, parseCommandOptions, runInstallCommand, runRemoveCommand } from '../src/utils/process'
+
+vi.mock('tinyexec', () => ({
+  x: vi.fn().mockResolvedValue(undefined),
+}))
+
+vi.mock('@clack/prompts', () => ({
+  outro: vi.fn(),
+  log: {
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}))
 
 describe('parseArgs', () => {
   it('should parse args', () => {
@@ -169,5 +181,77 @@ describe('parseCommandOptions', () => {
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-prod'])).toEqual(expected)
+  })
+})
+
+it('run install command with different package managers', async () => {
+  const { x } = await import('tinyexec')
+
+  await runInstallCommand({ packageManager: 'pnpm' })
+  expect(x).toHaveBeenCalledWith('pnpm', ['i'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runInstallCommand({ packageManager: 'yarn' })
+  expect(x).toHaveBeenCalledWith('yarn', ['install'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runInstallCommand({ packageManager: 'bun' })
+  expect(x).toHaveBeenCalledWith('bun', ['install'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runInstallCommand({ packageManager: 'vlt' })
+  expect(x).toHaveBeenCalledWith('vlt', ['install'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+})
+
+it('run remove command with different package managers', async () => {
+  const { x } = await import('tinyexec')
+
+  await runRemoveCommand(['vue'])
+  expect(x).toHaveBeenCalledWith('pnpm', ['remove', 'vue'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runRemoveCommand(['vue'], { packageManager: 'yarn' })
+  expect(x).toHaveBeenCalledWith('yarn', ['remove', 'vue'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runRemoveCommand(['vue'], { packageManager: 'bun' })
+  expect(x).toHaveBeenCalledWith('bun', ['remove', 'vue'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
+  })
+
+  await runRemoveCommand(['vue'], { packageManager: 'vlt' })
+  expect(x).toHaveBeenCalledWith('vlt', ['remove', 'vue'], {
+    nodeOptions: {
+      cwd: process.cwd(),
+      stdio: 'inherit',
+    },
   })
 })

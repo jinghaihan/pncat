@@ -13,6 +13,7 @@ try {
 
   cli
     .command('[mode]', 'A unified cli tool that enhances package managers catalogs feature')
+    .option('--cwd <cwd>', 'specify the current working directory')
     .option('--catalog [name]', 'Install from a specific catalog, auto detect if not provided')
     .option('--recursive, -r', 'Recursively search for package.json in subdirectories')
     .option('--force, -f', 'Force cataloging according to rules, ignoring original configurations')
