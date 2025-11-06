@@ -1,4 +1,4 @@
-import type { CatalogOptions, DepType, PackageManager, WorkspaceMeta } from './types'
+import type { CatalogOptions, DepType, PackageManager, RangeMode, WorkspaceMeta } from './types'
 import pkgJson from '../package.json'
 
 export const NAME = pkgJson.name
@@ -7,8 +7,10 @@ export const VERSION = pkgJson.version
 
 export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
-export const ADD_MODE_ALIAS = ['install', 'i']
-export const REMOVE_MODE_ALIAS = ['uninstall', 'rm', 'un', 'u']
+export const MODE_ALIASES: Partial<Record<RangeMode, string[]>> = {
+  add: ['install', 'i'],
+  remove: ['uninstall', 'rm', 'un', 'u'],
+}
 
 export const COMMON_DEPS_FIELDS = [
   'dependencies',

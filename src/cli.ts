@@ -6,7 +6,7 @@ import c from 'ansis'
 import { cac } from 'cac'
 import { addCommand, cleanCommand, detectCommand, initCommand, migrateCommand, removeCommand, revertCommand } from './commands'
 import { resolveConfig } from './config'
-import { ADD_MODE_ALIAS, MODE_CHOICES, NAME, REMOVE_MODE_ALIAS, VERSION } from './constants'
+import { MODE_ALIASES, MODE_CHOICES, NAME, VERSION } from './constants'
 
 try {
   const cli: CAC = cac(NAME)
@@ -27,10 +27,10 @@ try {
     .allowUnknownOptions()
     .action(async (mode: RangeMode, options: Partial<CatalogOptions>) => {
       if (mode) {
-        if (ADD_MODE_ALIAS.includes(mode))
-          mode = 'add'
-        else if (REMOVE_MODE_ALIAS.includes(mode))
-          mode = 'remove'
+        Object.entries(MODE_ALIASES).forEach(([key, value]: [string, string[]]) => {
+          if (value.includes(mode))
+            mode = key as RangeMode
+        })
 
         if (!MODE_CHOICES.includes(mode)) {
           console.error(`Invalid mode: ${mode}. Please use one of the following: ${MODE_CHOICES.join(', ')}`)

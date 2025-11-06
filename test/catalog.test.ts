@@ -58,7 +58,7 @@ describe('inferCatalogName', () => {
   it('should fallback by dep source if no match', () => {
     expect(inferCatalogName(createDep('leaflet'), config)).toBe('prod')
     expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('tsc')
-    expect(inferCatalogName(createDep('babel-core', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
+    expect(inferCatalogName(createDep('termsnap', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
     expect(inferCatalogName(createDep('node-pty', '^1.0.0', 'optionalDependencies'), config)).toBe('optional')
     expect(inferCatalogName(createDep('vsce', '^1.0.0', 'resolutions'), config)).toBe('cli')
     expect(inferCatalogName(createDep('ffmpeg', '^1.0.0', 'resolutions'), config)).toBe('default')
