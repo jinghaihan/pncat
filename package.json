@@ -1,7 +1,7 @@
 {
   "name": "pncat",
   "type": "module",
-  "version": "0.7.4",
+  "version": "0.7.5",
   "packageManager": "pnpm@10.21.0",
   "description": "A unified cli tool that enhances package managers catalogs feature.",
   "author": "jinghaihan",
