@@ -58,7 +58,9 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
   }
 
   const pkgCount = Object.keys(updatedPackages).length
-  lines.push(`${c.yellow(pkgCount)} package${pkgCount > 1 ? 's' : ''} ${c.yellow(deps.length)} dependenc${deps.length > 1 ? 'ies' : 'y'}`)
+  const pkgName = pkgCount === 1 ? 'package' : 'packages'
+  const depName = deps.length === 1 ? 'dependency' : 'dependencies'
+  lines.push(`${c.yellow(pkgCount)} ${pkgName} ${c.yellow(deps.length)} ${depName}`)
 
   return lines.join('\n')
 }

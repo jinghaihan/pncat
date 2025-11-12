@@ -88,7 +88,7 @@ export function parseCommandOptions(args: string[]) {
     isDev: !isProd && isDev,
     isOptional: !isProd && isOptional,
     isPeer: !isProd && isPeer,
-    isExact: !isProd && isExact,
+    isExact,
   }
 }
 
@@ -152,7 +152,10 @@ export async function runRemoveCommand(dependencies: string[], options: PackageM
   }
 }
 
-export async function runHooks(hooks: string | HookFunction | Array<string | HookFunction>, options: { cwd?: string } = {}) {
+export async function runHooks(
+  hooks: string | HookFunction | Array<string | HookFunction>,
+  options: { cwd?: string } = {},
+) {
   const { cwd = process.cwd() } = options
 
   for (const hook of toArray(hooks)) {

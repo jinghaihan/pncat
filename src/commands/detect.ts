@@ -3,8 +3,8 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { renderChanges } from '../utils/render'
-import { resolveMigrate } from '../utils/resolver'
 import { Workspace } from '../workspace-manager'
+import { resolveMigrate } from './resolver'
 
 export async function detectCommand(options: CatalogOptions) {
   const workspace = new Workspace(options)

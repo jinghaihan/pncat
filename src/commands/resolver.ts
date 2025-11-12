@@ -3,10 +3,10 @@ import type { Workspace } from '../workspace-manager'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { getDepSource, normalizeCatalogName } from './helper'
-import { getLatestVersion } from './npm'
-import { parseCommandOptions, runRemoveCommand } from './process'
-import { parseSpec, sortSpecs } from './specifier'
+import { getDepSource, normalizeCatalogName } from '../utils/helper'
+import { getLatestVersion } from '../utils/npm'
+import { parseCommandOptions, runRemoveCommand } from '../utils/process'
+import { parseSpec, sortSpecs } from '../utils/specifier'
 
 interface ResolveContext {
   options: CatalogOptions

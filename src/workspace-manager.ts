@@ -1,4 +1,11 @@
-import type { CatalogHandler, CatalogOptions, PackageJsonMeta, PackageMeta, RawDep, WorkspacePackageMeta } from './types'
+import type {
+  CatalogHandler,
+  CatalogOptions,
+  PackageJsonMeta,
+  PackageMeta,
+  RawDep,
+  WorkspacePackageMeta,
+} from './types'
 import process from 'node:process'
 import { join } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'

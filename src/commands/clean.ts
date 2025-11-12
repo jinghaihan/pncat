@@ -2,9 +2,9 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { resolveClean } from '../utils/resolver'
 import { confirmWorkspaceChanges } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
+import { resolveClean } from './resolver'
 
 export async function cleanCommand(options: CatalogOptions) {
   const workspace = new Workspace(options)

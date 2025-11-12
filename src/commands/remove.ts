@@ -2,9 +2,9 @@ import type { CatalogOptions } from '../types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { resolveRemove } from '../utils/resolver'
 import { confirmWorkspaceChanges } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
+import { resolveRemove } from './resolver'
 
 export async function removeCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)

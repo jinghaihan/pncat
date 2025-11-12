@@ -1,6 +1,6 @@
 import type { PackageJsonMeta, RawDep } from '../src/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveConflict, resolveMigrate } from '../src/utils/resolver'
+import { resolveConflict, resolveMigrate } from '../src/commands/resolver'
 
 import { createDep } from './_utils'
 

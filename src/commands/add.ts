@@ -4,9 +4,9 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { COMMON_DEPS_FIELDS } from '../constants'
 import { getDepSource, normalizeCatalogName } from '../utils/helper'
-import { resolveAdd } from '../utils/resolver'
 import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
+import { resolveAdd } from './resolver'
 
 export async function addCommand(options: CatalogOptions) {
   const args = process.argv.slice(3)

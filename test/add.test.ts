@@ -12,10 +12,6 @@ vi.mock('../src/utils/workspace', () => ({
   }),
 }))
 
-vi.mock('../src/utils/resolver', () => ({
-  resolveAdd: vi.fn(),
-}))
-
 vi.mock('../src/io/workspace', () => ({
   findWorkspaceRoot: vi.fn().mockResolvedValue('/test/workspace'),
 }))
@@ -23,6 +19,10 @@ vi.mock('../src/io/workspace', () => ({
 // Mock side effects that don't affect core logic
 vi.mock('../src/utils/process', () => ({
   runInstallCommand: vi.fn(),
+}))
+
+vi.mock('../src/commands/resolver', () => ({
+  resolveAdd: vi.fn(),
 }))
 
 vi.mock('../src/workspace', () => ({
@@ -49,7 +49,7 @@ describe('addCommand', () => {
   async function setupTest(packageJson: PackageJson, dependencies: RawDep[], isDev = false) {
     const config = await resolveConfig({ ...DEFAULT_CATALOG_OPTIONS })
     const mockReadPackageJSON = vi.mocked((await import('../src/utils/workspace')).readPackageJSON)
-    const mockResolveAdd = vi.mocked((await import('../src/utils/resolver')).resolveAdd)
+    const mockResolveAdd = vi.mocked((await import('../src/commands/resolver')).resolveAdd)
 
     mockReadPackageJSON.mockResolvedValue({
       pkgJson: packageJson,

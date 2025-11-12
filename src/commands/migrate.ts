@@ -1,7 +1,7 @@
 import type { CatalogOptions } from '../types'
-import { resolveMigrate } from '../utils/resolver'
 import { confirmWorkspaceChanges } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
+import { resolveMigrate } from './resolver'
 
 export async function migrateCommand(options: CatalogOptions) {
   const workspace = new Workspace(options)

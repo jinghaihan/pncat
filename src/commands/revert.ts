@@ -3,9 +3,9 @@ import type { ConfirmationOptions } from '../utils/workspace'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { resolveRevert } from '../utils/resolver'
 import { confirmWorkspaceChanges } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
+import { resolveRevert } from './resolver'
 
 export async function revertCommand(options: CatalogOptions) {
   const args: string[] = process.argv.slice(3)

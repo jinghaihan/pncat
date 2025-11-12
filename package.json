@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "pncat": "tsx ./src/cli.ts",
-    "build": "unbuild",
+    "build": "tsdown",
     "deps": "taze major -I",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
@@ -86,10 +86,10 @@
     "taze": "catalog:cli",
     "tildify": "catalog:node",
     "tinyglobby": "catalog:node",
+    "tsdown": "catalog:build",
     "tsx": "catalog:script",
     "typescript": "catalog:tsc",
     "ufo": "catalog:utils",
-    "unbuild": "catalog:build",
     "vitest": "catalog:test"
   },
   "simple-git-hooks": {
