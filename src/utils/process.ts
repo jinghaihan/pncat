@@ -6,9 +6,9 @@ import * as p from '@clack/prompts'
 import { resolveCommand } from 'package-manager-detector'
 import { x } from 'tinyexec'
 
-const BOOLEAN_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'recursive'])
+const BOOLEAN_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'save-exact', 'recursive'])
 
-const BOOLEAN_SHORT_FLAGS = new Set(['D', 'P', 'O', 'r'])
+const BOOLEAN_SHORT_FLAGS = new Set(['D', 'P', 'O', 'E', 'r'])
 
 export interface PackageManagerCommandOptions extends Pick<CatalogOptions, 'packageManager' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
@@ -76,12 +76,11 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
 export function parseCommandOptions(args: string[]) {
   const { deps } = parseArgs(args)
   const isRecursive = ['--recursive', '-r'].some(i => args.includes(i))
+  const isProd = ['--save-prod', '-P'].some(i => args.includes(i))
   const isDev = ['--save-dev', '-D'].some(i => args.includes(i))
   const isOptional = ['--save-optional', '-O'].some(i => args.includes(i))
-
-  // diffrent with pnpm: https://pnpm.io/cli/add
-  const isPeer = ['--save-peer', '-P'].some(i => args.includes(i))
-  const isProd = ['--save-prod'].some(i => args.includes(i))
+  const isPeer = ['--save-peer'].some(i => args.includes(i))
+  const isExact = ['--save-exact', '-E'].some(i => args.includes(i))
 
   return {
     deps,
@@ -89,6 +88,7 @@ export function parseCommandOptions(args: string[]) {
     isDev: !isProd && isDev,
     isOptional: !isProd && isOptional,
     isPeer: !isProd && isPeer,
+    isExact: !isProd && isExact,
   }
 }
 

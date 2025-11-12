@@ -116,6 +116,7 @@ describe('parseCommandOptions', () => {
       isDev: false,
       isPeer: false,
       isOptional: false,
+      isExact: false,
     })
   })
 
@@ -126,6 +127,7 @@ describe('parseCommandOptions', () => {
       isDev: false,
       isPeer: false,
       isOptional: false,
+      isExact: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-r'])).toEqual(expected)
@@ -139,6 +141,7 @@ describe('parseCommandOptions', () => {
       isDev: true,
       isPeer: false,
       isOptional: false,
+      isExact: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-D'])).toEqual(expected)
@@ -152,9 +155,9 @@ describe('parseCommandOptions', () => {
       isDev: false,
       isPeer: true,
       isOptional: false,
+      isExact: false,
     }
 
-    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-peer'])).toEqual(expected)
   })
 
@@ -165,6 +168,7 @@ describe('parseCommandOptions', () => {
       isDev: false,
       isPeer: false,
       isOptional: true,
+      isExact: false,
     }
 
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-O'])).toEqual(expected)
@@ -178,9 +182,25 @@ describe('parseCommandOptions', () => {
       isDev: false,
       isPeer: false,
       isOptional: false,
+      isExact: false,
     }
 
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-P'])).toEqual(expected)
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-prod'])).toEqual(expected)
+  })
+
+  it('should parse pnpm options with exact', () => {
+    const expected = {
+      deps: ['vue'],
+      isRecursive: false,
+      isDev: false,
+      isPeer: false,
+      isOptional: false,
+      isExact: true,
+    }
+
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-E'])).toEqual(expected)
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-exact'])).toEqual(expected)
   })
 })
 

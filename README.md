@@ -31,6 +31,8 @@ pnpm add -D pncat
 
 ```sh
 pncat init
+pncat create
+pncat setup
 ```
 
 Initialize your workspace with an optimized configuration file. Analyzes your current workspace dependencies and generates tailored rules for better project visibility.
@@ -73,6 +75,7 @@ Default rules can be found in `src/rules.ts`. To customize rules, create a `pnca
 ```sh
 pncat add dep
 pncat install dep
+pncat in dep
 pncat i dep
 ```
 
@@ -89,6 +92,7 @@ You can specify a catalog name using `--catalog name`. When no catalog is specif
 ```sh
 pncat remove dep
 pncat rm dep
+pncat r dep
 pncat uninstall dep
 pncat un dep
 pncat u dep

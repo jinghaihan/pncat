@@ -17,6 +17,7 @@ interface ResolveResult {
   isDev?: boolean
   isPeer?: boolean
   isOptional?: boolean
+  isExact?: boolean
   isRevertAll?: boolean
   dependencies?: RawDep[]
   updatedPackages?: Record<string, PackageJsonMeta>
@@ -29,7 +30,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
   const { options, workspace } = context
   await workspace.loadPackages()
 
-  const { deps, isDev, isOptional, isPeer } = parseCommandOptions(args)
+  const { deps, isDev, isOptional, isPeer, isExact } = parseCommandOptions(args)
   if (!deps.length) {
     p.outro(c.red('no dependencies provided, aborting'))
     process.exit(1)
@@ -86,7 +87,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
       spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
       const version = await getLatestVersion(dep.name)
       if (version) {
-        dep.specifier = `^${version}`
+        dep.specifier = isExact ? version : `^${version}`
         dep.specifierSource ||= 'npm'
         spinner.stop(`${c.dim('resolved')} ${c.cyan(dep.name)}${c.dim(`@${c.green(dep.specifier)}`)}`)
       }
@@ -102,7 +103,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
     }
   }
 
-  return { isDev, isPeer, isOptional, dependencies: parsed.map(dep => createDep(dep)) }
+  return { isDev, isPeer, isOptional, isExact, dependencies: parsed.map(i => createDep(i)) }
 }
 
 /**

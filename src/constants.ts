@@ -8,8 +8,9 @@ export const VERSION = pkgJson.version
 export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
 
 export const MODE_ALIASES: Partial<Record<RangeMode, string[]>> = {
-  add: ['install', 'i'],
-  remove: ['uninstall', 'rm', 'un', 'u'],
+  init: ['create', 'setup'],
+  add: ['install', 'in', 'i'],
+  remove: ['uninstall', 'rm', 'r', 'un', 'u'],
 }
 
 export const COMMON_DEPS_FIELDS = [
