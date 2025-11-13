@@ -1,5 +1,5 @@
 import type { PromptGroup } from '@clack/prompts'
-import type { CatalogOptions, CatalogRule, PackageManager, SpecifierRule } from '../types'
+import type { Agent, CatalogOptions, CatalogRule, SpecifierRule } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import process from 'node:process'
@@ -17,7 +17,7 @@ interface PromptResults {
   eslint?: boolean | symbol
 }
 
-const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
+const ESLINT_FIX_PATTERNS: Record<Agent, string> = {
   pnpm: '"**/package.json" "**/pnpm-workspace.yaml"',
   yarn: '"**/package.json" "**/.yarnrc.yml"',
   bun: '"**/package.json"',
@@ -31,7 +31,7 @@ function generateConfigContent(lines: string[]): string {
 async function generateConfigLines(lines: string[], workspace: Workspace, results: PromptResults): Promise<string[]> {
   const { eslint = false } = results
   const options = workspace.getOptions()
-  const packageManager = options.packageManager || 'pnpm'
+  const agent = options.agent || 'pnpm'
 
   const packages = await workspace.loadPackages()
 
@@ -39,7 +39,7 @@ async function generateConfigLines(lines: string[], workspace: Workspace, result
   const end = lines.findIndex(line => line === `})`)
 
   if (eslint)
-    lines.splice(end, 0, `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[packageManager]}',`)
+    lines.splice(end, 0, `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[agent]}',`)
 
   if (containsVSCodeExtension(packages))
     lines.splice(start + 1, 0, `  exclude: ['@types/vscode'],`)

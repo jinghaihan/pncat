@@ -13,12 +13,12 @@ vi.mock('../src/utils/workspace', () => ({
 }))
 
 vi.mock('../src/io/workspace', () => ({
-  findWorkspaceRoot: vi.fn().mockResolvedValue('/test/workspace'),
+  detectWorkspaceRoot: vi.fn().mockResolvedValue('/test/workspace'),
 }))
 
 // Mock side effects that don't affect core logic
 vi.mock('../src/utils/process', () => ({
-  runInstallCommand: vi.fn(),
+  runAgentInstall: vi.fn(),
 }))
 
 vi.mock('../src/commands/resolver', () => ({

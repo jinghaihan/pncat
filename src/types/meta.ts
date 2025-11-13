@@ -103,8 +103,9 @@ export interface ParsedSpec {
   specifierSource?: 'user' | 'catalog' | 'workspace' | 'npm'
 }
 
-export interface WorkspaceMeta {
-  type: WorkspaceType
+export interface AgentConfig {
+  workspaceType: WorkspaceType
+  filename: string
   lock: string | string[]
   defaultContent: string
 }

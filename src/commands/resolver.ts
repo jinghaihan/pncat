@@ -3,9 +3,10 @@ import type { Workspace } from '../workspace-manager'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { getDepSource, normalizeCatalogName } from '../utils/helper'
+import { normalizeCatalogName } from '../utils/catalog'
+import { getDepSource } from '../utils/helper'
 import { getLatestVersion } from '../utils/npm'
-import { parseCommandOptions, runRemoveCommand } from '../utils/process'
+import { parseCommandOptions, runAgentRemove } from '../utils/process'
 import { parseSpec, sortSpecs } from '../utils/specifier'
 
 interface ResolveContext {
@@ -254,9 +255,9 @@ export async function resolveRemove(args: string[], context: ResolveContext): Pr
   const filepath = await workspace.catalog.findWorkspaceFile()
   if (!filepath) {
     p.outro(c.red('no workspace file found'))
-    await runRemoveCommand(deps, {
+    await runAgentRemove(deps, {
       cwd: process.cwd(),
-      packageManager: catalogOptions.packageManager,
+      agent: catalogOptions.agent,
       recursive: isRecursive,
     })
     return { dependencies: [], updatedPackages: {} }
@@ -309,9 +310,9 @@ export async function resolveRemove(args: string[], context: ResolveContext): Pr
 
   if (unCatalogDeps.length) {
     p.outro(c.yellow(`${unCatalogDeps.join(', ')} is not used in any catalog`))
-    await runRemoveCommand(unCatalogDeps, {
+    await runAgentRemove(unCatalogDeps, {
       cwd: process.cwd(),
-      packageManager: catalogOptions.packageManager,
+      agent: catalogOptions.agent,
       recursive: isRecursive,
     })
   }

@@ -6,14 +6,14 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { findUp } from 'find-up-simple'
 import { join } from 'pathe'
-import { WORKSPACE_META } from '../constants'
-import { detectIndent, writeJSON } from '../io/packages'
-import { findWorkspaceRoot } from '../io/workspace'
+import { AGENT_CONFIG } from '../constants'
+import { detectIndent, writeJSON } from '../io/fs'
+import { detectWorkspaceRoot } from '../io/workspace'
 
 export class JsonCatalog implements CatalogHandler {
   public workspace: Workspace
   public options: CatalogOptions
-  public packageManager: 'bun' | 'vlt'
+  public agent: 'bun' | 'vlt'
 
   public workspaceJson: WorkspaceSchema | null = null
   public workspaceJsonPath: string | null = null
@@ -21,23 +21,23 @@ export class JsonCatalog implements CatalogHandler {
   constructor(workspace: Workspace) {
     this.workspace = workspace
     this.options = workspace.getOptions()
-    this.packageManager = (this.options.packageManager || 'bun') as 'bun' | 'vlt'
+    this.agent = (this.options.agent || 'bun') as 'bun' | 'vlt'
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.packageManager === 'vlt')
+    if (this.agent === 'vlt')
       return await findUp('vlt.json', { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
-    const workspaceMeta = WORKSPACE_META[this.packageManager]
+    const data = AGENT_CONFIG[this.agent]
 
     let filepath = await this.findWorkspaceFile()
-    const workspaceFile = workspaceMeta.type
+    const filename = data.filename
 
     if (!filepath) {
-      const root = await findWorkspaceRoot(this.packageManager)
-      p.log.warn(c.yellow(`no ${workspaceFile} found`))
+      const root = await detectWorkspaceRoot(this.agent)
+      p.log.warn(c.yellow(`no ${filename} found`))
 
       const result = await p.confirm({
         message: `do you want to create it under project root ${c.dim(root)} ?`,
@@ -47,8 +47,8 @@ export class JsonCatalog implements CatalogHandler {
         process.exit(1)
       }
 
-      filepath = join(root, workspaceFile)
-      await writeFile(filepath, workspaceMeta.defaultContent)
+      filepath = join(root, filename)
+      await writeFile(filepath, data.defaultContent)
     }
 
     this.workspaceJson = JSON.parse(await readFile(filepath, 'utf-8'))
@@ -196,7 +196,7 @@ export class JsonCatalog implements CatalogHandler {
 
     const workspaceJson = await this.getWorkspaceJson()
 
-    if (this.packageManager === 'bun') {
+    if (this.agent === 'bun') {
       raw.workspaces = workspaceJson
     }
     else {

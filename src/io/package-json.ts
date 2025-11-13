@@ -2,12 +2,11 @@ import type { CatalogOptions, DepType, PackageJsonMeta, RawDep } from '../types'
 import { resolve } from 'pathe'
 import { DEPS_FIELDS } from '../constants'
 import { parseDependencies } from './dependencies'
-import { readJSON } from './packages'
+import { readJSON } from './fs'
 
 function isDepFieldEnabled(key: DepType, options: CatalogOptions): boolean {
   if (!options.depFields?.[key])
     return false
-
   return true
 }
 

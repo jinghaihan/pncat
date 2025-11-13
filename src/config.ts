@@ -4,10 +4,10 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
-import { DEFAULT_CATALOG_OPTIONS, PACKAGE_MANAGERS } from './constants'
-import { findWorkspaceRoot } from './io/workspace'
+import { AGENTS, DEFAULT_CATALOG_OPTIONS } from './constants'
+import { detectWorkspaceRoot } from './io/workspace'
 import { DEFAULT_CATALOG_RULES } from './rules'
-import { detectPackageManager } from './utils/package-manager'
+import { detectAgent } from './utils/package-manager'
 
 function normalizeConfig(options: Partial<CatalogOptions>) {
   // interop
@@ -43,16 +43,16 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
 
   // detect package manager
-  if (!merged.packageManager) {
-    const packageManager = await detectPackageManager(merged.cwd)
-    merged.packageManager = packageManager ?? 'pnpm'
+  if (!merged.agent) {
+    const agent = await detectAgent(merged.cwd)
+    merged.agent = agent ?? 'pnpm'
   }
-  if (!PACKAGE_MANAGERS.includes(merged.packageManager)) {
-    p.outro(c.red(`Unsupported package manager: ${merged.packageManager}`))
+  if (!AGENTS.includes(merged.agent)) {
+    p.outro(c.red(`Unsupported package manager: ${merged.agent}`))
     process.exit(1)
   }
 
-  merged.cwd = merged.cwd || await findWorkspaceRoot(merged.packageManager)
+  merged.cwd = merged.cwd || await detectWorkspaceRoot(merged.agent)
   if (typeof merged.catalog === 'boolean')
     delete merged.catalog
 

@@ -1,7 +1,26 @@
-import type { CatalogOptions, RawDep } from '../types'
+import type { CatalogOptions, DepType, RawDep, WorkspaceSchema } from '../types'
 import { satisfies } from 'semver'
-import { DEP_TYPE_GROUP_NAME_MAP } from '../constants'
+import { DEPS_TYPE_CATALOG_MAP } from '../constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
+
+export function isCatalogWorkspace(type: DepType) {
+  return type === 'pnpm-workspace'
+    || type === 'yarn-workspace'
+    || type === 'bun-workspace'
+    || type === 'vlt-workspace'
+}
+
+export function extractCatalogName(name: string) {
+  return name
+    .replace('pnpm-catalog:', '')
+    .replace('yarn-catalog:', '')
+    .replace('bun-catalog:', '')
+    .replace('vlt-catalog:', '')
+}
+
+export function normalizeCatalogName(catalogName: string) {
+  return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+}
 
 export function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
   if (Array.isArray(match)) {
@@ -48,5 +67,40 @@ export function inferCatalogName(dep: Omit<RawDep, 'catalogName'>, options: Cata
     return bestMatching.name || `${name}-${bestMatching.suffix}`
   }
 
-  return DEP_TYPE_GROUP_NAME_MAP[dep.source] || 'default'
+  return DEPS_TYPE_CATALOG_MAP[dep.source] || 'default'
+}
+
+export function createDepCatalogIndex(workspaceJson?: WorkspaceSchema) {
+  const catalogIndex = new Map<string, { catalogName: string, specifier: string }[]>()
+  if (!workspaceJson)
+    return catalogIndex
+
+  if (workspaceJson.catalog) {
+    for (const [depName, specifier] of Object.entries(workspaceJson.catalog)) {
+      if (!catalogIndex.has(depName))
+        catalogIndex.set(depName, [])
+
+      catalogIndex.get(depName)?.push({
+        catalogName: 'default',
+        specifier,
+      })
+    }
+  }
+  if (workspaceJson.catalogs) {
+    for (const [catalogName, catalog] of Object.entries(workspaceJson.catalogs)) {
+      if (catalog) {
+        for (const [depName, specifier] of Object.entries(catalog)) {
+          if (!catalogIndex.has(depName))
+            catalogIndex.set(depName, [])
+
+          catalogIndex.get(depName)?.push({
+            catalogName,
+            specifier,
+          })
+        }
+      }
+    }
+  }
+
+  return catalogIndex
 }

@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { parseArgs, parseCommandOptions, runInstallCommand, runRemoveCommand } from '../src/utils/process'
+import { parseArgs, parseCommandOptions, runAgentInstall, runAgentRemove } from '../src/utils/process'
 
 vi.mock('tinyexec', () => ({
   x: vi.fn().mockResolvedValue(undefined),
@@ -207,7 +207,7 @@ describe('parseCommandOptions', () => {
 it('run install command with different package managers', async () => {
   const { x } = await import('tinyexec')
 
-  await runInstallCommand({ packageManager: 'pnpm' })
+  await runAgentInstall({ agent: 'pnpm' })
   expect(x).toHaveBeenCalledWith('pnpm', ['i'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -215,7 +215,7 @@ it('run install command with different package managers', async () => {
     },
   })
 
-  await runInstallCommand({ packageManager: 'yarn' })
+  await runAgentInstall({ agent: 'yarn' })
   expect(x).toHaveBeenCalledWith('yarn', ['install'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -223,7 +223,7 @@ it('run install command with different package managers', async () => {
     },
   })
 
-  await runInstallCommand({ packageManager: 'bun' })
+  await runAgentInstall({ agent: 'bun' })
   expect(x).toHaveBeenCalledWith('bun', ['install'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -231,7 +231,7 @@ it('run install command with different package managers', async () => {
     },
   })
 
-  await runInstallCommand({ packageManager: 'vlt' })
+  await runAgentInstall({ agent: 'vlt' })
   expect(x).toHaveBeenCalledWith('vlt', ['install'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -243,7 +243,7 @@ it('run install command with different package managers', async () => {
 it('run remove command with different package managers', async () => {
   const { x } = await import('tinyexec')
 
-  await runRemoveCommand(['vue'])
+  await runAgentRemove(['vue'])
   expect(x).toHaveBeenCalledWith('pnpm', ['remove', 'vue'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -251,7 +251,7 @@ it('run remove command with different package managers', async () => {
     },
   })
 
-  await runRemoveCommand(['vue'], { packageManager: 'yarn' })
+  await runAgentRemove(['vue'], { agent: 'yarn' })
   expect(x).toHaveBeenCalledWith('yarn', ['remove', 'vue'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -259,7 +259,7 @@ it('run remove command with different package managers', async () => {
     },
   })
 
-  await runRemoveCommand(['vue'], { packageManager: 'bun' })
+  await runAgentRemove(['vue'], { agent: 'bun' })
   expect(x).toHaveBeenCalledWith('bun', ['remove', 'vue'], {
     nodeOptions: {
       cwd: process.cwd(),
@@ -267,7 +267,7 @@ it('run remove command with different package managers', async () => {
     },
   })
 
-  await runRemoveCommand(['vue'], { packageManager: 'vlt' })
+  await runAgentRemove(['vue'], { agent: 'vlt' })
   expect(x).toHaveBeenCalledWith('vlt', ['remove', 'vue'], {
     nodeOptions: {
       cwd: process.cwd(),

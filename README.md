@@ -33,6 +33,8 @@ pnpm add -D pncat
 pncat init
 pncat create
 pncat setup
+pncat config
+pncat conf
 ```
 
 Initialize your workspace with an optimized configuration file. Analyzes your current workspace dependencies and generates tailored rules for better project visibility.
@@ -45,6 +47,10 @@ Initialize your workspace with an optimized configuration file. Analyzes your cu
 
 ```sh
 pncat detect
+pncat d
+pncat scan
+pncat check
+pncat find
 ```
 
 Scans your workspace to identify dependencies that could be moved to catalogs.
@@ -57,6 +63,10 @@ Scans your workspace to identify dependencies that could be moved to catalogs.
 
 ```sh
 pncat migrate
+pncat mig
+pncat move
+pncat mv
+pncat m
 ```
 
 > [!NOTE]
@@ -110,6 +120,9 @@ To remove a dependency from all packages in the monorepo, you can use `pnpm remo
 
 ```sh
 pncat clean
+pncat cl
+pncat c
+pncat prune
 ```
 
 Find unused catalog dependencies and remove them from workspace catalog configuration.
@@ -122,6 +135,9 @@ Find unused catalog dependencies and remove them from workspace catalog configur
 
 ```sh
 pncat revert
+pncat rev
+pncat restore
+pncat undo
 ```
 
 Reverts cataloged dependencies to `package.json`. Useful for monorepo restructuring or migration.
@@ -134,6 +150,9 @@ You can also revert specific dependencies using:
 
 ```sh
 pncat revert dep
+pncat rev dep
+pncat restore dep
+pncat undo dep
 ```
 
 <p align='center'>

@@ -1,6 +1,6 @@
 import type { PackageJsonMeta, RawDep } from '../types'
 import c from 'ansis'
-import { DEPENDENCIES_TYPE_SHORT_MAP } from '../constants'
+import { DEPS_TYPE_SHORT_MAP } from '../constants'
 
 const MIN_DEP_NAME_WIDTH = 12
 const MIN_DEP_TYPE_WIDTH = 6
@@ -20,7 +20,7 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
 
   for (const dep of deps) {
     maxDepNameWidth = Math.max(maxDepNameWidth, dep.name.length)
-    maxDepTypeWidth = Math.max(maxDepTypeWidth, DEPENDENCIES_TYPE_SHORT_MAP[dep.source].length)
+    maxDepTypeWidth = Math.max(maxDepTypeWidth, DEPS_TYPE_SHORT_MAP[dep.source].length)
     maxSpecifierWidth = Math.max(maxSpecifierWidth, (dep.specifier || '').length)
     maxCatalogWidth = Math.max(maxCatalogWidth, dep.catalogName.length)
   }
@@ -49,7 +49,7 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
 
     for (const dep of pkgDeps) {
       const depName = dep.name.padEnd(maxDepNameWidth)
-      const depType = DEPENDENCIES_TYPE_SHORT_MAP[dep.source].padEnd(maxDepTypeWidth)
+      const depType = DEPS_TYPE_SHORT_MAP[dep.source].padEnd(maxDepTypeWidth)
       const depSpecifier = (dep.specifier || '').padStart(maxSpecifierWidth)
       const catalogRef = (dep.catalogName === 'default' ? '' : dep.catalogName).padEnd(maxCatalogWidth)
       lines.push(`  ${depName} ${c.dim(depType)} ${c.red(depSpecifier)}  ${c.dim('→')}  catalog:${c.reset(c.green(catalogRef))}`)

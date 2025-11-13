@@ -5,12 +5,9 @@ import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import { resolveCommand } from 'package-manager-detector'
 import { x } from 'tinyexec'
+import { CMD_BOOL_FLAGS, CMD_BOOL_SHORT_FLAGS } from '../constants'
 
-const BOOLEAN_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'save-exact', 'recursive'])
-
-const BOOLEAN_SHORT_FLAGS = new Set(['D', 'P', 'O', 'E', 'r'])
-
-export interface PackageManagerCommandOptions extends Pick<CatalogOptions, 'packageManager' | 'cwd' | 'recursive'> {
+export interface AgentCommandOptions extends Pick<CatalogOptions, 'agent' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
   silent?: boolean
 }
@@ -35,7 +32,7 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
         options[key.slice(3)] = false
         i++
       }
-      else if (BOOLEAN_FLAGS.has(key)) {
+      else if (CMD_BOOL_FLAGS.has(key)) {
         options[key] = true
         i++
       }
@@ -51,7 +48,7 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
     else if (arg.startsWith('-') && arg.length === 2) {
       const key = arg.slice(1)
 
-      if (BOOLEAN_SHORT_FLAGS.has(key)) {
+      if (CMD_BOOL_SHORT_FLAGS.has(key)) {
         options[key] = true
         i++
       }
@@ -95,10 +92,10 @@ export function parseCommandOptions(args: string[]) {
 /**
  * Execute install command
  */
-export async function runInstallCommand(options: PackageManagerCommandOptions = {}) {
-  const { packageManager = 'pnpm', cwd = process.cwd(), stdio = 'inherit', silent = false } = options
+export async function runAgentInstall(options: AgentCommandOptions = {}) {
+  const { agent = 'pnpm', cwd = process.cwd(), stdio = 'inherit', silent = false } = options
   if (!silent)
-    p.outro(`running ${packageManager} install`)
+    p.outro(`running ${agent} install`)
 
   const execOptions = {
     nodeOptions: {
@@ -106,10 +103,10 @@ export async function runInstallCommand(options: PackageManagerCommandOptions = 
       stdio,
     },
   }
-  const execCommand = async () => await x(packageManager, ['install'], execOptions)
+  const execCommand = async () => await x(agent, ['install'], execOptions)
 
   try {
-    const resolved = resolveCommand(packageManager as Agent, 'install', [])
+    const resolved = resolveCommand(agent as Agent, 'install', [])
     if (resolved)
       await x(resolved.command, resolved.args, execOptions)
     else
@@ -123,8 +120,8 @@ export async function runInstallCommand(options: PackageManagerCommandOptions = 
 /**
  * Execute add command
  */
-export async function runRemoveCommand(dependencies: string[], options: PackageManagerCommandOptions = {}) {
-  const { packageManager = 'pnpm', cwd = process.cwd(), recursive = false, stdio = 'inherit' } = options
+export async function runAgentRemove(dependencies: string[], options: AgentCommandOptions = {}) {
+  const { agent = 'pnpm', cwd = process.cwd(), recursive = false, stdio = 'inherit' } = options
   if (dependencies.length === 0)
     return
 
@@ -138,10 +135,10 @@ export async function runRemoveCommand(dependencies: string[], options: PackageM
       stdio,
     },
   }
-  const execCommand = async () => await x(packageManager, ['remove', ...args], execOptions)
+  const execCommand = async () => await x(agent, ['remove', ...args], execOptions)
 
   try {
-    const resolved = resolveCommand(packageManager as Agent, 'uninstall', args)
+    const resolved = resolveCommand(agent as Agent, 'uninstall', args)
     if (resolved)
       await x(resolved.command, resolved.args, execOptions)
     else

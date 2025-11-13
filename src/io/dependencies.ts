@@ -1,5 +1,5 @@
 import type { CatalogOptions, DepType, RawDep } from '../types'
-import { inferCatalogName } from '../utils/catalog'
+import { extractCatalogName, inferCatalogName, isCatalogWorkspace } from '../utils/catalog'
 
 interface FlattenPkgData { [key: string]: { specifier: string, parents: string[] } }
 
@@ -21,21 +21,6 @@ export function getByPath(obj: any, path: string) {
   return flatten(path.split('.').reduce((o, i) => o?.[i], obj))
 }
 
-function isCatalog(type: DepType) {
-  return type === 'pnpm-workspace'
-    || type === 'yarn-workspace'
-    || type === 'bun-workspace'
-    || type === 'vlt-workspace'
-}
-
-export function extractCatalogName(name: string) {
-  return name
-    .replace('pnpm-catalog:', '')
-    .replace('yarn-catalog:', '')
-    .replace('bun-catalog:', '')
-    .replace('vlt-catalog:', '')
-}
-
 export function parseDependency(
   name: string,
   specifier: string,
@@ -50,13 +35,13 @@ export function parseDependency(
     specifier,
     parents,
     source: type,
-    catalog: isCatalog(type) || specifier.startsWith('catalog:'),
+    catalog: isCatalogWorkspace(type) || specifier.startsWith('catalog:'),
     catalogable: shouldCatalog(name, specifier),
   }
 
   return {
     ...dep,
-    catalogName: isCatalog(type) ? extractCatalogName(packageName!) : inferCatalogName(dep, options),
+    catalogName: isCatalogWorkspace(type) ? extractCatalogName(packageName!) : inferCatalogName(dep, options),
   }
 }
 

@@ -1,8 +1,16 @@
-import type { WorkspaceSchema } from '../types'
-import { createCatalogIndex } from '../utils/helper'
+import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta, WorkspaceSchema } from '../types'
+import { createDepCatalogIndex } from '../utils/catalog'
 import { YamlCatalog } from './yaml-workspace'
 
 export class PnpmCatalog extends YamlCatalog {
+  static async loadWorkspace(
+    relative: string,
+    options: CatalogOptions,
+    shouldCatalog: DepFilter,
+  ): Promise<PnpmWorkspaceMeta[]> {
+    return await YamlCatalog.loadWorkspace(relative, options, shouldCatalog) as PnpmWorkspaceMeta[]
+  }
+
   async updateWorkspaceOverrides(): Promise<void> {
     const packages = await this.workspace.loadPackages()
     const workspaceYaml = await this.getWorkspaceYaml()
@@ -12,8 +20,8 @@ export class PnpmCatalog extends YamlCatalog {
       return
 
     const rawWorkspaceJson = packages.find(i => i.name.startsWith('pnpm-catalog:'))?.raw as WorkspaceSchema
-    const rawCatalogIndex = createCatalogIndex(rawWorkspaceJson)
-    const catalogIndex = createCatalogIndex(workspaceYaml.toJSON())
+    const rawCatalogIndex = createDepCatalogIndex(rawWorkspaceJson)
+    const catalogIndex = createDepCatalogIndex(workspaceYaml.toJSON())
 
     const document = workspaceYaml.getDocument()
     for (const dep of overrides.deps) {

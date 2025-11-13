@@ -6,10 +6,10 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { basename, join } from 'pathe'
 import tildify from 'tildify'
-import { DEPS_FIELDS, WORKSPACE_META } from '../constants'
-import { readJSON, writeJSON } from '../io/packages'
+import { AGENT_CONFIG, DEPS_FIELDS } from '../constants'
+import { readJSON, writeJSON } from '../io/fs'
 import { diffHighlight } from './diff'
-import { runHooks, runInstallCommand } from './process'
+import { runAgentInstall, runHooks } from './process'
 
 export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
   workspace: Workspace
@@ -33,13 +33,13 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   } = options ?? {}
 
   const catalogOptions = workspace.getOptions()
-  const workspaceType = WORKSPACE_META[catalogOptions.packageManager || 'pnpm'].type
+  const workspaceType = AGENT_CONFIG[catalogOptions.agent || 'pnpm'].workspaceType
 
   const rawContent = await workspace.catalog.toString()
 
   await modifier()
   // update pnpm-workspace.yaml overrides
-  if (catalogOptions.packageManager === 'pnpm') {
+  if (catalogOptions.agent === 'pnpm') {
     await workspace.catalog.updateWorkspaceOverrides?.()
   }
 
@@ -84,9 +84,9 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   if (completeMessage) {
     if (catalogOptions.install) {
       p.log.info(c.green(completeMessage))
-      await runInstallCommand({
+      await runAgentInstall({
         cwd: workspace.getCwd(),
-        packageManager: catalogOptions.packageManager,
+        agent: catalogOptions.agent,
       })
     }
     else {

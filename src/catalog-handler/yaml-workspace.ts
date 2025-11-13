@@ -1,45 +1,103 @@
-import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema, WorkspaceYaml } from '../types'
+import type { CatalogHandler, CatalogOptions, DepFilter, RawDep, WorkspacePackageMeta, WorkspaceSchema, WorkspaceYaml } from '../types'
 import type { Workspace } from '../workspace-manager'
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { findUp } from 'find-up-simple'
-import { join } from 'pathe'
+import { join, resolve } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import { WORKSPACE_META } from '../constants'
-import { findWorkspaceRoot } from '../io/workspace'
+import { AGENT_CONFIG } from '../constants'
+import { parseDependency } from '../io/dependencies'
+import { detectWorkspaceRoot } from '../io/workspace'
 
 export class YamlCatalog implements CatalogHandler {
   public workspace: Workspace
   public options: CatalogOptions
-  public packageManager: 'pnpm' | 'yarn'
+  public agent: 'pnpm' | 'yarn'
 
   public workspaceYaml: WorkspaceYaml | null = null
   public workspaceYamlPath: string | null = null
 
   constructor(workspace: Workspace) {
     this.options = workspace.getOptions()
-    this.packageManager = (this.options.packageManager || 'pnpm') as 'pnpm' | 'yarn'
+    this.agent = (this.options.agent || 'pnpm') as 'pnpm' | 'yarn'
     this.workspace = workspace
   }
 
+  static async loadWorkspace(
+    relative: string,
+    options: CatalogOptions,
+    shouldCatalog: DepFilter,
+  ): Promise<WorkspacePackageMeta[]> {
+    const { agent = 'pnpm' } = options
+    const workspaceType = AGENT_CONFIG[agent].workspaceType
+
+    const filepath = resolve(options.cwd ?? '', relative)
+    const rawText = await readFile(filepath, 'utf-8')
+    const context = parsePnpmWorkspaceYaml(rawText)
+    const raw = context.getDocument().toJSON()
+
+    const catalogs: WorkspacePackageMeta[] = []
+
+    function createWorkspaceEntry(name: string, map: Record<string, string>): WorkspacePackageMeta {
+      const deps: RawDep[] = Object.entries(map)
+        .map(([pkg, version]) => parseDependency(
+          pkg,
+          version,
+          `${agent}-workspace`,
+          shouldCatalog,
+          options,
+          [],
+          name,
+        ))
+
+      return {
+        name,
+        private: true,
+        version: '',
+        type: workspaceType,
+        relative,
+        filepath,
+        raw,
+        context,
+        deps,
+      } satisfies WorkspacePackageMeta
+    }
+
+    if (raw?.catalog) {
+      catalogs.push(createWorkspaceEntry(`${agent}-catalog:default`, raw.catalog))
+    }
+
+    if (raw?.catalogs) {
+      for (const key of Object.keys(raw.catalogs)) {
+        catalogs.push(createWorkspaceEntry(`${agent}-catalog:${key}`, raw.catalogs[key]))
+      }
+    }
+
+    if (raw?.overrides) {
+      catalogs.push(createWorkspaceEntry(`${agent}-workspace:overrides`, raw.overrides))
+    }
+
+    return catalogs
+  }
+
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.packageManager === 'pnpm')
+    if (this.agent === 'pnpm')
       return await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
-    if (this.packageManager === 'yarn')
+    if (this.agent === 'yarn')
       return await findUp('.yarnrc.yml', { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
-    const workspaceMeta = WORKSPACE_META[this.packageManager]
+    const data = AGENT_CONFIG[this.agent]
 
     let filepath = await this.findWorkspaceFile()
-    const workspaceFile = workspaceMeta.type
+    const filename = data.filename
 
     if (!filepath) {
-      const root = await findWorkspaceRoot(this.packageManager)
-      p.log.warn(c.yellow(`no ${workspaceFile} found`))
+      const root = await detectWorkspaceRoot(this.agent)
+      p.log.warn(c.yellow(`no ${filename} found`))
 
       const result = await p.confirm({
         message: `do you want to create it under project root ${c.dim(root)} ?`,
@@ -49,8 +107,8 @@ export class YamlCatalog implements CatalogHandler {
         process.exit(1)
       }
 
-      filepath = join(root, workspaceFile)
-      await writeFile(filepath, workspaceMeta.defaultContent)
+      filepath = join(root, filename)
+      await writeFile(filepath, data.defaultContent)
     }
 
     this.workspaceYaml = parsePnpmWorkspaceYaml(await readFile(filepath, 'utf-8'))

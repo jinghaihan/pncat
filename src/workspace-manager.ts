@@ -9,9 +9,9 @@ import type {
 import process from 'node:process'
 import { join } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
-import { extractCatalogName } from './io/dependencies'
-import { loadPackages, readJSON } from './io/packages'
-import { inferCatalogName } from './utils/catalog'
+import { readJSON } from './io/fs'
+import { loadPackages } from './io/packages'
+import { extractCatalogName, inferCatalogName } from './utils/catalog'
 
 export class Workspace {
   public catalog: CatalogHandler
