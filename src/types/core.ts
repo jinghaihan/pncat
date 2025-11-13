@@ -16,22 +16,31 @@ export interface CommandOptions {
   mode?: RangeMode
   /**
    * Recursively search for package.json in subdirectories
+   * @default true
    */
   recursive?: boolean
   /**
    * Force the execution of the command
+   * @default false
    */
   force?: boolean
   /**
+   * Install from a specific catalog, auto detect if not provided
+   */
+  catalog?: string
+  /**
    * Prompt for confirmation
+   * @default true
    */
   yes?: boolean
   /**
    * Run install after command
+   * @default true
    */
   install?: boolean
   /**
    * Show complete catalogs instead of only the diff
+   * @default false
    */
   verbose?: boolean
 }
@@ -52,12 +61,9 @@ export interface ConfigOptions {
   ignorePaths?: string | string[]
   /**
    * Ignore other workspaces
+   * @default true
    */
   ignoreOtherWorkspaces?: boolean
-  /**
-   * Install from a specific catalog, auto detect if not provided
-   */
-  catalog?: string
   /**
    * Fields in package.json to be checked
    * By default check `dependencies`, `devDependencies` and `peerDependencies`
@@ -67,6 +73,11 @@ export interface ConfigOptions {
    * Allowed protocols in specifier to not be converted to catalog
    */
   allowedProtocols?: string[]
+  /**
+   * Save exact version of the dependency
+   * @default false
+   */
+  saveExact?: boolean
   /**
    * Hook to run after command completion
    * Can be a shell command string or a function

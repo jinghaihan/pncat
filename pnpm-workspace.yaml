@@ -1,7 +1,7 @@
 packages: []
 catalogs:
   build:
-    tsdown: ^0.16.3
+    tsdown: ^0.16.4
   cli:
     bumpp: ^10.3.1
     taze: ^19.9.0

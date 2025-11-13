@@ -186,6 +186,8 @@ export default defineConfig({
     allowPreReleases: true,
     allowWildcards: false
   },
+  // Saved dependencies will be configured with an exact version rather than using semver range operator
+  saveExact: true,
   // Hook to run after command completion (supports string commands, functions, or arrays)
   postRun: 'eslint --fix "**/package.json" "**/pnpm-workspace.yaml"'
 })

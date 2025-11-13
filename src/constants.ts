@@ -46,7 +46,13 @@ export const AGENT_CONFIG: Record<Agent, AgentConfig> = {
   },
 }
 
-export const CMD_BOOL_FLAGS = new Set(['save-dev', 'save-peer', 'save-optional', 'save-exact', 'recursive'])
+export const CMD_BOOL_FLAGS = new Set([
+  'save-dev',
+  'save-peer',
+  'save-optional',
+  'save-exact',
+  'recursive',
+])
 
 export const CMD_BOOL_SHORT_FLAGS = new Set(['D', 'P', 'O', 'E', 'r'])
 
@@ -67,6 +73,7 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
     allowWildcards: false,
   },
   yes: false,
+  saveExact: false,
   install: true,
 }
 

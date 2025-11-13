@@ -31,7 +31,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
   const { options, workspace } = context
   await workspace.loadPackages()
 
-  const { deps, isDev, isOptional, isPeer, isExact } = parseCommandOptions(args)
+  const { deps, isDev, isOptional, isPeer, isExact } = parseCommandOptions(args, options)
   if (!deps.length) {
     p.outro(c.red('no dependencies provided, aborting'))
     process.exit(1)

@@ -202,6 +202,19 @@ describe('parseCommandOptions', () => {
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '-E'])).toEqual(expected)
     expect(parseCommandOptions(['vue', '--catalog', 'frontend', '--save-exact'])).toEqual(expected)
   })
+
+  it('should parse pnpm options with exact from options', () => {
+    const expected = {
+      deps: ['vue'],
+      isRecursive: false,
+      isDev: false,
+      isOptional: false,
+      isPeer: false,
+      isExact: true,
+    }
+
+    expect(parseCommandOptions(['vue', '--catalog', 'frontend'], { saveExact: true })).toEqual(expected)
+  })
 })
 
 it('run install command with different package managers', async () => {

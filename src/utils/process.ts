@@ -70,7 +70,7 @@ export function parseArgs(args: string[]): { options: Record<string, unknown>, d
   return { options, deps }
 }
 
-export function parseCommandOptions(args: string[]) {
+export function parseCommandOptions(args: string[], options: CatalogOptions = {}) {
   const { deps } = parseArgs(args)
   const isRecursive = ['--recursive', '-r'].some(i => args.includes(i))
   const isProd = ['--save-prod', '-P'].some(i => args.includes(i))
@@ -85,7 +85,7 @@ export function parseCommandOptions(args: string[]) {
     isDev: !isProd && isDev,
     isOptional: !isProd && isOptional,
     isPeer: !isProd && isPeer,
-    isExact,
+    isExact: options.saveExact || isExact,
   }
 }
 
