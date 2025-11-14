@@ -7,11 +7,18 @@ import type {
   WorkspacePackageMeta,
 } from './types'
 import process from 'node:process'
+import cloneDeep from 'lodash.clonedeep'
 import { join } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
 import { readJSON } from './io/fs'
 import { loadPackages } from './io/packages'
-import { extractCatalogName, inferCatalogName } from './utils/catalog'
+import {
+  extractCatalogName,
+  inferCatalogName,
+  isCatalogPackageName,
+  isCatalogSpecifier,
+} from './utils/catalog'
+import { isPnpmOverridesPackageName } from './utils/helper'
 
 export class Workspace {
   public catalog: CatalogHandler
@@ -117,7 +124,7 @@ export class Workspace {
     let catalogDeletable = true
     updatedPackages ??= new Map()
 
-    const packages = this.getDepPackages(depName).filter(i => !this.isCatalogPackageName(i) && !this.isPnpmOverridesPackageName(i))
+    const packages = this.getDepPackages(depName).filter(i => !isCatalogPackageName(i) && !isPnpmOverridesPackageName(i))
     if (packages.length === 0)
       return { updatedPackages, catalogDeletable }
 
@@ -131,7 +138,7 @@ export class Workspace {
         return
 
       if (!updatedPackages.has(pkgName))
-        updatedPackages.set(pkgName, structuredClone(pkg))
+        updatedPackages.set(pkgName, cloneDeep(pkg))
       const updatedPkg = updatedPackages.get(pkgName)!
 
       delete updatedPkg.raw[dep.source][dep.name]
@@ -160,17 +167,17 @@ export class Workspace {
   }
 
   /**
-   * Get the dependencies of a catalog
-   */
-  getCatalogDeps(catalogName: string): RawDep[] {
-    return Array.from(this.catalogDepIndex.get(catalogName)?.values() ?? [])
-  }
-
-  /**
    * Get a dependency of a catalog
    */
   getCatalogDep(depName: string, catalogName: string): RawDep | null {
     return this.catalogDepIndex.get(depName)?.get(catalogName) ?? null
+  }
+
+  /**
+   * Get the dependencies of a catalog
+   */
+  getCatalogDeps(catalogName: string): RawDep[] {
+    return Array.from(this.catalogDepIndex.get(catalogName)?.values() ?? [])
   }
 
   /**
@@ -188,66 +195,38 @@ export class Workspace {
   }
 
   /**
-   * Check if a specifier is a catalog specifier
+   * Check if a package is a catalog package
    */
-  isCatalogSpecifier(specifier: string): boolean {
-    return specifier.startsWith('catalog:')
+  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
+    return isCatalogPackageName(pkg.name) && !isPnpmOverridesPackageName(pkg.name)
   }
 
   /**
    * Extract the catalog name from a specifier
    */
   extractCatalogName(specifier: string): string {
-    if (this.isCatalogSpecifier(specifier))
+    if (isCatalogSpecifier(specifier))
       return specifier.replace('catalog:', '')
-
     return ''
-  }
-
-  /**
-   * Check if a package is a catalog package
-   */
-  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return pkg.type === 'pnpm-workspace.yaml'
-      || pkg.type === '.yarnrc.yml'
-      || pkg.type === 'bun-workspace'
-      || pkg.type === 'vlt.json'
-  }
-
-  /**
-   * Check if a specifier is a catalog package name
-   */
-  isCatalogPackageName(pkgName: string): boolean {
-    return pkgName.startsWith('pnpm-catalog:')
-      || pkgName.startsWith('yarn-catalog:')
-      || pkgName.startsWith('bun-catalog:')
-      || pkgName.startsWith('vlt-catalog:')
-  }
-
-  /**
-   * Check if is a pnpm overrides
-   */
-  isPnpmOverridesPackageName(pkgName: string): boolean {
-    return pkgName === 'pnpm-workspace:overrides'
   }
 
   /**
    * Extract the catalog name from a package name
    */
-  extractCatalogNameFromPackageName(pkgName: string): string {
-    if (this.isCatalogPackageName(pkgName))
+  extractCatalogNameFromPkgName(pkgName: string): string {
+    if (isCatalogPackageName(pkgName))
       return extractCatalogName(pkgName)
     return ''
   }
 
   /**
-   * Resolve a dependency, update the catalog name if needed
+   * Normalize a dependency, update the catalog name if needed
    */
   resolveDep(dep: RawDep, force?: boolean): RawDep {
     if (!dep.catalog)
       return { ...dep, update: true }
 
-    const catalogDep = this.resolveCatalogDep(dep)
+    const catalogDep = this.resolveCatalogSpecifier(dep)
     if (!catalogDep)
       return { ...dep, update: true }
 
@@ -263,43 +242,21 @@ export class Workspace {
   }
 
   /**
-   * Resolve a catalog dependency, get the specifier from the catalog
+   * Get the specifier from the workspace catalog
    */
-  resolveCatalogDep(dep: RawDep): RawDep | null {
+  resolveCatalogSpecifier(dep: RawDep): RawDep | null {
     const pkgs = this.catalogDepIndex.get(dep.name)
     if (!pkgs)
       return null
 
-    // pnpm catalog
-    const pnpmPkgName = `pnpm-catalog:${dep.catalogName}`
-    if (pkgs.has(pnpmPkgName)) {
-      const catalogDep = pkgs.get(pnpmPkgName)!
-      return { ...dep, specifier: catalogDep.specifier }
-    }
-
-    // yarn catalog
-    const yarnPkgName = `yarn-catalog:${dep.catalogName}`
-    if (pkgs.has(yarnPkgName)) {
-      const catalogDep = pkgs.get(yarnPkgName)!
-      return { ...dep, specifier: catalogDep.specifier }
-    }
-
-    // bun catalog
-    const bunPkgName = `bun-catalog:${dep.catalogName}`
-    if (pkgs.has(bunPkgName)) {
-      const catalogDep = pkgs.get(bunPkgName)!
-      return { ...dep, specifier: catalogDep.specifier }
-    }
-
-    // vlt catalog
-    const vltPkgName = `vlt-catalog:${dep.catalogName}`
-    if (pkgs.has(vltPkgName)) {
-      const catalogDep = pkgs.get(vltPkgName)!
+    const pkgName = `${this.options.agent}-catalog:${dep.catalogName}`
+    if (pkgs.has(pkgName)) {
+      const catalogDep = pkgs.get(pkgName)!
       return { ...dep, specifier: catalogDep.specifier }
     }
 
     const catalogDep = Array.from(pkgs.values())[0]
-    const catalogName = this.extractCatalogNameFromPackageName(Array.from(pkgs.keys())[0])
+    const catalogName = this.extractCatalogNameFromPkgName(Array.from(pkgs.keys())[0])
 
     return { ...dep, specifier: catalogDep.specifier, catalogName }
   }
@@ -312,17 +269,7 @@ export class Workspace {
       return false
 
     const deps = Array.from(this.packageDepIndex.get(catalogDep.name)?.values() ?? [])
-    return !!deps.find(i => i.catalogName === catalogDep.catalogName)
-  }
-
-  /**
-   * Check if a catalog dependency is in pnpm overrides
-   */
-  isDepInPnpmOverrides(catalogDep: RawDep): boolean {
-    const pkg = this.packages.find(i => i.name === 'pnpm-workspace:overrides')
-    if (!pkg || !pkg.raw.overrides)
-      return false
-    return !!pkg.raw.overrides[catalogDep.name]
+    return !!deps.find(i => i.catalogName === catalogDep.catalogName && isCatalogSpecifier(i.specifier))
   }
 
   /**
@@ -331,13 +278,23 @@ export class Workspace {
   isDepInCatalog(pkgDep: RawDep): boolean {
     if (!pkgDep.catalog)
       return false
-
     if (!this.catalogDepIndex.has(pkgDep.name))
       return false
 
     const catalogName = this.extractCatalogName(pkgDep.specifier)
     const deps = Array.from(this.catalogDepIndex.get(pkgDep.name)?.values() ?? [])
     return !!deps.find(i => i.catalogName === catalogName)
+  }
+
+  /**
+   * Check if a catalog dependency is in pnpm overrides
+   */
+  isDepInPnpmOverrides(catalogDep: RawDep): boolean {
+    const pkg = this.packages.find(i => isPnpmOverridesPackageName(i.name))
+    if (!pkg || !pkg.raw.overrides)
+      return false
+    const specifier = pkg.raw.overrides[catalogDep.name]
+    return !!specifier && isCatalogSpecifier(specifier)
   }
 
   /**

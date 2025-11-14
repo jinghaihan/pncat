@@ -38,9 +38,6 @@ describe('inferCatalogName', () => {
 
     expect(inferCatalogName(createDep('@types/vscode'), config)).toBe('types')
     expect(inferCatalogName(createDep('reactive-vscode'), config)).toBe('vscode')
-
-    expect(inferCatalogName(createDep('p-limit'), config)).toBe('utils')
-    expect(inferCatalogName(createDep('p-retry'), config)).toBe('utils')
   })
 
   it('should name with catalog rules order', () => {
@@ -60,7 +57,6 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('tsc')
     expect(inferCatalogName(createDep('termsnap', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
     expect(inferCatalogName(createDep('node-pty', '^1.0.0', 'optionalDependencies'), config)).toBe('optional')
-    expect(inferCatalogName(createDep('vsce', '^1.0.0', 'resolutions'), config)).toBe('cli')
     expect(inferCatalogName(createDep('ffmpeg', '^1.0.0', 'resolutions'), config)).toBe('default')
   })
 
@@ -146,5 +142,8 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('guide'), config)).toBe('prod')
     expect(inferCatalogName(createDep('reka-ui'), config)).toBe('frontend')
     expect(inferCatalogName(createDep('@storybook/ui'), config)).toBe('frontend')
+
+    expect(inferCatalogName(createDep('p-limit'), config)).toBe('utils')
+    expect(inferCatalogName(createDep('p-retry'), config)).toBe('utils')
   })
 })

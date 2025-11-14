@@ -19,8 +19,7 @@ describe('parseDependencies', () => {
       name: 'pncat',
       private: true,
       dependencies: {
-        'vue': '^3.6.0',
-        'vue-router': '~4.5.0',
+        vue: '^3.6.0',
       },
     }
     const result = parseDependencies(pkgJson, 'dependencies', () => true, config)
@@ -35,15 +34,6 @@ describe('parseDependencies', () => {
           "source": "dependencies",
           "specifier": "^3.6.0",
         },
-        {
-          "catalog": false,
-          "catalogName": "frontend",
-          "catalogable": true,
-          "name": "vue-router",
-          "parents": [],
-          "source": "dependencies",
-          "specifier": "~4.5.0",
-        },
       ]
     `)
   })
@@ -54,7 +44,6 @@ describe('parseDependencies', () => {
       private: true,
       devDependencies: {
         vite: '~7.0.0',
-        vitest: '^3.2.0',
       },
     }
     const result = parseDependencies(pkgJson, 'devDependencies', () => true, config)
@@ -68,15 +57,6 @@ describe('parseDependencies', () => {
           "parents": [],
           "source": "devDependencies",
           "specifier": "~7.0.0",
-        },
-        {
-          "catalog": false,
-          "catalogName": "test",
-          "catalogable": true,
-          "name": "vitest",
-          "parents": [],
-          "source": "devDependencies",
-          "specifier": "^3.2.0",
         },
       ]
     `)

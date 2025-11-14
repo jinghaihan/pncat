@@ -1,6 +1,7 @@
 import type { CatalogRule } from '../types'
 import { toArray } from '@antfu/utils'
 import deepmerge from 'deepmerge'
+import cloneDeep from 'lodash.clonedeep'
 import { DEFAULT_CATALOG_RULES } from '../rules'
 
 export interface MergeOptions {
@@ -21,7 +22,7 @@ export function mergeCatalogRules(...args: (MergeOptions | CatalogRule[])[]): Ca
   const { mergeDefaults = true, arrayMerge = mergeByName } = options
 
   const sources = mergeDefaults
-    ? [structuredClone(DEFAULT_CATALOG_RULES), ...rules]
+    ? [cloneDeep(DEFAULT_CATALOG_RULES), ...rules]
     : [...rules]
 
   return sources.length === 0

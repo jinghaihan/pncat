@@ -5,7 +5,15 @@ export const NAME = pkgJson.name
 
 export const VERSION = pkgJson.version
 
-export const MODE_CHOICES = ['init', 'detect', 'migrate', 'add', 'remove', 'clean', 'revert'] as const
+export const MODE_CHOICES = [
+  'init',
+  'detect',
+  'migrate',
+  'add',
+  'remove',
+  'clean',
+  'revert',
+] as const
 
 export const MODE_ALIASES: Partial<Record<RangeMode, string[]>> = {
   init: ['create', 'setup', 'config', 'conf'],
@@ -21,30 +29,34 @@ export const AGENTS = ['pnpm', 'yarn', 'bun', 'vlt'] as const
 
 export const AGENT_CONFIG: Record<Agent, AgentConfig> = {
   pnpm: {
-    workspaceType: 'pnpm-workspace.yaml',
+    type: 'pnpm-workspace.yaml',
+    depType: 'pnpm-workspace',
     filename: 'pnpm-workspace.yaml',
-    lock: 'pnpm-lock.yaml',
+    locks: 'pnpm-lock.yaml',
     defaultContent: 'packages: []',
   },
   yarn: {
-    workspaceType: '.yarnrc.yml',
+    type: '.yarnrc.yml',
+    depType: 'yarn-workspace',
     filename: '.yarnrc.yml',
-    lock: 'yarn.lock',
+    locks: 'yarn.lock',
     defaultContent: 'defaultProtocol: "npm:"',
   },
   bun: {
-    workspaceType: 'bun-workspace',
+    type: 'bun-workspace',
+    depType: 'bun-workspace',
     filename: 'package.json',
-    lock: ['bun.lockb', 'bun.lock'],
+    locks: ['bun.lockb', 'bun.lock'],
     defaultContent: '',
   },
   vlt: {
-    workspaceType: 'vlt.json',
+    type: 'vlt.json',
+    depType: 'vlt-workspace',
     filename: 'vlt.json',
-    lock: 'vlt-lock.json',
+    locks: 'vlt-lock.json',
     defaultContent: '{}',
   },
-}
+} as const
 
 export const CMD_BOOL_FLAGS = new Set([
   'save-dev',
@@ -62,9 +74,13 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
   force: false,
   ignoreOtherWorkspaces: true,
   depFields: {
-    dependencies: true,
-    devDependencies: true,
-    peerDependencies: true,
+    'dependencies': true,
+    'devDependencies': true,
+    'peerDependencies': true,
+    'optionalDependencies': true,
+    'resolutions': true,
+    'overrides': true,
+    'pnpm.overrides': true,
   },
   allowedProtocols: ['workspace', 'link', 'file'],
   specifierOptions: {

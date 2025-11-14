@@ -1,4 +1,5 @@
 import type { DepType, RawDep } from '../src/types'
+import { isCatalogSpecifier } from '../src/utils/catalog'
 
 export function createDep<T = Omit<RawDep, 'catalogName'>>(
   name: string,
@@ -9,7 +10,7 @@ export function createDep<T = Omit<RawDep, 'catalogName'>>(
     name,
     specifier,
     source,
-    catalog: specifier.startsWith('catalog:'),
+    catalog: isCatalogSpecifier(specifier),
     catalogable: true,
   } as T
 }

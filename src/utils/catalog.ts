@@ -10,12 +10,23 @@ export function isCatalogWorkspace(type: DepType) {
     || type === 'vlt-workspace'
 }
 
+export function isCatalogPackageName(name: string): boolean {
+  return name.startsWith('pnpm-catalog:')
+    || name.startsWith('yarn-catalog:')
+    || name.startsWith('bun-catalog:')
+    || name.startsWith('vlt-catalog:')
+}
+
 export function extractCatalogName(name: string) {
   return name
     .replace('pnpm-catalog:', '')
     .replace('yarn-catalog:', '')
     .replace('bun-catalog:', '')
     .replace('vlt-catalog:', '')
+}
+
+export function isCatalogSpecifier(specifier: string): boolean {
+  return specifier.startsWith('catalog:')
 }
 
 export function normalizeCatalogName(catalogName: string) {

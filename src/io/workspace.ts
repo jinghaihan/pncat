@@ -10,9 +10,8 @@ export async function detectWorkspaceRoot(agent: Agent = 'pnpm'): Promise<string
   if (root)
     return dirname(root)
 
-  const lockFiles = toArray(AGENT_CONFIG[agent].lock)
-  for (const file of lockFiles) {
-    const filepath = await findUp(file, { cwd: process.cwd() })
+  for (const lock of toArray(AGENT_CONFIG[agent].locks)) {
+    const filepath = await findUp(lock, { cwd: process.cwd() })
     if (filepath)
       return dirname(filepath)
   }

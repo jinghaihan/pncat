@@ -22,7 +22,7 @@ async function _getNpmConfig() {
   npmcliConfig.loadDefaults = () => {
     oldLoadDefaults()
 
-    const setCliOption = (key: string, value: any) => {
+    const setCliOption = (key: string, value: string) => {
       const cli = npmcliConfig.data.get('cli')
       if (cli)
         cli.data[key] = value
