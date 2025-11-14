@@ -7,17 +7,15 @@ interface DiffHighlightOptions {
 }
 
 function highlight(content: string, indentSize: number = 2, highlight: boolean = false): string {
-  if (content.trim() === '') {
+  if (content.trim() === '')
     return content
-  }
 
   const currentIndent = content.search(/\S/)
   const indentLevel = Math.floor(currentIndent / indentSize)
 
   const colonIndex = content.indexOf(':')
-  if (colonIndex === -1) {
+  if (colonIndex === -1)
     return content
-  }
 
   const beforeColon = content.substring(0, colonIndex)
   const afterColon = content.substring(colonIndex)
@@ -54,9 +52,8 @@ export function diffHighlight(original: string, updated: string, options: DiffHi
   let lineNumber = 0
   changed.forEach((part) => {
     const lines = part.value.split('\n')
-    if (lines[lines.length - 1] === '') {
+    if (lines[lines.length - 1] === '')
       lines.pop()
-    }
 
     lines.forEach((line) => {
       diffs.push({
@@ -148,12 +145,10 @@ export function diffHighlight(original: string, updated: string, options: DiffHi
   })
 
   const summaryParts: string[] = []
-  if (addedCount > 0) {
+  if (addedCount > 0)
     summaryParts.push(`${c.yellow(addedCount)} added`)
-  }
-  if (removedCount > 0) {
+  if (removedCount > 0)
     summaryParts.push(`${c.yellow(removedCount)} removed`)
-  }
 
   const result: string[] = []
 

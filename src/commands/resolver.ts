@@ -111,7 +111,7 @@ export async function resolveAdd(args: string[], context: ResolveContext): Promi
  * Resolve the dependencies to clean
  */
 export async function resolveClean(context: ResolveContext): Promise<ResolveResult> {
-  const { workspace } = context
+  const { options, workspace } = context
 
   const packages = await workspace.loadPackages()
   const dependencies: RawDep[] = []
@@ -121,13 +121,31 @@ export async function resolveClean(context: ResolveContext): Promise<ResolveResu
       continue
     for (const dep of pkg.deps) {
       const resolvedDep = workspace.resolveDep(dep, false)
-      if (!workspace.isDepInPackage(resolvedDep)) {
+      if (!workspace.isDepInPackage(resolvedDep))
         dependencies.push(resolvedDep)
-      }
     }
   }
 
-  return { dependencies }
+  if (options.yes)
+    return { dependencies }
+
+  const choices = await p.multiselect({
+    message: 'please select the dependencies to clean',
+    options: dependencies.map((dep, index) => ({
+      label: `${dep.name} (${dep.catalogName})`,
+      value: index,
+      hint: dep.specifier,
+    })),
+    initialValues: Array.from({ length: dependencies.length }, (_, index) => index),
+  })
+  if (p.isCancel(choices) || !choices) {
+    p.outro(c.red('aborting'))
+    process.exit(1)
+  }
+
+  return {
+    dependencies: dependencies.filter((_, index) => choices.includes(index)),
+  }
 }
 
 /**
@@ -330,11 +348,9 @@ export async function resolveRevert(args: string[], context: ResolveContext): Pr
   const { workspace } = context
 
   const { deps } = parseCommandOptions(args)
-
   const depFilter = (depName: string) => {
     if (!deps.length)
       return true
-
     return deps.includes(depName)
   }
 
