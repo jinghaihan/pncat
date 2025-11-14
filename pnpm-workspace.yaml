@@ -34,6 +34,7 @@ catalogs:
   tsc:
     typescript: ^5.9.3
   types:
+    '@types/lodash.clonedeep': ^4.5.9
     '@types/node': ^24.10.1
     '@types/npm-package-arg': ^6.1.4
     '@types/npm-registry-fetch': ^8.0.9
@@ -43,6 +44,7 @@ catalogs:
     deepmerge: ^4.3.1
     detect-indent: ^7.0.2
     diff: ^8.0.2
+    lodash.clonedeep: ^4.5.0
     p-retry: ^7.1.0
     semver: ^7.7.3
     ufo: ^1.6.1

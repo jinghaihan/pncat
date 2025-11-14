@@ -7,20 +7,16 @@ import { AGENT_CONFIG, AGENTS } from '../constants'
 
 export async function detectAgent(cwd: string = process.cwd()): Promise<Agent | undefined> {
   const agent = await detect({ cwd })
-
-  const name = agent?.name as Agent
-
-  if (agent && AGENTS.includes(name))
-    return name
-
-  // vlt workspace
-  if (await findUp('vlt.json', { cwd }))
-    return 'vlt'
-
-  const lockFiles = toArray(AGENT_CONFIG.vlt.lock)
-  for (const file of lockFiles) {
-    const filepath = await findUp(file, { cwd })
-    if (filepath)
-      return 'vlt'
+  if (!agent) {
+    for (const file of toArray(AGENT_CONFIG.vlt.locks).concat(AGENT_CONFIG.vlt.filename)) {
+      const filepath = await findUp(file, { cwd })
+      if (filepath)
+        return 'vlt'
+    }
+    return
   }
+
+  const agentName = agent.name as Agent
+  if (AGENTS.includes(agentName))
+    return agentName
 }

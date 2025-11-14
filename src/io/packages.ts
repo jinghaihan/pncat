@@ -1,10 +1,11 @@
 import type { CatalogOptions, DepFilter, PackageMeta } from '../types'
 import { existsSync } from 'node:fs'
 import process from 'node:process'
+import { toArray } from '@antfu/utils'
 import { findUp } from 'find-up-simple'
 import { dirname, join, resolve } from 'pathe'
 import { glob } from 'tinyglobby'
-import { DEFAULT_IGNORE_PATHS } from '../constants'
+import { AGENT_CONFIG, DEFAULT_IGNORE_PATHS } from '../constants'
 import { createDependenciesFilter } from '../utils/filter'
 import { readJSON } from './fs'
 import { loadPackageJSON } from './package-json'
@@ -40,26 +41,10 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
         if (gitDir && dirname(gitDir) !== cwd)
           return []
 
-        // pnpm workspace
-        if (agent === 'pnpm') {
-          const pnpmWorkspace = await findUp('pnpm-workspace.yaml', { cwd: absolute, stopAt: cwd })
-          if (pnpmWorkspace && dirname(pnpmWorkspace) !== cwd)
-            return []
-        }
-
-        // yarn workspace
-        if (agent === 'yarn') {
-          const yarnWorkspace = await findUp('.yarnrc.yml', { cwd: absolute, stopAt: cwd })
-          if (yarnWorkspace && dirname(yarnWorkspace) !== cwd)
-            return []
-        }
-
-        // vlt workspace
-        if (agent === 'vlt') {
-          const vltWorkspace = await findUp('vlt.json', { cwd: absolute, stopAt: cwd })
-          if (vltWorkspace && dirname(vltWorkspace) !== cwd)
-            return []
-        }
+        const filename = AGENT_CONFIG[agent].filename
+        const filepath = await findUp(filename, { cwd: absolute, stopAt: cwd })
+        if (filepath && dirname(filepath) !== cwd)
+          return []
 
         return [packagePath]
       }),
@@ -72,13 +57,13 @@ export async function findPackageJsonPaths(options: CatalogOptions): Promise<str
 export async function loadPackage(relative: string, options: CatalogOptions, shouldCatalog: DepFilter): Promise<PackageMeta[]> {
   const { PnpmCatalog, YarnCatalog, VltCatalog, BunCatalog } = await import('../catalog-handler')
 
-  if (relative.endsWith('pnpm-workspace.yaml'))
+  if (relative.endsWith(AGENT_CONFIG.pnpm.filename))
     return PnpmCatalog.loadWorkspace(relative, options, shouldCatalog)
 
-  if (relative.endsWith('.yarnrc.yml'))
+  if (relative.endsWith(AGENT_CONFIG.yarn.filename))
     return YarnCatalog.loadWorkspace(relative, options, shouldCatalog)
 
-  if (relative.endsWith('vlt.json'))
+  if (relative.endsWith(AGENT_CONFIG.vlt.filename))
     return VltCatalog.loadWorkspace(relative, options, shouldCatalog)
 
   // Check if this package.json contains Bun workspaces with catalogs
@@ -91,9 +76,7 @@ export async function loadPackage(relative: string, options: CatalogOptions, sho
       // Only process Bun catalogs if we detect Bun is being used
       if (workspaces && (workspaces.catalog || workspaces.catalogs)) {
         const cwd = resolve(options.cwd || process.cwd())
-        const hasBunLock = existsSync(join(cwd, 'bun.lockb')) || existsSync(join(cwd, 'bun.lock'))
-
-        if (hasBunLock) {
+        if (toArray(AGENT_CONFIG.bun.locks).some(lock => existsSync(join(cwd, lock)))) {
           const bunWorkspaces = await BunCatalog.loadWorkspace(relative, options, shouldCatalog)
           const packageJson = await loadPackageJSON(relative, options, shouldCatalog)
           return [...bunWorkspaces, ...packageJson]
@@ -120,17 +103,9 @@ export async function loadPackages(options: CatalogOptions): Promise<PackageMeta
   )
   const packagePaths: string[] = await findPackageJsonPaths(options)
 
-  // pnpm workspace
-  if (agent === 'pnpm' && existsSync(join(cwd, 'pnpm-workspace.yaml')))
-    packagePaths.unshift('pnpm-workspace.yaml')
-
-  // yarn workspace
-  if (agent === 'yarn' && existsSync(join(cwd, '.yarnrc.yml')))
-    packagePaths.unshift('.yarnrc.yml')
-
-  // vlt workspace
-  if (agent === 'vlt' && existsSync(join(cwd, 'vlt.json')))
-    packagePaths.unshift('vlt.json')
+  const filename = AGENT_CONFIG[agent].filename
+  if (existsSync(join(cwd, filename)))
+    packagePaths.unshift(filename)
 
   const packages = (await Promise.all(
     packagePaths.map(relative => loadPackage(relative, options, filter)),

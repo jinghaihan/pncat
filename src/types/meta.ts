@@ -6,8 +6,6 @@ export type WorkspaceYaml = PnpmWorkspaceYaml
 
 export type WorkspaceSchema = PnpmWorkspaceYamlSchema
 
-export type WorkspaceType = 'pnpm-workspace.yaml' | '.yarnrc.yml' | 'bun-workspace' | 'vlt.json'
-
 export interface RawDep {
   name: string
   specifier: string
@@ -104,8 +102,9 @@ export interface ParsedSpec {
 }
 
 export interface AgentConfig {
-  workspaceType: WorkspaceType
+  type: WorkspacePackageMeta['type']
+  depType: DepType
   filename: string
-  lock: string | string[]
+  locks: string | string[]
   defaultContent: string
 }

@@ -9,7 +9,7 @@ import c from 'ansis'
 import { join } from 'pathe'
 import { DEFAULT_CATALOG_RULES } from '../rules'
 import { isDepMatched } from '../utils/catalog'
-import { containsESLint, containsVSCodeExtension } from '../utils/contains'
+import { containsESLint, containsVSCodeExtension } from '../utils/helper'
 import { Workspace } from '../workspace-manager'
 
 interface PromptResults {

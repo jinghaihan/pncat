@@ -4,7 +4,7 @@ import { existsSync } from 'node:fs'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { basename, join } from 'pathe'
+import { join } from 'pathe'
 import tildify from 'tildify'
 import { AGENT_CONFIG, DEPS_FIELDS } from '../constants'
 import { readJSON, writeJSON } from '../io/fs'
@@ -33,25 +33,25 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
   } = options ?? {}
 
   const catalogOptions = workspace.getOptions()
-  const workspaceType = AGENT_CONFIG[catalogOptions.agent || 'pnpm'].workspaceType
+  const filename = AGENT_CONFIG[catalogOptions.agent || 'pnpm'].filename
 
   const rawContent = await workspace.catalog.toString()
 
   await modifier()
+
   // update pnpm-workspace.yaml overrides
-  if (catalogOptions.agent === 'pnpm') {
+  if (catalogOptions.agent === 'pnpm')
     await workspace.catalog.updateWorkspaceOverrides?.()
-  }
 
   const content = await workspace.catalog.toString()
 
   if (rawContent === content) {
     if (bailout) {
-      p.outro(c.yellow(`no changes to ${workspaceType}`))
+      p.outro(c.yellow(`no changes to ${filename}`))
       process.exit(0)
     }
     else {
-      p.log.info(c.green(`no changes to ${workspaceType}`))
+      p.log.info(c.green(`no changes to ${filename}`))
     }
   }
 
@@ -73,7 +73,7 @@ export async function confirmWorkspaceChanges(modifier: () => Promise<void>, opt
     await writePackageJSONs(updatedPackages!)
 
   if (diff) {
-    p.log.info(`writing ${basename(filepath)}`)
+    p.log.info(`writing ${filename}`)
     await workspace.catalog.writeWorkspace()
   }
 

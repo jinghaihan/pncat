@@ -3,6 +3,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import deepmerge from 'deepmerge'
+import cloneDeep from 'lodash.clonedeep'
 import { createConfigLoader } from 'unconfig'
 import { AGENTS, DEFAULT_CATALOG_OPTIONS } from './constants'
 import { detectWorkspaceRoot } from './io/workspace'
@@ -33,11 +34,11 @@ export async function readConfig(options: Partial<CatalogOptions>) {
 }
 
 export async function resolveConfig(options: Partial<CatalogOptions>): Promise<CatalogOptions> {
-  const defaults = structuredClone(DEFAULT_CATALOG_OPTIONS)
+  const defaults = cloneDeep(DEFAULT_CATALOG_OPTIONS)
   options = normalizeConfig(options)
 
   const configOptions = await readConfig(options)
-  const catalogRules = configOptions.catalogRules || structuredClone(DEFAULT_CATALOG_RULES) || []
+  const catalogRules = configOptions.catalogRules || cloneDeep(DEFAULT_CATALOG_RULES) || []
   delete configOptions.catalogRules
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
@@ -45,7 +46,7 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
   // detect package manager
   if (!merged.agent) {
     const agent = await detectAgent(merged.cwd)
-    merged.agent = agent ?? 'pnpm'
+    merged.agent = agent || 'pnpm'
   }
   if (!AGENTS.includes(merged.agent)) {
     p.outro(c.red(`Unsupported package manager: ${merged.agent}`))

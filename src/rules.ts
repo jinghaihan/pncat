@@ -120,7 +120,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'markdown',
-    match: [/markdown/, /turndown/],
+    match: [/markdown/, /mdast/, /remark/, /turndown/],
     priority: 50,
   },
   {

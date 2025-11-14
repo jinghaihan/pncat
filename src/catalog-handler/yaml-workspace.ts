@@ -31,7 +31,6 @@ export class YamlCatalog implements CatalogHandler {
     shouldCatalog: DepFilter,
   ): Promise<WorkspacePackageMeta[]> {
     const { agent = 'pnpm' } = options
-    const workspaceType = AGENT_CONFIG[agent].workspaceType
 
     const filepath = resolve(options.cwd ?? '', relative)
     const rawText = await readFile(filepath, 'utf-8')
@@ -56,7 +55,7 @@ export class YamlCatalog implements CatalogHandler {
         name,
         private: true,
         version: '',
-        type: workspaceType,
+        type: AGENT_CONFIG[agent].type,
         relative,
         filepath,
         raw,
@@ -83,10 +82,8 @@ export class YamlCatalog implements CatalogHandler {
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.agent === 'pnpm')
-      return await findUp('pnpm-workspace.yaml', { cwd: process.cwd() })
-    if (this.agent === 'yarn')
-      return await findUp('.yarnrc.yml', { cwd: process.cwd() })
+    const filename = AGENT_CONFIG[this.agent].filename
+    return await findUp(filename, { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
