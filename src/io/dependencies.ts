@@ -1,5 +1,6 @@
 import type { CatalogOptions, DepType, RawDep } from '../types'
 import { extractCatalogName, inferCatalogName, isCatalogWorkspace } from '../utils/catalog'
+import { isPnpmOverridesPackageName } from '../utils/helper'
 
 interface FlattenPkgData { [key: string]: { specifier: string, parents: string[] } }
 
@@ -41,7 +42,9 @@ export function parseDependency(
 
   return {
     ...dep,
-    catalogName: isCatalogWorkspace(type) ? extractCatalogName(packageName!) : inferCatalogName(dep, options),
+    catalogName: isCatalogWorkspace(type) && !isPnpmOverridesPackageName(packageName)
+      ? extractCatalogName(packageName!)
+      : inferCatalogName(dep, options),
   }
 }
 

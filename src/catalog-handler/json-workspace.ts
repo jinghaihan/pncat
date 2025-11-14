@@ -5,6 +5,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { findUp } from 'find-up-simple'
+import cloneDeep from 'lodash.clonedeep'
 import { join } from 'pathe'
 import { AGENT_CONFIG } from '../constants'
 import { detectIndent, writeJSON } from '../io/fs'
@@ -25,8 +26,8 @@ export class JsonCatalog implements CatalogHandler {
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    if (this.agent === 'vlt')
-      return await findUp('vlt.json', { cwd: process.cwd() })
+    const filename = AGENT_CONFIG[this.agent].filename
+    return await findUp(filename, { cwd: process.cwd() })
   }
 
   async ensureWorkspace(): Promise<void> {
@@ -57,7 +58,8 @@ export class JsonCatalog implements CatalogHandler {
 
   async toJSON(): Promise<WorkspaceSchema> {
     await this.cleanupCatalogs()
-    return await this.getWorkspaceJson()
+    const data = await this.getWorkspaceJson()
+    return cloneDeep(data)
   }
 
   async toString(): Promise<string> {

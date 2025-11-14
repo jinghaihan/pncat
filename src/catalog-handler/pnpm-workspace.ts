@@ -1,5 +1,6 @@
 import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta, WorkspaceSchema } from '../types'
 import { createDepCatalogIndex } from '../utils/catalog'
+import { isPnpmOverridesPackageName } from '../utils/helper'
 import { YamlCatalog } from './yaml-workspace'
 
 export class PnpmCatalog extends YamlCatalog {
@@ -15,7 +16,7 @@ export class PnpmCatalog extends YamlCatalog {
     const packages = await this.workspace.loadPackages()
     const workspaceYaml = await this.getWorkspaceYaml()
 
-    const overrides = packages.find(i => i.name === 'pnpm-workspace:overrides')
+    const overrides = packages.find(i => isPnpmOverridesPackageName(i.name))
     if (!overrides)
       return
 

@@ -7,11 +7,14 @@ import type {
   WorkspacePackageMeta,
 } from './types'
 import process from 'node:process'
+import cloneDeep from 'lodash.clonedeep'
 import { join } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
+import { AGENT_CONFIG } from './constants'
 import { readJSON } from './io/fs'
 import { loadPackages } from './io/packages'
 import { extractCatalogName, inferCatalogName } from './utils/catalog'
+import { isPnpmOverridesPackageName } from './utils/helper'
 
 export class Workspace {
   public catalog: CatalogHandler
@@ -117,7 +120,7 @@ export class Workspace {
     let catalogDeletable = true
     updatedPackages ??= new Map()
 
-    const packages = this.getDepPackages(depName).filter(i => !this.isCatalogPackageName(i) && !this.isPnpmOverridesPackageName(i))
+    const packages = this.getDepPackages(depName).filter(i => !this.isCatalogPackageName(i) && !isPnpmOverridesPackageName(i))
     if (packages.length === 0)
       return { updatedPackages, catalogDeletable }
 
@@ -131,7 +134,7 @@ export class Workspace {
         return
 
       if (!updatedPackages.has(pkgName))
-        updatedPackages.set(pkgName, structuredClone(pkg))
+        updatedPackages.set(pkgName, cloneDeep(pkg))
       const updatedPkg = updatedPackages.get(pkgName)!
 
       delete updatedPkg.raw[dep.source][dep.name]
@@ -200,7 +203,6 @@ export class Workspace {
   extractCatalogName(specifier: string): string {
     if (this.isCatalogSpecifier(specifier))
       return specifier.replace('catalog:', '')
-
     return ''
   }
 
@@ -208,10 +210,8 @@ export class Workspace {
    * Check if a package is a catalog package
    */
   isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return pkg.type === 'pnpm-workspace.yaml'
-      || pkg.type === '.yarnrc.yml'
-      || pkg.type === 'bun-workspace'
-      || pkg.type === 'vlt.json'
+    const options = Object.values(AGENT_CONFIG).map(i => i.type) as PackageMeta['type'][]
+    return options.includes(pkg.type) && !isPnpmOverridesPackageName(pkg.name)
   }
 
   /**
@@ -222,13 +222,6 @@ export class Workspace {
       || pkgName.startsWith('yarn-catalog:')
       || pkgName.startsWith('bun-catalog:')
       || pkgName.startsWith('vlt-catalog:')
-  }
-
-  /**
-   * Check if is a pnpm overrides
-   */
-  isPnpmOverridesPackageName(pkgName: string): boolean {
-    return pkgName === 'pnpm-workspace:overrides'
   }
 
   /**
@@ -312,17 +305,18 @@ export class Workspace {
       return false
 
     const deps = Array.from(this.packageDepIndex.get(catalogDep.name)?.values() ?? [])
-    return !!deps.find(i => i.catalogName === catalogDep.catalogName)
+    return !!deps.find(i => i.catalogName === catalogDep.catalogName && i.specifier.startsWith('catalog:'))
   }
 
   /**
    * Check if a catalog dependency is in pnpm overrides
    */
   isDepInPnpmOverrides(catalogDep: RawDep): boolean {
-    const pkg = this.packages.find(i => i.name === 'pnpm-workspace:overrides')
+    const pkg = this.packages.find(i => isPnpmOverridesPackageName(i.name))
     if (!pkg || !pkg.raw.overrides)
       return false
-    return !!pkg.raw.overrides[catalogDep.name]
+    const specifier = pkg.raw.overrides[catalogDep.name]
+    return !!specifier && specifier.startsWith('catalog:')
   }
 
   /**
