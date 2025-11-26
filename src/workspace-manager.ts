@@ -269,7 +269,9 @@ export class Workspace {
       return false
 
     const deps = Array.from(this.packageDepIndex.get(catalogDep.name)?.values() ?? [])
-    return !!deps.find(i => i.catalogName === catalogDep.catalogName && isCatalogSpecifier(i.specifier))
+    return !!deps.find(i =>
+      i.specifier === `catalog:${catalogDep.catalogName}` && isCatalogSpecifier(i.specifier),
+    )
   }
 
   /**
@@ -294,7 +296,7 @@ export class Workspace {
     if (!pkg || !pkg.raw.overrides)
       return false
     const specifier = pkg.raw.overrides[catalogDep.name]
-    return !!specifier && isCatalogSpecifier(specifier)
+    return !!specifier && isCatalogSpecifier(specifier) && specifier === `catalog:${catalogDep.catalogName}`
   }
 
   /**

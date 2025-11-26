@@ -91,7 +91,14 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'style',
-    match: [/css/, /less/, /sass/, /autoprefixer/],
+    match: [
+      'clsx',
+      /css/,
+      /less/,
+      /sass/,
+      /autoprefixer/,
+      /tailwind/,
+    ],
     priority: 50,
   },
   {
@@ -100,15 +107,18 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 50,
   },
   {
-    name: 'ast',
+    name: 'parser',
     match: [
       /babel/,
       /swc/,
       /oxc/,
       /acorn/,
       /buble/,
-      /estree/,
       /esprima/,
+      /mdast/,
+      /micromark/,
+      /remark/,
+      /marked/,
       /([/-]|^)ast([/-]|$)/,
     ],
     priority: 50,
@@ -120,7 +130,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'markdown',
-    match: [/markdown/, /mdast/, /remark/, /turndown/],
+    match: [/markdown/, /turndown/],
     priority: 50,
   },
   {
