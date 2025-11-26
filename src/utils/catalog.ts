@@ -11,6 +11,9 @@ export function isCatalogWorkspace(type: DepType) {
 }
 
 export function isCatalogPackageName(name: string): boolean {
+  if (!name)
+    return false
+
   return name.startsWith('pnpm-catalog:')
     || name.startsWith('yarn-catalog:')
     || name.startsWith('bun-catalog:')
