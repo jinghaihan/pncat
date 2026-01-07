@@ -10,7 +10,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import cloneDeep from 'lodash.clonedeep'
-import { updatePackageToSpecifier } from '../utils/helper'
+import { isPnpmOverridesPackageName, updatePackageToSpecifier } from '../utils/helper'
 import { parseCommandOptions } from '../utils/process'
 import { confirmWorkspaceChanges } from '../utils/workspace'
 import { Workspace } from '../workspace-manager'
@@ -92,8 +92,12 @@ export async function resolveRevert(context: ResolverContext): Promise<ResolverR
   }
 
   for (const pkg of packages) {
+    if (isPnpmOverridesPackageName(pkg.name))
+      continue
+
     if (workspace.isCatalogPackage(pkg))
       continue
+
     for (const dep of pkg.deps) {
       if (!depFilter(dep.name))
         continue
