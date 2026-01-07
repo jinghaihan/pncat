@@ -1,13 +1,13 @@
 packages: []
 catalogs:
   build:
-    tsdown: ^0.16.8
+    tsdown: ^0.18.4
   cli:
     bumpp: ^10.3.2
     taze: ^19.9.2
   lint:
-    '@antfu/eslint-config': ^6.3.0
-    eslint: ^9.39.1
+    '@antfu/eslint-config': ^6.7.3
+    eslint: ^9.39.2
     lint-staged: ^16.2.7
     simple-git-hooks: ^2.13.1
   node:
@@ -17,25 +17,25 @@ catalogs:
     find-up-simple: ^1.0.1
     package-manager-detector: ^1.6.0
     pathe: ^2.0.3
-    pnpm-workspace-yaml: ^1.3.0
+    pnpm-workspace-yaml: ^1.4.3
     tildify: ^3.0.0
     tinyexec: ^1.0.2
     tinyglobby: ^0.2.15
-    unconfig: ^7.4.1
+    unconfig: ^7.4.2
   npm:
-    '@npmcli/config': ^10.4.4
+    '@npmcli/config': ^10.4.5
     fast-npm-meta: ^0.4.7
     npm-package-arg: ^13.0.2
     npm-registry-fetch: ^19.1.1
   script:
     tsx: ^4.21.0
   test:
-    vitest: ^4.0.15
+    vitest: ^4.0.16
   tsc:
     typescript: ^5.9.3
   types:
     '@types/lodash.clonedeep': ^4.5.9
-    '@types/node': ^24.10.1
+    '@types/node': ^25.0.3
     '@types/npm-package-arg': ^6.1.4
     '@types/npm-registry-fetch': ^8.0.9
     '@types/semver': ^7.7.1
@@ -45,9 +45,9 @@ catalogs:
     detect-indent: ^7.0.2
     diff: ^8.0.2
     lodash.clonedeep: ^4.5.0
-    p-retry: ^7.1.0
+    p-retry: ^7.1.1
     semver: ^7.7.3
-    ufo: ^1.6.1
+    ufo: ^1.6.2
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks
