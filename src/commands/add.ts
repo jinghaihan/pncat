@@ -39,6 +39,10 @@ export async function addCommand(options: CatalogOptions) {
   const deps = pkgJson[depsSource] ||= {}
   for (const dep of dependencies) {
     COMMON_DEPS_FIELDS.forEach((field) => {
+      // In this case, the package is usually installed as a dev dependency,
+      // but published as a peer or optional dependency.
+      if (depsSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
+        return
       if (pkgJson[field]?.[dep.name])
         delete pkgJson[field][dep.name]
     })
