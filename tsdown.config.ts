@@ -6,4 +6,5 @@ export default defineConfig({
     'src/cli',
   ],
   clean: true,
+  inlineOnly: false,
 })

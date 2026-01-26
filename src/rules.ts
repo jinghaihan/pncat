@@ -284,6 +284,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'ai',
     match: [
+      '@anthropic-ai/claude-agent-sdk',
       'ai',
       /@ai-sdk/,
     ],
