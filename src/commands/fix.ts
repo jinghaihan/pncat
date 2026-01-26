@@ -18,31 +18,31 @@ export async function fixCommand(options: CatalogOptions) {
   const catalogs = await workspace.catalog.toJSON()
   const invalidCatalogs: { name: string, pkg: string, specifier: string }[] = []
 
-  const scanCatalog = (name: string, catalog: Record<string, string>) => {
-    Object.entries(catalog).forEach(async ([pkg, specifier]) => {
-      if (specifier.startsWith('catalog:')) {
-        const spinner = p.spinner({ indicator: 'dots' })
-        spinner.start(`resolving ${c.cyan(pkg)} from npm...`)
+  const scanCatalog = async (name: string, catalog: Record<string, string>) => {
+    for (const [pkg, specifier] of Object.entries(catalog)) {
+      if (!specifier.startsWith('catalog:'))
+        return
 
-        const version = await getLatestVersion(pkg)
-        if (version) {
-          const specifier = `^${version}`
-          spinner.stop(`${c.dim('resolved')} ${c.cyan(pkg)}${c.dim(`@${c.green(specifier)}`)}`)
-          invalidCatalogs.push({ name, pkg, specifier })
-        }
-        else {
-          spinner.stop(`failed to resolve ${c.cyan(pkg)} from npm`)
-          p.outro(c.red('aborting'))
-          process.exit(1)
-        }
+      const spinner = p.spinner({ indicator: 'dots' })
+      spinner.start(`resolving ${c.cyan(pkg)} from npm...`)
+
+      const version = await getLatestVersion(pkg)
+      if (version) {
+        const specifier = `^${version}`
+        spinner.stop(`${c.dim('resolved')} ${c.cyan(pkg)}${c.dim(`@${c.green(specifier)}`)}`)
+        invalidCatalogs.push({ name, pkg, specifier })
       }
-    })
+      else {
+        spinner.stop(`failed to resolve ${c.cyan(pkg)} from npm`)
+        p.outro(c.red('aborting'))
+        process.exit(1)
+      }
+    }
   }
 
   await scanCatalog('default', catalogs.catalog ?? {})
-  Object.entries(catalogs.catalogs ?? {}).forEach(async ([name, catalog]) => {
+  for (const [name, catalog] of Object.entries(catalogs.catalogs ?? {}))
     await scanCatalog(name, catalog)
-  })
 
   if (!invalidCatalogs.length) {
     p.log.info(c.green('no invalid catalogs found'))
