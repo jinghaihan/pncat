@@ -159,6 +159,19 @@ pncat undo dep
 <img src='./assets/revert-d.png' width='600' />
 </p>
 
+### Fix
+
+```sh
+pncat fix
+pncat f
+```
+
+Automatically detects and fixes invalid catalog specifiers in workspace file by re-resolving and rewriting them to valid versions.
+
+<p align='center'>
+<img src='./assets/fix.png' width='600' />
+</p>
+
 ## Configuration
 
 You can use `pncat init` to initialize a configuration file with optimized rules based on your current workspace, or create a `pncat.config.ts` file manually to customize catalog rules:

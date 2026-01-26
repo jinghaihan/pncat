@@ -21,7 +21,7 @@ export async function fixCommand(options: CatalogOptions) {
   const scanCatalog = async (name: string, catalog: Record<string, string>) => {
     for (const [pkg, specifier] of Object.entries(catalog)) {
       if (!specifier.startsWith('catalog:'))
-        return
+        continue
 
       const spinner = p.spinner({ indicator: 'dots' })
       spinner.start(`resolving ${c.cyan(pkg)} from npm...`)
@@ -41,8 +41,9 @@ export async function fixCommand(options: CatalogOptions) {
   }
 
   await scanCatalog('default', catalogs.catalog ?? {})
-  for (const [name, catalog] of Object.entries(catalogs.catalogs ?? {}))
+  for (const [name, catalog] of Object.entries(catalogs.catalogs ?? {})) {
     await scanCatalog(name, catalog)
+  }
 
   if (!invalidCatalogs.length) {
     p.log.info(c.green('no invalid catalogs found'))
