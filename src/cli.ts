@@ -8,6 +8,7 @@ import {
   addCommand,
   cleanCommand,
   detectCommand,
+  fixCommand,
   initCommand,
   migrateCommand,
   removeCommand,
@@ -71,6 +72,9 @@ try {
           break
         case 'revert':
           await revertCommand(config)
+          break
+        case 'fix':
+          await fixCommand(config)
           break
       }
     })
