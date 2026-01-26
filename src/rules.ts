@@ -58,12 +58,12 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'e2e',
-    match: [/cypress/, /playwright/, /puppeteer/, /nightwatch/, /webdriverio/],
+    match: [/cypress/, /playwright/, /puppeteer/, /nightwatch/, /webdriverio/, /chromium/],
     priority: 30,
   },
   {
     name: 'i18n',
-    match: [/i18n/],
+    match: ['next-intl', /i18n/],
     priority: 40,
   },
   {
@@ -93,6 +93,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     name: 'style',
     match: [
       'clsx',
+      'class-variance-authority',
       /css/,
       /less/,
       /sass/,
@@ -162,11 +163,13 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       'detect-indent',
       'ufo',
       'hookable',
+      'lz-string',
       /lodash/,
       /ramda/,
       /zod/,
       /ajv/,
       /dayjs/,
+      /date-fns/,
       /semver/,
       /uuid/,
       /nanoid/,
@@ -177,6 +180,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /cheerio/,
       /deepmerge/,
       /defu/,
+      /dexie/,
       /lru-cache/,
       /utils/,
       /@vueuse\//,
@@ -212,6 +216,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /ansi/,
       /prompts/,
       /kill/,
+      /shadcn/,
       /cli-/,
       /find-/,
       /fs(?=-)|(?<=-)fs/,
@@ -222,7 +227,10 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'frontend',
     match: [
+      'cmdk',
+      'sonner',
       /nprogress/,
+      /dnd/,
       /swiper/,
       /tippy/,
       /monaco/,
@@ -237,6 +245,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /vue/,
       /pinia/,
       /react/,
+      /zustand/,
       /redux/,
       /angular/,
       /svelte/,
@@ -257,6 +266,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'database',
     match: [
+      'pg',
       /prisma/,
       /sequelize/,
       /knex/,
@@ -264,8 +274,18 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /mongo/,
       /database/,
       /datastore/,
+      /supabase/,
+      /postgres/,
       /sql/,
       /orm/,
+    ],
+    priority: 60,
+  },
+  {
+    name: 'ai',
+    match: [
+      'ai',
+      /@ai-sdk/,
     ],
     priority: 60,
   },
