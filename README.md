@@ -20,6 +20,7 @@ pnpm add -D pncat
 - <samp><b>➖ Remove</b></samp> - Safely remove dependencies and worksspace catalogs
 - <samp><b>🧹 Clean</b></samp> - Find and remove unused catalog entries
 - <samp><b>↩️ Revert</b></samp> - Revert cataloged dependencies to package.json
+- <samp><b>🩹 Fix</b></samp> - Fix invalid specifiers in workspace file
 
 <p align='center'>
 <img src='./assets/help.png' />

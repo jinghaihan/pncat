@@ -62,8 +62,18 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 30,
   },
   {
+    name: 'doc',
+    match: [/vitepress/, /vuepress/],
+    priority: 40,
+  },
+  {
     name: 'i18n',
     match: ['next-intl', /i18n/],
+    priority: 40,
+  },
+  {
+    name: 'auth',
+    match: [/better-auth/],
     priority: 40,
   },
   {
@@ -167,6 +177,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /lodash/,
       /ramda/,
       /zod/,
+      /immer/,
       /ajv/,
       /dayjs/,
       /date-fns/,
@@ -183,6 +194,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
       /dexie/,
       /lru-cache/,
       /utils/,
+      /hooks/,
       /@vueuse\//,
       /^use[A-Z]/,
       /^p-/,
@@ -284,9 +296,9 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   {
     name: 'ai',
     match: [
-      '@anthropic-ai/claude-agent-sdk',
       'ai',
       /@ai-sdk/,
+      /agent-sdk/,
     ],
     priority: 60,
   },
