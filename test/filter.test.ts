@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { createDependenciesFilter, specFilter } from '../src/utils/filter'
+import { createDependenciesFilter, packageNameFilter, specFilter } from '../src/utils/filter'
 
 describe('specFilter', () => {
   it('valid specifiers should be accepted', () => {
@@ -100,6 +100,47 @@ describe('specFilter', () => {
         expect(specFilter('*', { skipRangeTypes: ['*'], allowWildcards: true })).toBe(false)
       })
     })
+  })
+})
+
+describe('packageNameFilter', () => {
+  it('should accept plain package names', () => {
+    expect(packageNameFilter('react')).toBe(true)
+    expect(packageNameFilter('vue')).toBe(true)
+    expect(packageNameFilter('lodash')).toBe(true)
+  })
+
+  it('should accept scoped package names without version', () => {
+    expect(packageNameFilter('@types/node')).toBe(true)
+    expect(packageNameFilter('@vue/core')).toBe(true)
+    expect(packageNameFilter('@scope/package')).toBe(true)
+  })
+
+  it('should reject package names with version specifier', () => {
+    expect(packageNameFilter('foo@1.2.3')).toBe(false)
+    expect(packageNameFilter('bar@^1.0.0')).toBe(false)
+    expect(packageNameFilter('baz@~2.3.4')).toBe(false)
+  })
+
+  it('should reject package names with range specifiers', () => {
+    expect(packageNameFilter('foo@^1')).toBe(false)
+    expect(packageNameFilter('foo@>1')).toBe(false)
+    expect(packageNameFilter('foo@<2')).toBe(false)
+  })
+
+  it('should reject scoped package names with version', () => {
+    expect(packageNameFilter('@scope/foo@1')).toBe(false)
+    expect(packageNameFilter('@types/node@^20.0.0')).toBe(false)
+  })
+
+  it('should reject workspace protocol', () => {
+    expect(packageNameFilter('foo@workspace:*')).toBe(false)
+    expect(packageNameFilter('@scope/bar@workspace:^1.0.0')).toBe(false)
+  })
+
+  it('should reject npm protocol', () => {
+    expect(packageNameFilter('foo@npm:bar@1')).toBe(false)
+    expect(packageNameFilter('pkg@npm:@scope/pkg@^2.0.0')).toBe(false)
   })
 })
 

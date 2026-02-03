@@ -85,6 +85,14 @@ export function specFilter(str: string, options?: SpecifierOptions): boolean {
   return true
 }
 
+export function packageNameFilter(name: string): boolean {
+  if (name.startsWith('@')) {
+    const secondAt = name.indexOf('@', 1)
+    return secondAt === -1
+  }
+  return !name.includes('@')
+}
+
 export function protocolsFilter(str: string, protocols?: string[]) {
   if (protocols) {
     return !protocols.some(p => str.startsWith(p))
@@ -105,6 +113,8 @@ export function createDependenciesFilter(
     if (excludeFilter(name) || !includeFilter(name))
       return false
     if (!protocolsFilter(specifier, protocols))
+      return false
+    if (!packageNameFilter(name))
       return false
     return specFilter(specifier, specOptions)
   }
