@@ -1,6 +1,15 @@
 import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '../types'
 import { toArray } from '@antfu/utils'
 
+// Matches versions with x wildcard like 1.x, 1.2.x, x.1, etc.
+const X_REGEXP = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d+)*)$/
+// Matches pure * wildcard
+const ASTERISK_REGEXP = /^\*(?:\.\*)*$/
+// Pre-release versions (must be checked before wildcards)
+const PRE_RELEASE_REGEXP = /^(?:\d+\.){1,2}\d+-[a-z0-9.-]+$/i
+// Matches any version containing x or * wildcard (but not pre-release)
+const WILDCARD_REGEXP = /(?:^|\.)(?:x|\*)(?:$|\.)/
+
 function escapeRegExp(str: string) {
   return str.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
 }
@@ -52,9 +61,9 @@ export function specFilter(str: string, options?: SpecifierOptions): boolean {
     '<=': s => s.startsWith('<='),
     '>': s => s.startsWith('>') && !s.startsWith('>='),
     '<': s => s.startsWith('<') && !s.startsWith('<='),
-    'x': s => s.includes('x'),
-    '*': s => s === '*',
-    'pre-release': s => s.includes('-'),
+    'x': s => X_REGEXP.test(s),
+    '*': s => ASTERISK_REGEXP.test(s),
+    'pre-release': s => PRE_RELEASE_REGEXP.test(s),
   }
 
   // Check skipRangeTypes first (takes priority)
@@ -75,11 +84,11 @@ export function specFilter(str: string, options?: SpecifierOptions): boolean {
   }
 
   // Check pre-releases
-  if (!allowPreReleases && str.includes('-'))
+  if (!allowPreReleases && PRE_RELEASE_REGEXP.test(str))
     return false
 
   // Check wildcards
-  if (!allowWildcards && (str.includes('x') || str === '*'))
+  if (!allowWildcards && (X_REGEXP.test(str) || WILDCARD_REGEXP.test(str)))
     return false
 
   return true

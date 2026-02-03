@@ -2,6 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { createDependenciesFilter, packageNameFilter, specFilter } from '../src/utils/filter'
 
 describe('specFilter', () => {
+  it('npm alias', () => {
+    expect(specFilter('npm:@nolyfill/safe-regex-test@^1', {})).toBe(true)
+    expect(specFilter('npm:@nolyfill/array.prototype.findlastindex@^1', {})).toBe(true)
+  })
+
   it('valid specifiers should be accepted', () => {
     expect(specFilter('1.0.0', {})).toBe(true)
     expect(specFilter('^1.0.0', {})).toBe(true)
