@@ -7,7 +7,6 @@ import cloneDeep from 'lodash.clonedeep'
 import { createConfigLoader } from 'unconfig'
 import { AGENTS, DEFAULT_CATALOG_OPTIONS } from './constants'
 import { detectWorkspaceRoot } from './io/workspace'
-import { DEFAULT_CATALOG_RULES } from './rules'
 import { detectAgent } from './utils/package-manager'
 
 function normalizeConfig(options: Partial<CatalogOptions>) {
@@ -38,7 +37,7 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
   options = normalizeConfig(options)
 
   const configOptions = await readConfig(options)
-  const catalogRules = configOptions.catalogRules || cloneDeep(DEFAULT_CATALOG_RULES) || []
+  const catalogRules = configOptions.catalogRules || []
   delete configOptions.catalogRules
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
