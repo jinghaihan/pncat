@@ -57,7 +57,7 @@ describe('inferCatalogName', () => {
     expect(inferCatalogName(createDep('typescript', '^1.0.0', 'devDependencies'), config)).toBe('tsc')
     expect(inferCatalogName(createDep('termsnap', '^1.0.0', 'peerDependencies'), config)).toBe('peer')
     expect(inferCatalogName(createDep('node-pty', '^1.0.0', 'optionalDependencies'), config)).toBe('optional')
-    expect(inferCatalogName(createDep('ffmpeg', '^1.0.0', 'resolutions'), config)).toBe('default')
+    expect(inferCatalogName(createDep('ffmpeg', '^1.0.0', 'resolutions'), config)).toBe('override')
   })
 
   it('specifier rules should work', () => {
