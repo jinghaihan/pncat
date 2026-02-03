@@ -136,8 +136,11 @@ export const DEPS_TYPE_SHORT_MAP: Record<DepType, string> = {
 }
 
 export const DEPS_TYPE_CATALOG_MAP: Partial<Record<DepType, string>> = {
-  dependencies: 'prod',
-  devDependencies: 'dev',
-  peerDependencies: 'peer',
-  optionalDependencies: 'optional',
+  'dependencies': 'prod',
+  'devDependencies': 'dev',
+  'peerDependencies': 'peer',
+  'optionalDependencies': 'optional',
+  'pnpm.overrides': 'override',
+  'resolutions': 'override',
+  'pnpm-workspace': 'override',
 }
