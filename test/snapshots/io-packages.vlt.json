@@ -1,51 +1,114 @@
 [
   {
-    "type": "vlt.json",
     "name": "vlt-catalog:default",
+    "private": true,
+    "version": "",
+    "type": "vlt.json",
     "relative": "vlt.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/vlt.json",
+    "raw": {
+      "catalog": {
+        "svelte": "^5.0.0"
+      },
+      "catalogs": {
+        "build": {
+          "vite": "^7.0.0"
+        }
+      }
+    },
     "deps": [
       {
         "name": "svelte",
         "specifier": "^5.0.0",
+        "parents": [],
         "source": "vlt-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "default"
       }
     ]
   },
   {
-    "type": "vlt.json",
     "name": "vlt-catalog:build",
+    "private": true,
+    "version": "",
+    "type": "vlt.json",
     "relative": "vlt.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/vlt.json",
+    "raw": {
+      "catalog": {
+        "svelte": "^5.0.0"
+      },
+      "catalogs": {
+        "build": {
+          "vite": "^7.0.0"
+        }
+      }
+    },
     "deps": [
       {
         "name": "vite",
         "specifier": "^7.0.0",
+        "parents": [],
         "source": "vlt-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "build"
       }
     ]
   },
   {
-    "type": "package.json",
     "name": "fixture-vlt",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/package.json",
+    "raw": {
+      "name": "fixture-vlt",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": [
+        "packages/*"
+      ]
+    },
     "deps": []
   },
   {
-    "type": "package.json",
     "name": "app-vlt",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "packages/app/package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/packages/app/package.json",
+    "raw": {
+      "name": "app-vlt",
+      "version": "0.0.0",
+      "private": true,
+      "dependencies": {
+        "svelte": "catalog:"
+      },
+      "devDependencies": {
+        "vite": "catalog:"
+      }
+    },
     "deps": [
       {
         "name": "svelte",
         "specifier": "catalog:",
+        "parents": [],
         "source": "dependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "prod"
       },
       {
         "name": "vite",
         "specifier": "catalog:",
+        "parents": [],
         "source": "devDependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "dev"
       }
     ]

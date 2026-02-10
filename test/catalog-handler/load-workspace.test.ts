@@ -1,12 +1,12 @@
-import type { DepFilter, PackageManager } from '../src/types'
+import type { DepFilter, PackageManager } from '../../src/types'
 import { describe, expect, it } from 'vitest'
-import { catalogHandlers } from '../src/catalog-handler'
-import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '../src/constants'
-import { createFixtureOptions, getFixturePath } from './_shared'
+import { catalogHandlers } from '../../src/catalog-handler'
+import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '../../src/constants'
+import { createFixtureOptions, getFixturePath } from '../_shared'
 
 const shouldCatalog: DepFilter = () => true
 
-describe('catalog-handler/loadWorkspace', () => {
+describe('loadWorkspace', () => {
   it('loads expected workspace entries for each manager fixture', async () => {
     const expectedNames: Record<PackageManager, string[]> = {
       pnpm: ['pnpm-catalog:default', 'pnpm-catalog:test', 'pnpm-workspace:overrides'],

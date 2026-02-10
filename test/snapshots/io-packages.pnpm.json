@@ -1,64 +1,209 @@
 [
   {
-    "type": "pnpm-workspace.yaml",
     "name": "pnpm-catalog:default",
+    "private": true,
+    "version": "",
+    "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "raw": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
+    "context": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
     "deps": [
       {
         "name": "react",
         "specifier": "^18.3.1",
+        "parents": [],
         "source": "pnpm-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "default"
       }
     ]
   },
   {
-    "type": "pnpm-workspace.yaml",
     "name": "pnpm-catalog:test",
+    "private": true,
+    "version": "",
+    "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "raw": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
+    "context": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
     "deps": [
       {
         "name": "vitest",
         "specifier": "^4.0.0",
+        "parents": [],
         "source": "pnpm-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "test"
       }
     ]
   },
   {
-    "type": "pnpm-workspace.yaml",
     "name": "pnpm-workspace:overrides",
+    "private": true,
+    "version": "",
+    "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "raw": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
+    "context": {
+      "packages": [
+        "packages/*"
+      ],
+      "catalog": {
+        "react": "^18.3.1"
+      },
+      "catalogs": {
+        "test": {
+          "vitest": "^4.0.0"
+        }
+      },
+      "overrides": {
+        "react": "catalog:"
+      }
+    },
     "deps": [
       {
         "name": "react",
         "specifier": "catalog:",
+        "parents": [],
         "source": "pnpm-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "override"
       }
     ]
   },
   {
-    "type": "package.json",
     "name": "fixture-pnpm",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/package.json",
+    "raw": {
+      "name": "fixture-pnpm",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": [
+        "packages/*"
+      ]
+    },
     "deps": []
   },
   {
-    "type": "package.json",
     "name": "app-pnpm",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "packages/app/package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/packages/app/package.json",
+    "raw": {
+      "name": "app-pnpm",
+      "version": "0.0.0",
+      "private": true,
+      "dependencies": {
+        "react": "catalog:"
+      },
+      "devDependencies": {
+        "vitest": "catalog:test"
+      }
+    },
     "deps": [
       {
         "name": "react",
         "specifier": "catalog:",
+        "parents": [],
         "source": "dependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "prod"
       },
       {
         "name": "vitest",
         "specifier": "catalog:test",
+        "parents": [],
         "source": "devDependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "dev"
       }
     ]

@@ -5,12 +5,13 @@ const RANGE_X_WILDCARD_RE = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d
 const RANGE_ASTERISK_WILDCARD_RE = /^\*(?:\.\*)*$/
 const RANGE_PRERELEASE_RE = /^(?:\d+\.){1,2}\d+-[a-z0-9.-]+$/i
 const RANGE_ANY_WILDCARD_TOKEN_RE = /(?:^|\.)(?:x|\*)(?:$|\.)/
+const NPM_ALIAS_RE = /^npm:(?:@[^/\s]+\/)?[^@\s]+@(.+)$/
 
 function escapeRegExp(input: string) {
   return input.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
 }
 
-export function filterToRegex(value: string): RegExp {
+function filterToRegex(value: string): RegExp {
   if (value.startsWith('/')) {
     const endIndex = value.lastIndexOf('/')
     const pattern = value.substring(1, endIndex)
@@ -21,7 +22,7 @@ export function filterToRegex(value: string): RegExp {
   return new RegExp(`^${escapeRegExp(value).replace(/\*+/g, '.*?')}$`)
 }
 
-export function parseFilter(value?: string | string[], defaultValue = true): (name: string) => boolean {
+function parseFilter(value?: string | string[], defaultValue = true): (name: string) => boolean {
   if (!value || value.length === 0)
     return () => defaultValue
 
@@ -29,11 +30,12 @@ export function parseFilter(value?: string | string[], defaultValue = true): (na
   return (name: string) => regexes.some(regex => regex.test(name))
 }
 
-function specFilter(specifier: string, options?: SpecifierOptions): boolean {
+export function specFilter(specifier: string, options?: SpecifierOptions): boolean {
   if (!specifier.trim())
     return false
 
-  if (specifier.startsWith('catalog:'))
+  const normalizedSpecifier = normalizeSpecifier(specifier)
+  if (normalizedSpecifier.startsWith('catalog:'))
     return true
 
   const {
@@ -57,7 +59,7 @@ function specFilter(specifier: string, options?: SpecifierOptions): boolean {
 
   if (skipRangeTypes.length > 0) {
     for (const type of skipRangeTypes) {
-      if (checks[type](specifier))
+      if (checks[type](normalizedSpecifier))
         return false
     }
     return true
@@ -65,18 +67,23 @@ function specFilter(specifier: string, options?: SpecifierOptions): boolean {
 
   if (skipComplexRanges) {
     for (const type of ['||', '-', '>=', '<=', '>', '<'] as const) {
-      if (checks[type](specifier))
+      if (checks[type](normalizedSpecifier))
         return false
     }
   }
 
-  if (!allowPreReleases && RANGE_PRERELEASE_RE.test(specifier))
+  if (!allowPreReleases && RANGE_PRERELEASE_RE.test(normalizedSpecifier))
     return false
 
-  if (!allowWildcards && (RANGE_X_WILDCARD_RE.test(specifier) || RANGE_ANY_WILDCARD_TOKEN_RE.test(specifier)))
+  if (!allowWildcards && (RANGE_X_WILDCARD_RE.test(normalizedSpecifier) || RANGE_ANY_WILDCARD_TOKEN_RE.test(normalizedSpecifier)))
     return false
 
   return true
+}
+
+function normalizeSpecifier(specifier: string): string {
+  const npmAliasMatch = specifier.match(NPM_ALIAS_RE)
+  return npmAliasMatch ? npmAliasMatch[1] : specifier
 }
 
 function packageNameFilter(name: string): boolean {

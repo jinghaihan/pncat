@@ -1,5 +1,6 @@
 import type { CatalogOptions, PackageManager } from '../src/types'
 import { fileURLToPath } from 'node:url'
+import deepmerge from 'deepmerge'
 import { dirname, join } from 'pathe'
 import { DEFAULT_CATALOG_OPTIONS } from '../src/constants'
 
@@ -20,17 +21,9 @@ export function getSnapshotPath(...paths: string[]): string {
 }
 
 export function createFixtureOptions(
-  agent: PackageManager,
+  agent: PackageManager = 'pnpm',
   overrides: Partial<CatalogOptions> = {},
 ): CatalogOptions {
-  const baseOptions = DEFAULT_CATALOG_OPTIONS
-
-  return {
-    ...baseOptions,
-    depFields: { ...baseOptions.depFields },
-    specifierOptions: { ...baseOptions.specifierOptions },
-    cwd: getFixtureCwd(agent),
-    agent,
-    ...overrides,
-  }
+  const fixtureOptions = { cwd: getFixtureCwd(agent), agent }
+  return deepmerge(deepmerge(DEFAULT_CATALOG_OPTIONS, fixtureOptions), overrides)
 }

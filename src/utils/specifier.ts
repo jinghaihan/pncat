@@ -36,7 +36,7 @@ export function cleanSpec(spec: string, options?: CatalogOptions): string | null
 
 export function mostSpecificRule(rules: SpecifierRule[]): SpecifierRule {
   if (rules.length === 0)
-    throw new Error('mostSpecificRule requires at least one rule')
+    throw new Error('Requires at least one rule')
 
   return rules.reduce((best, current) => {
     if (subset(current.specifier, best.specifier))

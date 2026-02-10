@@ -1,51 +1,140 @@
 [
   {
-    "type": "bun-workspace",
     "name": "bun-catalog:default",
+    "private": true,
+    "version": "",
+    "type": "bun-workspace",
     "relative": "package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "raw": {
+      "name": "fixture-bun",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": {
+        "packages": [
+          "packages/*"
+        ],
+        "catalog": {
+          "solid-js": "^1.9.0"
+        },
+        "catalogs": {
+          "test": {
+            "vitest": "^4.0.0"
+          }
+        }
+      }
+    },
     "deps": [
       {
         "name": "solid-js",
         "specifier": "^1.9.0",
+        "parents": [],
         "source": "bun-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "default"
       }
     ]
   },
   {
-    "type": "bun-workspace",
     "name": "bun-catalog:test",
+    "private": true,
+    "version": "",
+    "type": "bun-workspace",
     "relative": "package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "raw": {
+      "name": "fixture-bun",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": {
+        "packages": [
+          "packages/*"
+        ],
+        "catalog": {
+          "solid-js": "^1.9.0"
+        },
+        "catalogs": {
+          "test": {
+            "vitest": "^4.0.0"
+          }
+        }
+      }
+    },
     "deps": [
       {
         "name": "vitest",
         "specifier": "^4.0.0",
+        "parents": [],
         "source": "bun-workspace",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "test"
       }
     ]
   },
   {
-    "type": "package.json",
     "name": "fixture-bun",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "raw": {
+      "name": "fixture-bun",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": {
+        "packages": [
+          "packages/*"
+        ],
+        "catalog": {
+          "solid-js": "^1.9.0"
+        },
+        "catalogs": {
+          "test": {
+            "vitest": "^4.0.0"
+          }
+        }
+      }
+    },
     "deps": []
   },
   {
-    "type": "package.json",
     "name": "app-bun",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
     "relative": "packages/app/package.json",
+    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/packages/app/package.json",
+    "raw": {
+      "name": "app-bun",
+      "version": "0.0.0",
+      "private": true,
+      "dependencies": {
+        "solid-js": "catalog:"
+      },
+      "devDependencies": {
+        "vitest": "catalog:test"
+      }
+    },
     "deps": [
       {
         "name": "solid-js",
         "specifier": "catalog:",
+        "parents": [],
         "source": "dependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "prod"
       },
       {
         "name": "vitest",
         "specifier": "catalog:test",
+        "parents": [],
         "source": "devDependencies",
+        "catalogable": true,
+        "isCatalog": true,
         "catalogName": "dev"
       }
     ]

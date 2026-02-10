@@ -3,36 +3,46 @@ import { realpath } from 'node:fs/promises'
 import process from 'node:process'
 import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { resolveConfig } from '../src/config'
-import { detectPackageManager } from '../src/utils'
+import { readConfig, resolveConfig } from '../src/config'
 import { getFixtureCwd, getFixturePath } from './_shared'
 
-describe('utils/package-manager', () => {
-  it('detects package manager from fixture lock markers', async () => {
-    const cases = [
-      { agent: 'yarn', cwd: getFixturePath('yarn', 'packages', 'app') },
-      { agent: 'bun', cwd: getFixturePath('bun', 'packages', 'app') },
-    ] as const
+describe('resolveConfig', () => {
+  it('loads config from pncat.config.ts default export', async () => {
+    const config = await readConfig({
+      cwd: getFixturePath('config-source'),
+    })
 
-    for (const item of cases) {
-      const agent = await detectPackageManager(item.cwd)
-      expect(agent).toBe(item.agent)
+    expect(config.agent).toBe('yarn')
+    expect(config.recursive).toBe(false)
+  })
+
+  it('supports interop default config shape', async () => {
+    const input: Partial<CatalogOptions> & { default: Partial<CatalogOptions> } = {
+      default: {
+        cwd: getFixtureCwd('pnpm'),
+      },
     }
+
+    const config = await resolveConfig(input)
+    expect(config.agent).toBe('pnpm')
+    expect(resolve(config.cwd || '')).toBe(resolve(getFixtureCwd('pnpm')))
   })
 
-  it('falls back to pnpm when no explicit marker is detected', async () => {
-    const agent = await detectPackageManager(getFixturePath('plain', 'packages', 'app'))
-    expect(agent).toBe('pnpm')
-  })
-})
-
-describe('config/resolveConfig', () => {
   it('uses provided cwd to infer agent', async () => {
     const nested = getFixturePath('bun', 'packages', 'app')
 
     const config = await resolveConfig({ cwd: nested })
     expect(config.agent).toBe('bun')
     expect(resolve(config.cwd || '')).toBe(resolve(nested))
+  })
+
+  it('respects explicitly provided agent without re-detecting', async () => {
+    const config = await resolveConfig({
+      cwd: getFixturePath('bun', 'packages', 'app'),
+      agent: 'pnpm',
+    })
+
+    expect(config.agent).toBe('pnpm')
   })
 
   it('resolves workspace root from process cwd when cwd is not provided', async () => {
@@ -51,7 +61,8 @@ describe('config/resolveConfig', () => {
   })
 
   it('removes boolean catalog option during sanitize', async () => {
-    const input = { cwd: getFixtureCwd('pnpm'), catalog: true } as unknown as Partial<CatalogOptions>
+    // @ts-expect-error legacy boolean catalog value is sanitized at runtime
+    const input: Partial<CatalogOptions> = { cwd: getFixtureCwd('pnpm'), catalog: true }
     const config = await resolveConfig(input)
     expect('catalog' in config).toBe(false)
   })

@@ -13,7 +13,7 @@ export async function detectIndent(filepath: string): Promise<string> {
   }
 }
 
-export async function readJsonFile<T>(filepath: string): Promise<T> {
+export async function readJsonFile<T = unknown>(filepath: string): Promise<T> {
   const rawText = await readFile(filepath, 'utf-8')
   return JSON.parse(rawText) as T
 }

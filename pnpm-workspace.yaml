@@ -30,6 +30,7 @@ catalogs:
   script:
     tsx: ^4.21.0
   test:
+    '@vitest/coverage-v8': ^4.0.18
     vitest: ^4.0.18
   tsc:
     typescript: ^5.9.3

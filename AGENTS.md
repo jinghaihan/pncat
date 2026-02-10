@@ -81,6 +81,21 @@
 - Add fixture-driven tests per package manager.
 - Each new handler behavior must have at least one fixture-based test case.
 - Keep fixtures minimal and deterministic.
+- `describe` titles must be function names (the unit under test), not module or behavior bundles.
+- `it` titles must describe different cases for that function.
+- Do not repeat the function name in `it` titles when `describe` already names that function.
+  - Good: `describe('parseSpec')` + `it('parses scoped package spec')`
+  - Bad: `describe('parseSpec')` + `it('parseSpec parses scoped package spec')`
+- Do not use `tmpdir`, `mkdtemp`, or runtime temporary directories in tests.
+- Prefer static fixtures over runtime IO setup (`mkdir`, `writeFile`, etc.).
+- For complex expected outputs, use `toMatchFileSnapshot` with files in `test/snapshots` instead of large inline JSON objects.
+- Organize test files by mirroring `src` directory structure.
+  - Example: `src/utils/catalog.ts` -> `test/utils/catalog.test.ts`
+  - Example: `src/io/workspace.ts` -> `test/io/workspace.test.ts`
+  - Example: `src/catalog-handler/index.ts` -> `test/catalog-handler/index.test.ts`
+  - Root-level source files map to root-level tests: `src/config.ts` -> `test/config.test.ts`
+  - Do not use cross-module aggregate files like `test/io.test.ts` or `test/catalog-handler.test.ts`.
+  - Avoid behavior-based filename patterns like `catalog.infer-catalog-name.test.ts`.
 
 ## Mandatory Validation Per Change
 - After each change iteration, run:
