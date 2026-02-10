@@ -1,4 +1,4 @@
-import type { RangeMode } from '../types/core'
+import type { RangeMode } from '../types'
 
 export const MODE_CHOICES = [
   'init',

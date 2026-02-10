@@ -53,7 +53,11 @@ export interface VltWorkspaceMeta extends BasePackageMeta {
   raw: WorkspaceSchema
 }
 
-export type WorkspacePackageMeta = PnpmWorkspaceMeta | YarnWorkspaceMeta | BunWorkspaceMeta | VltWorkspaceMeta
+export type WorkspacePackageMeta
+  = | PnpmWorkspaceMeta
+    | YarnWorkspaceMeta
+    | BunWorkspaceMeta
+    | VltWorkspaceMeta
 
 export type PackageMeta = PackageJsonMeta | WorkspacePackageMeta
 

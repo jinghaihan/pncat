@@ -1,5 +1,4 @@
-import type { Agent, DepType } from '../types/core'
-import type { AgentConfig } from '../types/meta'
+import type { Agent, AgentConfig, DepType } from '../types'
 
 export const AGENTS = ['pnpm', 'yarn', 'bun', 'vlt'] as const
 

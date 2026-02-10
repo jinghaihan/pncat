@@ -4,4 +4,7 @@ export default antfu({
   rules: {
     'pnpm/yaml-enforce-settings': 'off',
   },
+  ignores: [
+    '**/test/fixtures/**',
+  ],
 })

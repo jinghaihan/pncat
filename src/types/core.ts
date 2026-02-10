@@ -1,5 +1,4 @@
-import type { MODE_CHOICES } from '../constants/cli'
-import type { AGENTS, DEPS_FIELDS } from '../constants/package-manager'
+import type { AGENTS, DEPS_FIELDS, MODE_CHOICES } from '../constants'
 import type { HookFunction } from './fn'
 import type { CatalogRule, SpecifierOptions } from './rules'
 

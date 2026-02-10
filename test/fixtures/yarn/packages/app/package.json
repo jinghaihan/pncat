@@ -1,0 +1,11 @@
+{
+  "name": "app-yarn",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "vue": "catalog:"
+  },
+  "devDependencies": {
+    "eslint": "catalog:lint"
+  }
+}
