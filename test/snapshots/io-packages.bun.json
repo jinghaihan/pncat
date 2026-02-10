@@ -1,0 +1,53 @@
+[
+  {
+    "type": "bun-workspace",
+    "name": "bun-catalog:default",
+    "relative": "package.json",
+    "deps": [
+      {
+        "name": "solid-js",
+        "specifier": "^1.9.0",
+        "source": "bun-workspace",
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "type": "bun-workspace",
+    "name": "bun-catalog:test",
+    "relative": "package.json",
+    "deps": [
+      {
+        "name": "vitest",
+        "specifier": "^4.0.0",
+        "source": "bun-workspace",
+        "catalogName": "test"
+      }
+    ]
+  },
+  {
+    "type": "package.json",
+    "name": "fixture-bun",
+    "relative": "package.json",
+    "deps": []
+  },
+  {
+    "type": "package.json",
+    "name": "app-bun",
+    "relative": "packages/app/package.json",
+    "deps": [
+      {
+        "name": "solid-js",
+        "specifier": "catalog:",
+        "source": "dependencies",
+        "catalogName": "prod"
+      },
+      {
+        "name": "vitest",
+        "specifier": "catalog:test",
+        "source": "devDependencies",
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

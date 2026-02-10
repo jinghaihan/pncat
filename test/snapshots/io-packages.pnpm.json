@@ -1,0 +1,66 @@
+[
+  {
+    "type": "pnpm-workspace.yaml",
+    "name": "pnpm-catalog:default",
+    "relative": "pnpm-workspace.yaml",
+    "deps": [
+      {
+        "name": "react",
+        "specifier": "^18.3.1",
+        "source": "pnpm-workspace",
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "type": "pnpm-workspace.yaml",
+    "name": "pnpm-catalog:test",
+    "relative": "pnpm-workspace.yaml",
+    "deps": [
+      {
+        "name": "vitest",
+        "specifier": "^4.0.0",
+        "source": "pnpm-workspace",
+        "catalogName": "test"
+      }
+    ]
+  },
+  {
+    "type": "pnpm-workspace.yaml",
+    "name": "pnpm-workspace:overrides",
+    "relative": "pnpm-workspace.yaml",
+    "deps": [
+      {
+        "name": "react",
+        "specifier": "catalog:",
+        "source": "pnpm-workspace",
+        "catalogName": "override"
+      }
+    ]
+  },
+  {
+    "type": "package.json",
+    "name": "fixture-pnpm",
+    "relative": "package.json",
+    "deps": []
+  },
+  {
+    "type": "package.json",
+    "name": "app-pnpm",
+    "relative": "packages/app/package.json",
+    "deps": [
+      {
+        "name": "react",
+        "specifier": "catalog:",
+        "source": "dependencies",
+        "catalogName": "prod"
+      },
+      {
+        "name": "vitest",
+        "specifier": "catalog:test",
+        "source": "devDependencies",
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

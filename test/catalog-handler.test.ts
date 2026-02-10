@@ -1,11 +1,8 @@
 import type { DepFilter, PackageManager } from '../src/types'
-import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
-import { tmpdir } from 'node:os'
-import { join } from 'pathe'
 import { describe, expect, it } from 'vitest'
 import { catalogHandlers } from '../src/catalog-handler'
 import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '../src/constants'
-import { createFixtureOptions } from './_shared'
+import { createFixtureOptions, getFixturePath } from './_shared'
 
 const shouldCatalog: DepFilter = () => true
 
@@ -37,32 +34,18 @@ describe('catalog-handler/loadWorkspace', () => {
   })
 
   it('bun returns null when lockfile is missing', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'pncat-bun-no-lock-'))
-    await writeFile(join(root, 'package.json'), JSON.stringify({
-      name: 'no-lock',
-      workspaces: { catalog: { react: '^18.0.0' } },
-    }, null, 2), 'utf-8')
-
     const workspace = await catalogHandlers.bun.loadWorkspace(
       'package.json',
-      createFixtureOptions('bun', { cwd: root }),
+      createFixtureOptions('bun', { cwd: getFixturePath('bun-no-lock') }),
       shouldCatalog,
     )
     expect(workspace).toBeNull()
   })
 
   it('bun returns null when lockfile exists but no workspace catalogs', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'pncat-bun-no-catalog-'))
-    await mkdir(join(root, 'packages', 'app'), { recursive: true })
-    await writeFile(join(root, 'bun.lock'), '# lock\n', 'utf-8')
-    await writeFile(join(root, 'package.json'), JSON.stringify({
-      name: 'no-catalog',
-      workspaces: { packages: ['packages/*'] },
-    }, null, 2), 'utf-8')
-
     const workspace = await catalogHandlers.bun.loadWorkspace(
       'package.json',
-      createFixtureOptions('bun', { cwd: root }),
+      createFixtureOptions('bun', { cwd: getFixturePath('bun-no-catalog') }),
       shouldCatalog,
     )
     expect(workspace).toBeNull()

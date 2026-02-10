@@ -1,0 +1,53 @@
+[
+  {
+    "type": "vlt.json",
+    "name": "vlt-catalog:default",
+    "relative": "vlt.json",
+    "deps": [
+      {
+        "name": "svelte",
+        "specifier": "^5.0.0",
+        "source": "vlt-workspace",
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "type": "vlt.json",
+    "name": "vlt-catalog:build",
+    "relative": "vlt.json",
+    "deps": [
+      {
+        "name": "vite",
+        "specifier": "^7.0.0",
+        "source": "vlt-workspace",
+        "catalogName": "build"
+      }
+    ]
+  },
+  {
+    "type": "package.json",
+    "name": "fixture-vlt",
+    "relative": "package.json",
+    "deps": []
+  },
+  {
+    "type": "package.json",
+    "name": "app-vlt",
+    "relative": "packages/app/package.json",
+    "deps": [
+      {
+        "name": "svelte",
+        "specifier": "catalog:",
+        "source": "dependencies",
+        "catalogName": "prod"
+      },
+      {
+        "name": "vite",
+        "specifier": "catalog:",
+        "source": "devDependencies",
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

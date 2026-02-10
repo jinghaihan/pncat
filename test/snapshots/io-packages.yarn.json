@@ -1,0 +1,53 @@
+[
+  {
+    "type": ".yarnrc.yml",
+    "name": "yarn-catalog:default",
+    "relative": ".yarnrc.yml",
+    "deps": [
+      {
+        "name": "vue",
+        "specifier": "^3.5.0",
+        "source": "yarn-workspace",
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "type": ".yarnrc.yml",
+    "name": "yarn-catalog:lint",
+    "relative": ".yarnrc.yml",
+    "deps": [
+      {
+        "name": "eslint",
+        "specifier": "^9.0.0",
+        "source": "yarn-workspace",
+        "catalogName": "lint"
+      }
+    ]
+  },
+  {
+    "type": "package.json",
+    "name": "fixture-yarn",
+    "relative": "package.json",
+    "deps": []
+  },
+  {
+    "type": "package.json",
+    "name": "app-yarn",
+    "relative": "packages/app/package.json",
+    "deps": [
+      {
+        "name": "vue",
+        "specifier": "catalog:",
+        "source": "dependencies",
+        "catalogName": "prod"
+      },
+      {
+        "name": "eslint",
+        "specifier": "catalog:lint",
+        "source": "devDependencies",
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

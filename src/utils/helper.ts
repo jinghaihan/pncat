@@ -3,8 +3,8 @@ import process from 'node:process'
 import { resolve } from 'pathe'
 import { PACKAGE_MANAGERS } from '../constants'
 
-export function getCwd(options: CatalogOptions): string {
-  return resolve(options.cwd || process.cwd())
+export function getCwd(options?: CatalogOptions): string {
+  return resolve(options?.cwd || process.cwd())
 }
 
 export function isDepFieldEnabled(options: CatalogOptions, depType: DepType): boolean {
