@@ -1,9 +1,11 @@
-import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '../../types'
+import type { CatalogHandler, CatalogOptions, DepFilter, RawDep, WorkspacePackageMeta, WorkspaceSchema } from '../../types'
 import { readFile, writeFile } from 'node:fs/promises'
 import { findUp } from 'find-up'
+import { resolve } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import { AGENT_CONFIG } from '../../constants'
-import { getCwd } from '../../utils'
+import { PACKAGE_MANAGER_CONFIG } from '../../constants'
+import { getCwd, parseDependency } from '../../utils'
+import { cloneDeep } from '../../utils/_internal'
 
 type WorkspaceYamlContext = ReturnType<typeof parsePnpmWorkspaceYaml>
 
@@ -19,24 +21,75 @@ export class YamlCatalog implements CatalogHandler {
     this.agent = agent
   }
 
+  static async loadWorkspace(
+    relative: string,
+    options: CatalogOptions,
+    shouldCatalog: DepFilter,
+  ): Promise<WorkspacePackageMeta[] | null> {
+    const { agent = 'pnpm' } = options
+
+    const filepath = resolve(getCwd(options), relative)
+    const rawText = await readFile(filepath, 'utf-8')
+    const context = parsePnpmWorkspaceYaml(rawText)
+    const raw = context.getDocument().toJSON() as WorkspaceSchema
+
+    const catalogs: WorkspacePackageMeta[] = []
+    function createWorkspaceEntry(name: string, map: Record<string, string>): WorkspacePackageMeta {
+      const deps: RawDep[] = Object.entries(map).map(([pkg, version]) => parseDependency(
+        pkg,
+        version,
+        `${agent}-workspace`,
+        shouldCatalog,
+        options,
+        [],
+        name,
+      ))
+
+      return {
+        name,
+        private: true,
+        version: '',
+        type: PACKAGE_MANAGER_CONFIG[agent].type,
+        relative,
+        filepath,
+        raw,
+        context,
+        deps,
+      }
+    }
+
+    if (raw.catalog)
+      catalogs.push(createWorkspaceEntry(`${agent}-catalog:default`, raw.catalog))
+
+    if (raw.catalogs) {
+      for (const key of Object.keys(raw.catalogs))
+        catalogs.push(createWorkspaceEntry(`${agent}-catalog:${key}`, raw.catalogs[key]))
+    }
+
+    if (raw.overrides)
+      catalogs.push(createWorkspaceEntry(`${agent}-workspace:overrides`, raw.overrides))
+
+    return catalogs
+  }
+
   async findWorkspaceFile(): Promise<string | undefined> {
-    const filename = AGENT_CONFIG[this.agent].filename
+    const filename = PACKAGE_MANAGER_CONFIG[this.agent].filename
     return await findUp(filename, { cwd: getCwd(this.options) })
   }
 
   async ensureWorkspace(): Promise<void> {
     const filepath = await this.findWorkspaceFile()
     if (!filepath)
-      throw new Error(`No ${AGENT_CONFIG[this.agent].filename} found from ${getCwd(this.options)}`)
+      throw new Error(`No ${PACKAGE_MANAGER_CONFIG[this.agent].filename} found from ${getCwd(this.options)}`)
 
-    const content = await readFile(filepath, 'utf-8')
-    this.workspaceYaml = parsePnpmWorkspaceYaml(content)
+    const rawText = await readFile(filepath, 'utf-8')
+    this.workspaceYaml = parsePnpmWorkspaceYaml(rawText)
     this.workspaceYamlPath = filepath
   }
 
   async toJSON(): Promise<WorkspaceSchema> {
     const workspaceYaml = await this.getWorkspaceYaml()
-    return structuredClone(workspaceYaml.toJSON() as WorkspaceSchema)
+    return cloneDeep(workspaceYaml.toJSON() as WorkspaceSchema)
   }
 
   async toString(): Promise<string> {

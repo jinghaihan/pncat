@@ -1,10 +1,10 @@
-import type { AGENTS, DEPS_FIELDS, MODE_CHOICES } from '../constants'
+import type { DEPS_FIELDS, MODE_CHOICES, PACKAGE_MANAGERS } from '../constants'
 import type { HookFunction } from './fn'
 import type { CatalogRule, SpecifierOptions } from './rules'
 
 export type RangeMode = (typeof MODE_CHOICES)[number]
 
-export type Agent = (typeof AGENTS)[number]
+export type PackageManager = (typeof PACKAGE_MANAGERS)[number]
 
 export type DepType = (typeof DEPS_FIELDS)[number]
 
@@ -22,7 +22,7 @@ export interface CommandOptions {
 }
 
 export interface ConfigOptions {
-  agent?: Agent
+  agent?: PackageManager
   include?: string | string[]
   exclude?: string | string[]
   ignorePaths?: string | string[]

@@ -4,8 +4,16 @@ import { PnpmCatalog } from './pnpm-workspace'
 import { VltCatalog } from './vlt-workspace'
 import { YarnCatalog } from './yarn-workspace'
 
+/// keep-sorted
+export const catalogHandlers = {
+  bun: BunCatalog,
+  pnpm: PnpmCatalog,
+  vlt: VltCatalog,
+  yarn: YarnCatalog,
+} as const
+
 export function createCatalogHandler(options: CatalogOptions): CatalogHandler {
-  const agent = options.agent || 'pnpm'
+  const { agent = 'pnpm' } = options
 
   switch (agent) {
     case 'pnpm':
@@ -20,5 +28,3 @@ export function createCatalogHandler(options: CatalogOptions): CatalogHandler {
       throw new Error(`Unsupported package manager: ${agent}`)
   }
 }
-
-export { BunCatalog, PnpmCatalog, VltCatalog, YarnCatalog }

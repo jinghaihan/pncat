@@ -1,8 +1,9 @@
 import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '../../types'
 import { findUp } from 'find-up'
-import { AGENT_CONFIG } from '../../constants'
-import { detectIndentOfFile, readJsonFile, writeJsonFile } from '../../io'
+import { PACKAGE_MANAGER_CONFIG } from '../../constants'
+import { detectIndent, readJsonFile, writeJsonFile } from '../../io'
 import { getCwd } from '../../utils'
+import { cloneDeep } from '../../utils/_internal'
 
 export class JsonCatalog implements CatalogHandler {
   public readonly options: CatalogOptions
@@ -17,14 +18,14 @@ export class JsonCatalog implements CatalogHandler {
   }
 
   async findWorkspaceFile(): Promise<string | undefined> {
-    const filename = AGENT_CONFIG[this.agent].filename
+    const filename = PACKAGE_MANAGER_CONFIG[this.agent].filename
     return await findUp(filename, { cwd: getCwd(this.options) })
   }
 
   async ensureWorkspace(): Promise<void> {
     const filepath = await this.findWorkspaceFile()
     if (!filepath)
-      throw new Error(`No ${AGENT_CONFIG[this.agent].filename} found from ${getCwd(this.options)}`)
+      throw new Error(`No ${PACKAGE_MANAGER_CONFIG[this.agent].filename} found from ${getCwd(this.options)}`)
 
     const raw = await readJsonFile<WorkspaceSchema>(filepath)
     this.workspaceJson = {
@@ -37,13 +38,13 @@ export class JsonCatalog implements CatalogHandler {
   async toJSON(): Promise<WorkspaceSchema> {
     await this.cleanupCatalogs()
     const workspaceJson = await this.getWorkspaceJson()
-    return structuredClone(workspaceJson)
+    return cloneDeep(workspaceJson)
   }
 
   async toString(): Promise<string> {
     await this.cleanupCatalogs()
     const filepath = await this.getWorkspacePath()
-    const indent = await detectIndentOfFile(filepath)
+    const indent = await detectIndent(filepath)
     return JSON.stringify(await this.getWorkspaceJson(), null, indent)
   }
 

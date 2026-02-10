@@ -13,9 +13,9 @@ export interface RawDep {
   specifier: string
   source: DepType
   parents?: string[]
-  catalog: boolean
   catalogable: boolean
   catalogName: string
+  isCatalog: boolean
   update?: boolean
 }
 
@@ -60,18 +60,3 @@ export type WorkspacePackageMeta
     | VltWorkspaceMeta
 
 export type PackageMeta = PackageJsonMeta | WorkspacePackageMeta
-
-export interface ParsedSpec {
-  name: string
-  specifier?: string
-  catalogName?: string
-  specifierSource?: 'user' | 'catalog' | 'workspace' | 'npm'
-}
-
-export interface AgentConfig {
-  type: WorkspacePackageMeta['type']
-  depType: DepType
-  filename: string
-  locks: string[]
-  defaultContent: string
-}

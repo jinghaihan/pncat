@@ -1,6 +1,6 @@
-import type { Agent, AgentConfig, DepType } from '../types'
+import type { DepType, PackageManager, PackageManagerConfig } from '../types'
 
-export const AGENTS = ['pnpm', 'yarn', 'bun', 'vlt'] as const
+export const PACKAGE_MANAGERS = ['pnpm', 'yarn', 'bun', 'vlt'] as const
 
 export const COMMON_DEPS_FIELDS = [
   'dependencies',
@@ -56,7 +56,7 @@ export const DEPS_TYPE_SHORT_MAP: Record<DepType, string> = {
   'vlt-workspace': 'vlt-workspace',
 }
 
-export const AGENT_CONFIG: Record<Agent, AgentConfig> = {
+export const PACKAGE_MANAGER_CONFIG: Record<PackageManager, PackageManagerConfig> = {
   pnpm: {
     type: 'pnpm-workspace.yaml',
     depType: 'pnpm-workspace',

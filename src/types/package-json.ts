@@ -1,4 +1,6 @@
-export interface PackageJson {
+import type { WorkspaceSchema } from './meta'
+
+export interface PackageJson extends WorkspaceSchema {
   name?: string
   version?: string
   description?: string
