@@ -1,5 +1,6 @@
-export * from './catalog'
+export * from './catalog-handler'
 export * from './core'
+export * from './fn'
 export * from './meta'
 export * from './package-json'
 export * from './resolver'
