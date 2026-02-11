@@ -5,7 +5,7 @@
     "version": "",
     "type": "vlt.json",
     "relative": "vlt.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/vlt.json",
+    "filepath": "<fixtures>/vlt/vlt.json",
     "raw": {
       "catalog": {
         "svelte": "^5.0.0"
@@ -34,7 +34,7 @@
     "version": "",
     "type": "vlt.json",
     "relative": "vlt.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/vlt.json",
+    "filepath": "<fixtures>/vlt/vlt.json",
     "raw": {
       "catalog": {
         "svelte": "^5.0.0"
@@ -63,7 +63,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/package.json",
+    "filepath": "<fixtures>/vlt/package.json",
     "raw": {
       "name": "fixture-vlt",
       "version": "0.0.0",
@@ -80,7 +80,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "packages/app/package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/vlt/packages/app/package.json",
+    "filepath": "<fixtures>/vlt/packages/app/package.json",
     "raw": {
       "name": "app-vlt",
       "version": "0.0.0",

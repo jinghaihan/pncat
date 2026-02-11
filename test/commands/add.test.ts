@@ -1,9 +1,20 @@
 import type { CatalogOptions, PackageJsonMeta } from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
-import { describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveAdd } from '@/commands/add'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import * as utils from '@/utils'
 import { createFixtureOptions } from '../_shared'
+
+vi.mock('@/utils', async () => {
+  const actual = await vi.importActual<typeof import('@/utils')>('@/utils')
+  return {
+    ...actual,
+    getLatestVersion: vi.fn(),
+  }
+})
+
+const getLatestVersionMock = vi.mocked(utils.getLatestVersion)
 
 function createPackage(name: string): PackageJsonMeta {
   return {
@@ -30,6 +41,11 @@ function createWorkspace(
 }
 
 describe('resolveAdd', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    getLatestVersionMock.mockResolvedValue('0.0.0')
+  })
+
   it('throws when no dependency names are provided', async () => {
     const workspace = createWorkspace([createPackage('app')], new Map())
 
@@ -120,5 +136,55 @@ describe('resolveAdd', () => {
       source: 'devDependencies',
       specifier: '1.2.3',
     })
+  })
+
+  it('resolves dependency version from npm when specifier is missing', async () => {
+    getLatestVersionMock.mockResolvedValue('4.17.21')
+    const workspace = createWorkspace([createPackage('app')], new Map())
+
+    const result = await resolveAdd({
+      args: ['lodash'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })
+
+    expect(getLatestVersionMock).toHaveBeenCalledWith('lodash')
+    expect(result.dependencies).toEqual([
+      {
+        name: 'lodash',
+        specifier: '^4.17.21',
+        source: 'dependencies',
+        parents: [],
+        catalogable: true,
+        catalogName: 'prod',
+        isCatalog: false,
+      },
+    ])
+  })
+
+  it('uses exact npm version when save-exact is enabled', async () => {
+    getLatestVersionMock.mockResolvedValue('4.17.21')
+    const workspace = createWorkspace([createPackage('app')], new Map())
+
+    const result = await resolveAdd({
+      args: ['lodash', '-E'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })
+
+    expect(result.dependencies?.[0]).toMatchObject({
+      specifier: '4.17.21',
+    })
+  })
+
+  it('throws when npm version lookup fails', async () => {
+    getLatestVersionMock.mockResolvedValue('')
+    const workspace = createWorkspace([createPackage('app')], new Map())
+
+    await expect(resolveAdd({
+      args: ['unknown-dep'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
   })
 })

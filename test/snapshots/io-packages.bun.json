@@ -5,7 +5,7 @@
     "version": "",
     "type": "bun-workspace",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "filepath": "<fixtures>/bun/package.json",
     "raw": {
       "name": "fixture-bun",
       "version": "0.0.0",
@@ -42,7 +42,7 @@
     "version": "",
     "type": "bun-workspace",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "filepath": "<fixtures>/bun/package.json",
     "raw": {
       "name": "fixture-bun",
       "version": "0.0.0",
@@ -79,7 +79,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/package.json",
+    "filepath": "<fixtures>/bun/package.json",
     "raw": {
       "name": "fixture-bun",
       "version": "0.0.0",
@@ -106,7 +106,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "packages/app/package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/bun/packages/app/package.json",
+    "filepath": "<fixtures>/bun/packages/app/package.json",
     "raw": {
       "name": "app-bun",
       "version": "0.0.0",

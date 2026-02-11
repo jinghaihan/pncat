@@ -5,7 +5,7 @@
     "version": "",
     "type": ".yarnrc.yml",
     "relative": ".yarnrc.yml",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/yarn/.yarnrc.yml",
+    "filepath": "<fixtures>/yarn/.yarnrc.yml",
     "raw": {
       "defaultProtocol": "npm:",
       "catalog": {
@@ -46,7 +46,7 @@
     "version": "",
     "type": ".yarnrc.yml",
     "relative": ".yarnrc.yml",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/yarn/.yarnrc.yml",
+    "filepath": "<fixtures>/yarn/.yarnrc.yml",
     "raw": {
       "defaultProtocol": "npm:",
       "catalog": {
@@ -87,7 +87,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/yarn/package.json",
+    "filepath": "<fixtures>/yarn/package.json",
     "raw": {
       "name": "fixture-yarn",
       "version": "0.0.0",
@@ -104,7 +104,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "packages/app/package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/yarn/packages/app/package.json",
+    "filepath": "<fixtures>/yarn/packages/app/package.json",
     "raw": {
       "name": "app-yarn",
       "version": "0.0.0",

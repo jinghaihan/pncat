@@ -305,4 +305,100 @@ describe('resolveMigrate', () => {
       workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
   })
+
+  it('ignores dependencies that are marked as not catalogable', async () => {
+    const dep: RawDep = {
+      name: 'left-pad',
+      specifier: '^1.3.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: false,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const workspace = createWorkspace([createPackage(dep)], {})
+    const result = await resolveMigrate({
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+  })
+
+  it('keeps stable order when specifiers normalize to the same version', async () => {
+    const depA: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depB: RawDep = {
+      ...depA,
+      specifier: '~18.3.1',
+    }
+
+    selectMock.mockImplementationOnce(async (input) => {
+      expect(input.options.map(item => item.value)).toEqual(['^18.3.1', '~18.3.1'])
+      return '^18.3.1'
+    })
+
+    const workspace = createWorkspace([
+      createPackage(depA, 'app-a'),
+      createPackage(depB, 'app-b'),
+    ], {})
+
+    const result = await resolveMigrate({
+      options: createFixtureOptions('pnpm', { yes: false }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        ...depA,
+        update: true,
+      },
+    ])
+  })
+
+  it('falls back to locale sorting when specifier cannot be normalized', async () => {
+    const depA: RawDep = {
+      name: 'react',
+      specifier: 'workspace:*',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depB: RawDep = {
+      ...depA,
+      specifier: '^18.3.1',
+    }
+
+    selectMock.mockImplementationOnce(async (input) => {
+      expect(input.options.map(item => item.value)).toEqual(['^18.3.1', 'workspace:*'])
+      return '^18.3.1'
+    })
+
+    const workspace = createWorkspace([
+      createPackage(depA, 'app-a'),
+      createPackage(depB, 'app-b'),
+    ], {})
+
+    const result = await resolveMigrate({
+      options: createFixtureOptions('pnpm', { yes: false }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        ...depB,
+        update: true,
+      },
+    ])
+  })
 })

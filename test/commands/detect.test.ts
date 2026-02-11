@@ -1,8 +1,31 @@
+import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { join } from 'pathe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { detectCommand } from '@/commands/detect'
-import { createFixtureScenarioOptions } from '../_shared'
+import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
+
+const ROOT = getFixtureScenarioPath('command-detect')
+const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
+const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
+
+const PACKAGE_JSON_BASELINE = `{
+  "name": "fixture-command-detect",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.3.1"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
+`
+
+const WORKSPACE_BASELINE = `packages:
+  - packages/*
+`
 
 vi.mock('@clack/prompts', () => ({
   note: vi.fn(),
@@ -13,8 +36,10 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 describe('detectCommand', () => {
-  beforeEach(() => {
+  beforeEach(async () => {
     vi.clearAllMocks()
+    await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
+    await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
   })
 
   it('prints detected changes and migration hint', async () => {

@@ -1,3 +1,4 @@
+import type { PackageJsonMeta, RawDep } from '@/types'
 import { describe, expect, it } from 'vitest'
 import { WorkspaceManager } from '@/workspace-manager'
 import { createFixtureOptions, getFixtureCwd } from './_shared'
@@ -142,6 +143,351 @@ describe('resolveCatalogDependency', () => {
 
     expect(resolved.catalogName).toBe('prod')
   })
+
+  it('throws when catalog specifier cannot be resolved from index', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+
+    expect(() => manager.resolveCatalogDependency(
+      {
+        name: 'react',
+        specifier: 'catalog:prod',
+        source: 'dependencies',
+        parents: [],
+        catalogable: true,
+        catalogName: 'prod',
+        isCatalog: true,
+      },
+      new Map(),
+      false,
+    )).toThrowError('Unable to resolve catalog specifier for react')
+  })
+
+  it('reuses indexed entry for non-catalog specifier when force is disabled', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const resolved = manager.resolveCatalogDependency(
+      {
+        name: 'react',
+        specifier: '^18.3.1',
+        source: 'dependencies',
+        parents: [],
+        catalogable: true,
+        catalogName: 'prod',
+        isCatalog: false,
+      },
+      new Map([
+        ['react', [{ catalogName: 'legacy', specifier: '^17.0.0' }]],
+      ]),
+      false,
+    )
+
+    expect(resolved.catalogName).toBe('legacy')
+    expect(resolved.specifier).toBe('^17.0.0')
+    expect(resolved.update).toBe(true)
+  })
+})
+
+describe('isCatalogDependencyReferenced', () => {
+  it('returns true when pnpm overrides references expected catalog specifier', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm.overrides',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      pnpm: {
+        overrides: {
+          react: 'catalog:prod',
+        },
+      },
+    })
+
+    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(true)
+  })
+
+  it('returns false when dependency is not a catalog specifier', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: '^18.3.1',
+      }),
+    ], {
+      dependencies: {
+        react: '^18.3.1',
+      },
+    })
+
+    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+  })
+
+  it('returns true when package dependency references the target catalog', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      dependencies: {
+        react: 'catalog:prod',
+      },
+    })
+
+    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(true)
+  })
+
+  it('continues scanning when pnpm overrides entry points to a different catalog', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm.overrides',
+        specifier: 'catalog:dev',
+        catalogName: 'dev',
+      }),
+    ], {
+      pnpm: {
+        overrides: {
+          react: 'catalog:dev',
+        },
+      },
+    })
+
+    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+  })
+
+  it('ignores dependencies with different names while scanning package references', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'vite',
+        source: 'dependencies',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      dependencies: {
+        vite: 'catalog:prod',
+      },
+    })
+
+    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+  })
+})
+
+describe('setDependencySpecifier', () => {
+  it('writes specifier into pnpm overrides source', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm.overrides',
+        specifier: 'catalog:prod',
+      }),
+    ], {})
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    manager.setDependencySpecifier(
+      updatedPackages,
+      pkg,
+      pkg.deps[0],
+      'catalog:test',
+    )
+
+    const updated = updatedPackages.get('app')
+    expect(updated?.raw.pnpm?.overrides?.react).toBe('catalog:test')
+  })
+
+  it('skips non package.json dependency sources', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm-workspace',
+        specifier: 'catalog:prod',
+      }),
+    ], {})
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    manager.setDependencySpecifier(
+      updatedPackages,
+      pkg,
+      pkg.deps[0],
+      'catalog:test',
+    )
+
+    const updated = updatedPackages.get('app')
+    expect(updated).toBeDefined()
+    expect(updated?.raw.dependencies).toBeUndefined()
+    expect(updated?.raw.devDependencies).toBeUndefined()
+  })
+})
+
+describe('removeCatalogDependencyFromPackages', () => {
+  it('removes dependency from pnpm overrides source', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm.overrides',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      pnpm: {
+        overrides: {
+          react: 'catalog:prod',
+        },
+      },
+    })
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(true)
+    expect(updatedPackages.get('app')?.raw.pnpm?.overrides?.react).toBeUndefined()
+  })
+
+  it('removes dependency from package.json dependency fields', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      dependencies: {
+        react: 'catalog:prod',
+      },
+    })
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(true)
+    expect(updatedPackages.get('app')?.raw.dependencies?.react).toBeUndefined()
+  })
+
+  it('skips package deps under pnpm overrides pseudo package', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('pnpm-workspace:overrides', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: 'catalog:prod',
+      }),
+    ], {
+      dependencies: {
+        react: 'catalog:prod',
+      },
+    })
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(false)
+    expect(updatedPackages.get('pnpm-workspace:overrides')?.raw.dependencies?.react).toBe('catalog:prod')
+  })
+
+  it('skips non package.json dependency sources', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'pnpm-workspace',
+        specifier: 'catalog:prod',
+      }),
+    ], {})
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(false)
+  })
+
+  it('ignores dependencies that do not match target catalog specifier', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: '^18.3.1',
+        isCatalog: false,
+      }),
+      createRawDep({
+        name: 'vite',
+        source: 'dependencies',
+        specifier: 'catalog:dev',
+        catalogName: 'dev',
+      }),
+    ], {
+      dependencies: {
+        react: '^18.3.1',
+        vite: 'catalog:dev',
+      },
+    })
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(false)
+    expect(updatedPackages.size).toBe(0)
+  })
+
+  it('ignores dependencies when catalog specifier points to a different catalog name', () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    const pkg = createPackageJsonMeta('app', [
+      createRawDep({
+        name: 'react',
+        source: 'dependencies',
+        specifier: 'catalog:dev',
+        catalogName: 'dev',
+      }),
+    ], {
+      dependencies: {
+        react: 'catalog:dev',
+      },
+    })
+
+    const updatedPackages = new Map<string, PackageJsonMeta>()
+    const removed = manager.removeCatalogDependencyFromPackages(
+      updatedPackages,
+      [pkg],
+      'react',
+      'prod',
+    )
+
+    expect(removed).toBe(false)
+    expect(updatedPackages.size).toBe(0)
+  })
 })
 
 describe('reset', () => {
@@ -155,3 +501,38 @@ describe('reset', () => {
     expect(manager.getDepNames()).toEqual([])
   })
 })
+
+function createRawDep(overrides: Partial<RawDep>): RawDep {
+  return {
+    name: 'react',
+    specifier: 'catalog:prod',
+    source: 'dependencies',
+    parents: [],
+    catalogable: true,
+    catalogName: 'prod',
+    isCatalog: true,
+    ...overrides,
+  }
+}
+
+function createPackageJsonMeta(
+  name: string,
+  deps: RawDep[],
+  raw: Record<string, unknown>,
+): PackageJsonMeta {
+  return {
+    type: 'package.json',
+    name,
+    private: true,
+    version: '0.0.0',
+    filepath: `/tmp/${name}/package.json`,
+    relative: 'package.json',
+    deps,
+    raw: {
+      name,
+      version: '0.0.0',
+      private: true,
+      ...raw,
+    },
+  }
+}

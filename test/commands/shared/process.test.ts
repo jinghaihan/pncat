@@ -57,6 +57,27 @@ describe('parseCommandOptions', () => {
     expect(result.deps).toEqual(['@scope/pkg', 'vitest'])
     expect(result.isDev).toBe(true)
   })
+
+  it('skips long options with explicit values while collecting dependencies', () => {
+    const result = parseCommandOptions(['--tag', 'next', 'react'], createFixtureOptions('pnpm'))
+    expect(result.deps).toEqual(['react'])
+  })
+
+  it('skips short options with explicit values while collecting dependencies', () => {
+    const result = parseCommandOptions(['-C', 'packages/app', 'react'], createFixtureOptions('pnpm'))
+    expect(result.deps).toEqual(['react'])
+  })
+
+  it('handles short options without values when followed by another flag', () => {
+    const result = parseCommandOptions(['-C', '--save-dev', 'react'], createFixtureOptions('pnpm'))
+    expect(result.deps).toEqual(['react'])
+    expect(result.isDev).toBe(true)
+  })
+
+  it('ignores --no-* boolean style flags while parsing dependencies', () => {
+    const result = parseCommandOptions(['--no-frozen-lockfile', 'react'], createFixtureOptions('pnpm'))
+    expect(result.deps).toEqual(['react'])
+  })
 })
 
 describe('runAgentInstall', () => {
@@ -86,6 +107,25 @@ describe('runAgentInstall', () => {
 
   it('falls back to direct install command when detector returns undefined', async () => {
     resolveCommandMock.mockReturnValue(null)
+
+    await runAgentInstall({
+      agent: 'pnpm',
+      cwd: '/repo',
+      silent: true,
+    })
+
+    expect(xMock).toHaveBeenCalledWith('pnpm', ['install'], {
+      nodeOptions: {
+        cwd: '/repo',
+        stdio: 'inherit',
+      },
+    })
+  })
+
+  it('falls back to direct install command when detector throws', async () => {
+    resolveCommandMock.mockImplementation(() => {
+      throw new Error('resolver failed')
+    })
 
     await runAgentInstall({
       agent: 'pnpm',
@@ -134,6 +174,42 @@ describe('runAgentRemove', () => {
     })
 
     expect(xMock).not.toHaveBeenCalled()
+  })
+
+  it('falls back to direct remove command when detector returns undefined', async () => {
+    resolveCommandMock.mockReturnValue(null)
+
+    await runAgentRemove(['react'], {
+      agent: 'pnpm',
+      cwd: '/repo',
+      recursive: false,
+    })
+
+    expect(xMock).toHaveBeenCalledWith('pnpm', ['remove', 'react'], {
+      nodeOptions: {
+        cwd: '/repo',
+        stdio: 'inherit',
+      },
+    })
+  })
+
+  it('falls back to direct remove command when detector throws', async () => {
+    resolveCommandMock.mockImplementation(() => {
+      throw new Error('resolver failed')
+    })
+
+    await runAgentRemove(['react'], {
+      agent: 'pnpm',
+      cwd: '/repo',
+      recursive: true,
+    })
+
+    expect(xMock).toHaveBeenCalledWith('pnpm', ['remove', 'react', '--recursive'], {
+      nodeOptions: {
+        cwd: '/repo',
+        stdio: 'inherit',
+      },
+    })
   })
 })
 

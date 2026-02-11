@@ -205,4 +205,30 @@ describe('resolveRevert', () => {
     expect(result.dependencies).toEqual([])
     expect(result.updatedPackages).toEqual({})
   })
+
+  it('skips pnpm overrides pseudo package when collecting revert targets', async () => {
+    const dep: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+
+    const workspace = createWorkspace(
+      [createPackage('pnpm-workspace:overrides', [dep])],
+      new Map([['react', [{ catalogName: 'prod', specifier: '^18.3.1' }]]]),
+    )
+
+    const result = await resolveRevert({
+      args: [],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+  })
 })

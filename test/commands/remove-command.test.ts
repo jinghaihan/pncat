@@ -1,11 +1,22 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import { join } from 'pathe'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { removeCommand } from '@/commands/remove'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import * as shared from '@/commands/shared'
 import { readJsonFile } from '@/io'
 import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
+
+vi.mock('@/commands/shared', async () => {
+  const actual = await vi.importActual<typeof import('@/commands/shared')>('@/commands/shared')
+  return {
+    ...actual,
+    runAgentRemove: vi.fn(),
+  }
+})
+
+const runAgentRemoveMock = vi.mocked(shared.runAgentRemove)
 
 const SCENARIO = 'command-remove'
 const ROOT = getFixtureScenarioPath(SCENARIO)
@@ -33,6 +44,8 @@ catalogs:
 `
 
 beforeEach(async () => {
+  vi.clearAllMocks()
+  runAgentRemoveMock.mockResolvedValue(undefined)
   await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
   await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
 })

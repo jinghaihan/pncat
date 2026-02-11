@@ -42,3 +42,5 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 30,
   },
 ]
+
+export default DEFAULT_CATALOG_RULES

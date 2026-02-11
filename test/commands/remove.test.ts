@@ -9,7 +9,16 @@ import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveRemove } from '@/commands/remove'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import * as shared from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
+
+vi.mock('@/commands/shared', async () => {
+  const actual = await vi.importActual<typeof import('@/commands/shared')>('@/commands/shared')
+  return {
+    ...actual,
+    runAgentRemove: vi.fn(),
+  }
+})
 
 vi.mock('@clack/prompts', () => ({
   multiselect: vi.fn(),
@@ -21,6 +30,7 @@ vi.mock('@clack/prompts', () => ({
 
 const multiselectMock = vi.mocked(p.multiselect)
 const isCancelMock = vi.mocked(p.isCancel)
+const runAgentRemoveMock = vi.mocked(shared.runAgentRemove)
 
 function createProjectPackage(
   name: string,
@@ -119,6 +129,7 @@ describe('resolveRemove', () => {
     vi.clearAllMocks()
     multiselectMock.mockResolvedValue(['prod'])
     isCancelMock.mockReturnValue(false)
+    runAgentRemoveMock.mockResolvedValue(undefined)
   })
 
   it('removes catalog dependency from target package and marks workspace entry for deletion', async () => {
@@ -272,5 +283,140 @@ describe('resolveRemove', () => {
       options: createFixtureOptions('pnpm', { yes: false }),
       workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+  })
+
+  it('falls back to agent remove when dependency is not used in any catalog', async () => {
+    const depInPackage: RawDep = {
+      name: 'axios',
+      specifier: '^1.7.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [],
+    )
+
+    const result = await resolveRemove({
+      args: ['axios', '-r'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).toHaveBeenCalledWith(['axios'], {
+      cwd: '/repo',
+      agent: 'pnpm',
+      recursive: true,
+    })
+  })
+
+  it('skips workspace removal when no matching catalog specifier is found in target package', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depInWorkspace: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+
+    const result = await resolveRemove({
+      args: ['react', '-r'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when no catalog is selected from the prompt', async () => {
+    multiselectMock.mockResolvedValue([])
+
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:legacy',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'legacy',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^17.0.0',
+          catalogName: 'legacy',
+        }),
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^18.3.1',
+          catalogName: 'prod',
+        }),
+      ],
+    )
+
+    await expect(resolveRemove({
+      args: ['react'],
+      options: createFixtureOptions('pnpm', { yes: false }),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+
+  it('throws when dependency argument list is empty after parsing options', async () => {
+    const workspace = createWorkspace([], [])
+
+    await expect(resolveRemove({
+      args: ['-r'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+
+  it('throws when dependency is not used in any package', async () => {
+    const depInWorkspace: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [])],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+
+    await expect(resolveRemove({
+      args: ['react'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
   })
 })

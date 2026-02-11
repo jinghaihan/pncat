@@ -5,7 +5,7 @@
     "version": "",
     "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "filepath": "<fixtures>/pnpm/pnpm-workspace.yaml",
     "raw": {
       "packages": [
         "packages/*"
@@ -56,7 +56,7 @@
     "version": "",
     "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "filepath": "<fixtures>/pnpm/pnpm-workspace.yaml",
     "raw": {
       "packages": [
         "packages/*"
@@ -107,7 +107,7 @@
     "version": "",
     "type": "pnpm-workspace.yaml",
     "relative": "pnpm-workspace.yaml",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/pnpm-workspace.yaml",
+    "filepath": "<fixtures>/pnpm/pnpm-workspace.yaml",
     "raw": {
       "packages": [
         "packages/*"
@@ -158,7 +158,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/package.json",
+    "filepath": "<fixtures>/pnpm/package.json",
     "raw": {
       "name": "fixture-pnpm",
       "version": "0.0.0",
@@ -175,7 +175,7 @@
     "version": "0.0.0",
     "type": "package.json",
     "relative": "packages/app/package.json",
-    "filepath": "/Users/jinghaihan/code/repos/pncat/test/fixtures/pnpm/packages/app/package.json",
+    "filepath": "<fixtures>/pnpm/packages/app/package.json",
     "raw": {
       "name": "app-pnpm",
       "version": "0.0.0",
