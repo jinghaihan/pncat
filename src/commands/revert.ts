@@ -1,6 +1,5 @@
 import type { CatalogOptions, PackageJsonMeta, RawDep, ResolverContext, ResolverResult } from '@/types'
 import process from 'node:process'
-import * as p from '@clack/prompts'
 import { isCatalogSpecifier, isPnpmOverridesPackageName } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
 import {
@@ -40,19 +39,15 @@ export async function revertCommand(options: CatalogOptions): Promise<void> {
   } as const
 
   if (isRevertAll) {
-    if (!options.yes) {
-      const confirmed = await p.confirm({
-        message: 'all catalog dependencies will be reverted, are you sure?',
-      })
-      if (!confirmed || p.isCancel(confirmed))
-        throw createCommandError(COMMAND_ERROR_CODES.ABORT)
-    }
-
     await confirmWorkspaceChanges(
       async () => {
         await workspace.catalog.clearCatalogs()
       },
-      { ...confirmationOptions, showDiff: false },
+      {
+        ...confirmationOptions,
+        showDiff: false,
+        confirmMessage: 'all catalog dependencies will be reverted, are you sure?',
+      },
     )
     return
   }

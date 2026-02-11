@@ -114,7 +114,7 @@ describe('revertCommand', () => {
     process.argv = ['node', 'pncat', 'revert']
 
     await revertCommand(createFixtureScenarioOptions(SCENARIO, {
-      yes: true,
+      yes: false,
       install: false,
       verbose: false,
     }))
@@ -125,6 +125,10 @@ describe('revertCommand', () => {
     const workspaceYaml = await readFile(WORKSPACE_PATH, 'utf-8')
     expect(workspaceYaml).not.toContain('catalogs:')
     expect(workspaceYaml).not.toContain('react: ^18.3.1')
+    expect(confirmMock).toHaveBeenCalledTimes(1)
+    expect(confirmMock).toHaveBeenCalledWith({
+      message: 'all catalog dependencies will be reverted, are you sure?',
+    })
   })
 
   it('throws abort when full revert confirmation is declined', async () => {
