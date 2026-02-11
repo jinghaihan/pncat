@@ -1,4 +1,5 @@
 import type { RawDep, WorkspaceSchema } from '@/types'
+import { normalize } from 'pathe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { JsonCatalog } from '@/catalog-handler/base'
 import * as io from '@/io'
@@ -40,7 +41,7 @@ describe('findWorkspaceFile', () => {
   it('finds vlt workspace file from fixture cwd', async () => {
     const catalog = new JsonCatalog(createFixtureOptions('vlt'), 'vlt')
     const filepath = await catalog.findWorkspaceFile()
-    expect(filepath).toBe(getFixturePath('vlt', 'vlt.json'))
+    expect(normalize(filepath!)).toBe(normalize(getFixturePath('vlt', 'vlt.json')))
   })
 })
 

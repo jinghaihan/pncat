@@ -1,5 +1,6 @@
 import type { RawDep } from '@/types'
 import { writeFile } from 'node:fs/promises'
+import { normalize } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { YamlCatalog } from '@/catalog-handler/base'
@@ -66,7 +67,7 @@ describe('findWorkspaceFile', () => {
   it('finds pnpm workspace file from fixture cwd', async () => {
     const catalog = new YamlCatalog(createFixtureOptions(), 'pnpm')
     const filepath = await catalog.findWorkspaceFile()
-    expect(filepath).toBe(getFixturePath('pnpm', 'pnpm-workspace.yaml'))
+    expect(normalize(filepath!)).toBe(normalize(getFixturePath('pnpm', 'pnpm-workspace.yaml')))
   })
 })
 
@@ -285,7 +286,7 @@ describe('getWorkspacePath', () => {
   it('returns workspace path after ensureWorkspace', async () => {
     const catalog = new YamlCatalog(createFixtureOptions(), 'pnpm')
     await catalog.ensureWorkspace()
-    await expect(catalog.getWorkspacePath()).resolves.toBe(getFixturePath('pnpm', 'pnpm-workspace.yaml'))
+    expect(normalize(await catalog.getWorkspacePath())).toBe(normalize(getFixturePath('pnpm', 'pnpm-workspace.yaml')))
   })
 
   it('calls ensureWorkspace when workspace path is not initialized', async () => {
@@ -311,11 +312,11 @@ describe('writeWorkspace', () => {
     await catalog.ensureWorkspace()
 
     await catalog.writeWorkspace()
-    expect(writeFileMock).toHaveBeenCalledWith(
-      getFixturePath('pnpm', 'pnpm-workspace.yaml'),
-      expect.any(String),
-      'utf-8',
-    )
+    expect(writeFileMock).toHaveBeenCalledTimes(1)
+    const [filepath, content, encoding] = writeFileMock.mock.calls[0]!
+    expect(normalize(String(filepath))).toBe(normalize(getFixturePath('pnpm', 'pnpm-workspace.yaml')))
+    expect(typeof content).toBe('string')
+    expect(encoding).toBe('utf-8')
   })
 })
 
