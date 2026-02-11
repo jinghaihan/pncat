@@ -22,20 +22,86 @@ interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
   showDiff?: boolean
 }
 
-export async function readWorkspacePackageJSON(workspace: WorkspaceManager): Promise<{
-  pkgPath: string
-  pkgName: string
-  pkgJson: PackageJson
-}> {
-  const pkgPath = join(workspace.getCwd(), 'package.json')
-  if (!existsSync(pkgPath))
-    throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no package.json found, aborting')
+export async function confirmWorkspaceChanges(
+  modifier: () => Promise<void>,
+  options: ConfirmationOptions,
+): Promise<'applied' | 'noop'> {
+  const {
+    workspace,
+    updatedPackages,
+    yes = false,
+    verbose = false,
+    bailout = true,
+    confirmMessage = 'continue?',
+    completeMessage,
+    showDiff = true,
+  } = options
 
-  const pkgJson = await readJsonFile<PackageJson>(pkgPath)
-  if (typeof pkgJson.name !== 'string')
-    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'package.json is missing name, aborting')
+  const catalogOptions = workspace.getOptions()
+  const filename = PACKAGE_MANAGER_CONFIG[catalogOptions.agent || 'pnpm'].filename
+  const rawContent = await workspace.catalog.toString()
 
-  return { pkgPath, pkgName: pkgJson.name, pkgJson }
+  await modifier()
+
+  if (catalogOptions.agent === 'pnpm')
+    await workspace.catalog.updateWorkspaceOverrides?.()
+
+  const nextContent = await workspace.catalog.toString()
+  const hasWorkspaceChanges = rawContent !== nextContent
+  const hasUpdatedPackages = hasPackageJSONChanges(updatedPackages)
+
+  if (!hasWorkspaceChanges && !hasUpdatedPackages) {
+    if (bailout)
+      p.outro(c.yellow(`no changes to ${filename}`))
+    else
+      p.log.info(c.green(`no changes to ${filename}`))
+
+    return 'noop'
+  }
+
+  const diff = hasWorkspaceChanges
+    ? diffHighlight(rawContent, nextContent, { verbose })
+    : ''
+
+  if (hasWorkspaceChanges && showDiff && diff) {
+    const workspacePath = await workspace.catalog.getWorkspacePath()
+    p.note(c.reset(diff), c.dim(tildify(workspacePath)))
+
+    if (!yes)
+      await confirmOrAbort(confirmMessage)
+  }
+  else if (hasUpdatedPackages && !yes) {
+    await confirmOrAbort(confirmMessage)
+  }
+
+  if (updatedPackages)
+    await writePackageJSONs(updatedPackages)
+
+  if (!hasWorkspaceChanges)
+    p.log.info(c.green(`no changes to ${filename}, applying package.json updates`))
+
+  if (hasWorkspaceChanges && diff) {
+    p.log.info(`writing ${filename}`)
+    await workspace.catalog.writeWorkspace()
+  }
+
+  if (catalogOptions.postRun)
+    await runHooks(catalogOptions.postRun, { cwd: workspace.getCwd() })
+
+  if (completeMessage) {
+    if (catalogOptions.install) {
+      p.log.info(c.green(completeMessage))
+      await runAgentInstall({
+        cwd: workspace.getCwd(),
+        agent: catalogOptions.agent,
+      })
+    }
+    else {
+      p.outro(c.green(completeMessage))
+    }
+  }
+
+  return 'applied'
 }
 
 export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<void> {
@@ -69,78 +135,20 @@ export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<
   await workspace.catalog.ensureWorkspace()
 }
 
-export async function confirmWorkspaceChanges(
-  modifier: () => Promise<void>,
-  options: ConfirmationOptions,
-): Promise<'applied' | 'noop'> {
-  const {
-    workspace,
-    updatedPackages,
-    yes = false,
-    verbose = false,
-    bailout = true,
-    confirmMessage = 'continue?',
-    completeMessage,
-    showDiff = true,
-  } = options
+export async function readWorkspacePackageJSON(workspace: WorkspaceManager): Promise<{
+  pkgPath: string
+  pkgName: string
+  pkgJson: PackageJson
+}> {
+  const pkgPath = join(workspace.getCwd(), 'package.json')
+  if (!existsSync(pkgPath))
+    throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no package.json found, aborting')
 
-  const catalogOptions = workspace.getOptions()
-  const filename = PACKAGE_MANAGER_CONFIG[catalogOptions.agent || 'pnpm'].filename
-  const rawContent = await workspace.catalog.toString()
+  const pkgJson = await readJsonFile<PackageJson>(pkgPath)
+  if (typeof pkgJson.name !== 'string')
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'package.json is missing name, aborting')
 
-  await modifier()
-
-  if (catalogOptions.agent === 'pnpm')
-    await workspace.catalog.updateWorkspaceOverrides?.()
-
-  const nextContent = await workspace.catalog.toString()
-  if (rawContent === nextContent) {
-    if (bailout)
-      p.outro(c.yellow(`no changes to ${filename}`))
-    else
-      p.log.info(c.green(`no changes to ${filename}`))
-
-    return 'noop'
-  }
-
-  const workspacePath = await workspace.catalog.getWorkspacePath()
-  const diff = diffHighlight(rawContent, nextContent, { verbose })
-
-  if (showDiff && diff) {
-    p.note(c.reset(diff), c.dim(tildify(workspacePath)))
-
-    if (!yes) {
-      const confirmed = await p.confirm({ message: confirmMessage })
-      if (p.isCancel(confirmed) || !confirmed)
-        throw createCommandError(COMMAND_ERROR_CODES.ABORT)
-    }
-  }
-
-  if (updatedPackages)
-    await writePackageJSONs(updatedPackages)
-
-  if (diff) {
-    p.log.info(`writing ${filename}`)
-    await workspace.catalog.writeWorkspace()
-  }
-
-  if (catalogOptions.postRun)
-    await runHooks(catalogOptions.postRun, { cwd: workspace.getCwd() })
-
-  if (completeMessage) {
-    if (catalogOptions.install) {
-      p.log.info(c.green(completeMessage))
-      await runAgentInstall({
-        cwd: workspace.getCwd(),
-        agent: catalogOptions.agent,
-      })
-    }
-    else {
-      p.outro(c.green(completeMessage))
-    }
-  }
-
-  return 'applied'
+  return { pkgPath, pkgName: pkgJson.name, pkgJson }
 }
 
 async function writePackageJSONs(updatedPackages: Record<string, PackageJsonMeta>): Promise<void> {
@@ -151,4 +159,16 @@ async function writePackageJSONs(updatedPackages: Record<string, PackageJsonMeta
   await Promise.all(
     Object.values(updatedPackages).map(pkg => writeJsonFile(pkg.filepath, cleanupPackageJSON(pkg.raw))),
   )
+}
+
+function hasPackageJSONChanges(updatedPackages?: Record<string, PackageJsonMeta>): boolean {
+  if (!updatedPackages)
+    return false
+  return Object.keys(updatedPackages).length > 0
+}
+
+async function confirmOrAbort(message: string): Promise<void> {
+  const confirmed = await p.confirm({ message })
+  if (p.isCancel(confirmed) || !confirmed)
+    throw createCommandError(COMMAND_ERROR_CODES.ABORT)
 }

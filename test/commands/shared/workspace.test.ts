@@ -4,8 +4,7 @@ import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile, readWorkspacePackageJSON } from '@/commands/shared'
-import { runAgentInstall, runHooks } from '@/commands/shared/process'
+import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile, readWorkspacePackageJSON, runAgentInstall, runHooks } from '@/commands/shared'
 import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '@/io'
 import { createFixtureOptions } from '../../_shared'
 
@@ -114,6 +113,24 @@ describe('confirmWorkspaceChanges', () => {
     )
 
     expect(result).toBe('noop')
+    expect(workspace.catalog.writeWorkspace).not.toHaveBeenCalled()
+  })
+
+  it('writes package json when workspace content is unchanged', async () => {
+    const workspace = createWorkspace('catalog: {}', 'catalog: {}')
+    const updatedPackages = createUpdatedPackage()
+
+    const result = await confirmWorkspaceChanges(
+      async () => {},
+      {
+        workspace,
+        updatedPackages,
+        yes: true,
+      },
+    )
+
+    expect(result).toBe('applied')
+    expect(writeJsonFileMock).toHaveBeenCalledWith('/repo/package.json', updatedPackages.app.raw)
     expect(workspace.catalog.writeWorkspace).not.toHaveBeenCalled()
   })
 

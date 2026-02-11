@@ -1,5 +1,6 @@
 import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '@/types'
 import { toArray } from '@antfu/utils'
+import { COMPLEX_SPECIFIER_RANGE_TYPES } from '@/constants'
 
 const RANGE_X_WILDCARD_RE = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d+)*)$/
 const RANGE_ASTERISK_WILDCARD_RE = /^\*(?:\.\*)*$/
@@ -66,7 +67,7 @@ export function specFilter(specifier: string, options?: SpecifierOptions): boole
   }
 
   if (skipComplexRanges) {
-    for (const type of ['||', '-', '>=', '<=', '>', '<'] as const) {
+    for (const type of COMPLEX_SPECIFIER_RANGE_TYPES) {
       if (checks[type](normalizedSpecifier))
         return false
     }

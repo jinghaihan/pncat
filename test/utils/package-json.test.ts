@@ -7,7 +7,7 @@ import {
   getPackageJsonDeps,
   getPnpmOverrides,
   isPackageJsonDepSource,
-} from '@/utils/package-json'
+} from '@/utils'
 
 describe('isPackageJsonDepSource', () => {
   it('returns true for package.json dependency source fields', () => {

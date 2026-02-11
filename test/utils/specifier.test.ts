@@ -17,6 +17,20 @@ describe('parseSpec', () => {
       specifier: '^22.10.0',
     })
   })
+
+  it('parses npm alias spec for non-scoped package', () => {
+    expect(parseSpec('react@npm:preact@10.24.3')).toEqual({
+      name: 'react',
+      specifier: 'npm:preact@10.24.3',
+    })
+  })
+
+  it('parses npm alias spec for scoped package', () => {
+    expect(parseSpec('@types/node@npm:@types/node@22.10.2')).toEqual({
+      name: '@types/node',
+      specifier: 'npm:@types/node@22.10.2',
+    })
+  })
 })
 
 describe('cleanSpec', () => {

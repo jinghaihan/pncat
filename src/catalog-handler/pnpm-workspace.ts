@@ -1,5 +1,5 @@
 import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta, WorkspaceSchema } from '@/types'
-import { YamlCatalog } from '@/catalog-handler/base/yaml-workspace'
+import { YamlCatalog } from '@/catalog-handler/base'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { loadPackages } from '@/io'
 import { createDepCatalogIndex, isCatalogSpecifier, isPnpmOverridesPackageName } from '@/utils'

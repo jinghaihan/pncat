@@ -2,7 +2,7 @@ import type { RawDep } from '@/types'
 import { writeFile } from 'node:fs/promises'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { YamlCatalog } from '@/catalog-handler/base/yaml-workspace'
+import { YamlCatalog } from '@/catalog-handler/base'
 import { createFixtureOptions, getFixturePath } from '../../_shared'
 
 vi.mock('node:fs/promises', async (importOriginal) => {

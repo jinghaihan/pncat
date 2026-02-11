@@ -2,18 +2,7 @@ import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
 import { clean, coerce, gt, minVersion, subset, valid } from 'semver'
 
 export function parseSpec(spec: string): ParsedSpec {
-  let name: string | undefined
-  let specifier: string | undefined
-
-  const parts = spec.split(/@/g)
-  if (parts[0] === '') {
-    name = parts.slice(0, 2).join('@')
-    specifier = parts[2]
-  }
-  else {
-    name = parts[0]
-    specifier = parts[1]
-  }
+  const { name, specifier } = splitPackageSpec(spec.trim())
 
   return { name, specifier }
 }
@@ -53,4 +42,29 @@ export function mostSpecificRule(rules: SpecifierRule[]): SpecifierRule {
 
     return best
   })
+}
+
+function splitPackageSpec(spec: string): { name: string, specifier?: string } {
+  if (!spec.startsWith('@')) {
+    const atIndex = spec.indexOf('@')
+    if (atIndex === -1)
+      return { name: spec }
+    return {
+      name: spec.slice(0, atIndex),
+      specifier: spec.slice(atIndex + 1),
+    }
+  }
+
+  const slashIndex = spec.indexOf('/')
+  if (slashIndex === -1)
+    return { name: spec }
+
+  const atIndex = spec.indexOf('@', slashIndex + 1)
+  if (atIndex === -1)
+    return { name: spec }
+
+  return {
+    name: spec.slice(0, atIndex),
+    specifier: spec.slice(atIndex + 1),
+  }
 }

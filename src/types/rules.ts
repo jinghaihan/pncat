@@ -1,4 +1,5 @@
 import type { DepType } from './core'
+import type { SPECIFIER_RANGE_TYPES } from '@/constants'
 
 export interface CatalogRule {
   name: string
@@ -22,13 +23,4 @@ export interface SpecifierOptions {
   skipRangeTypes?: SpecifierRangeType[]
 }
 
-export type SpecifierRangeType
-  = | '||'
-    | '-'
-    | '>='
-    | '<='
-    | '>'
-    | '<'
-    | 'x'
-    | '*'
-    | 'pre-release'
+export type SpecifierRangeType = (typeof SPECIFIER_RANGE_TYPES)[number]
