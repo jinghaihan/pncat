@@ -1,0 +1,272 @@
+import type { CatalogOptions, PackageJsonMeta } from '../../../src/types'
+import { writeFile } from 'node:fs/promises'
+import * as p from '@clack/prompts'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile } from '../../../src/commands/shared'
+import { runAgentInstall, runHooks } from '../../../src/commands/shared/process'
+import { detectWorkspaceRoot, writeJsonFile } from '../../../src/io'
+import { createFixtureOptions } from '../../_shared'
+
+vi.mock('@clack/prompts', () => ({
+  confirm: vi.fn(),
+  isCancel: vi.fn(),
+  note: vi.fn(),
+  outro: vi.fn(),
+  log: {
+    info: vi.fn(),
+    warn: vi.fn(),
+  },
+}))
+
+vi.mock('../../../src/commands/shared/process', () => ({
+  runAgentInstall: vi.fn(),
+  runHooks: vi.fn(),
+}))
+
+vi.mock('../../../src/io', () => ({
+  detectWorkspaceRoot: vi.fn(),
+  writeJsonFile: vi.fn(),
+}))
+
+vi.mock('node:fs/promises', () => ({
+  writeFile: vi.fn(),
+}))
+
+const confirmMock = vi.mocked(p.confirm)
+const isCancelMock = vi.mocked(p.isCancel)
+const writeFileMock = vi.mocked(writeFile)
+const writeJsonFileMock = vi.mocked(writeJsonFile)
+const detectWorkspaceRootMock = vi.mocked(detectWorkspaceRoot)
+const runAgentInstallMock = vi.mocked(runAgentInstall)
+const runHooksMock = vi.mocked(runHooks)
+
+function createWorkspace(rawText: string, nextText: string, overrides: Partial<CatalogOptions> = {}) {
+  let content = rawText
+  return {
+    getOptions: () => createFixtureOptions('pnpm', { yes: true, ...overrides }),
+    getCwd: () => '/repo',
+    catalog: {
+      toString: vi.fn(async () => content),
+      updateWorkspaceOverrides: vi.fn(async () => {}),
+      getWorkspacePath: vi.fn(async () => '/repo/pnpm-workspace.yaml'),
+      writeWorkspace: vi.fn(async () => {}),
+    },
+    apply: () => {
+      content = nextText
+    },
+  }
+}
+
+function createUpdatedPackage(): Record<string, PackageJsonMeta> {
+  return {
+    app: {
+      type: 'package.json',
+      name: 'app',
+      private: true,
+      version: '0.0.0',
+      filepath: '/repo/package.json',
+      relative: 'package.json',
+      raw: {
+        name: 'app',
+        dependencies: {
+          react: 'catalog:prod',
+        },
+      },
+      deps: [],
+    },
+  }
+}
+
+describe('confirmWorkspaceChanges', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    isCancelMock.mockReturnValue(false)
+    confirmMock.mockResolvedValue(true)
+    detectWorkspaceRootMock.mockResolvedValue('/repo')
+    runAgentInstallMock.mockResolvedValue(undefined)
+    runHooksMock.mockResolvedValue(undefined)
+  })
+
+  it('returns noop when workspace content has no changes', async () => {
+    const workspace = createWorkspace('catalog: {}', 'catalog: {}')
+
+    const result = await confirmWorkspaceChanges(
+      async () => {},
+      {
+        workspace: workspace as any,
+        bailout: true,
+      },
+    )
+
+    expect(result).toBe('noop')
+    expect(workspace.catalog.writeWorkspace).not.toHaveBeenCalled()
+  })
+
+  it('writes workspace and package json when confirmed', async () => {
+    const workspace = createWorkspace('catalog: {}', 'catalog:\n  react: ^18.3.1')
+    const updatedPackages = createUpdatedPackage()
+
+    const result = await confirmWorkspaceChanges(
+      async () => {
+        workspace.apply()
+      },
+      {
+        workspace: workspace as any,
+        updatedPackages,
+        yes: true,
+        completeMessage: 'migrate complete',
+      },
+    )
+
+    expect(result).toBe('applied')
+    expect(writeJsonFileMock).toHaveBeenCalledWith('/repo/package.json', updatedPackages.app.raw)
+    expect(workspace.catalog.writeWorkspace).toHaveBeenCalledTimes(1)
+    expect(runAgentInstallMock).toHaveBeenCalledWith({
+      cwd: '/repo',
+      agent: 'pnpm',
+    })
+  })
+
+  it('returns aborted when user rejects confirmation', async () => {
+    const workspace = createWorkspace('catalog: {}', 'catalog:\n  react: ^18.3.1')
+    confirmMock.mockResolvedValue(false)
+
+    await expect(confirmWorkspaceChanges(
+      async () => {
+        workspace.apply()
+      },
+      {
+        workspace: workspace as any,
+        yes: false,
+      },
+    )).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+    expect(workspace.catalog.writeWorkspace).not.toHaveBeenCalled()
+    expect(runAgentInstallMock).not.toHaveBeenCalled()
+  })
+
+  it('runs post hooks after workspace write', async () => {
+    const workspace = createWorkspace(
+      'catalog: {}',
+      'catalog:\n  react: ^18.3.1',
+      { postRun: 'eslint --fix "**/package.json"' },
+    )
+
+    await confirmWorkspaceChanges(
+      async () => {
+        workspace.apply()
+      },
+      {
+        workspace: workspace as any,
+        yes: true,
+      },
+    )
+
+    expect(runHooksMock).toHaveBeenCalledWith('eslint --fix "**/package.json"', {
+      cwd: '/repo',
+    })
+  })
+
+  it('prints complete outro without install when install is disabled', async () => {
+    const workspace = createWorkspace(
+      'catalog: {}',
+      'catalog:\n  react: ^18.3.1',
+      { install: false },
+    )
+
+    await confirmWorkspaceChanges(
+      async () => {
+        workspace.apply()
+      },
+      {
+        workspace: workspace as any,
+        yes: true,
+        completeMessage: 'migrate complete',
+      },
+    )
+
+    expect(runAgentInstallMock).not.toHaveBeenCalled()
+  })
+})
+
+describe('ensureWorkspaceFile', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    isCancelMock.mockReturnValue(false)
+    confirmMock.mockResolvedValue(true)
+    detectWorkspaceRootMock.mockResolvedValue('/repo')
+  })
+
+  it('creates missing workspace file and ensures workspace', async () => {
+    const ensureWorkspace = vi.fn(async () => {})
+    const workspace = {
+      getOptions: () => createFixtureOptions('pnpm', { yes: false }),
+      getCwd: () => '/repo/packages/app',
+      catalog: {
+        findWorkspaceFile: vi.fn(async () => undefined),
+        ensureWorkspace,
+      },
+    }
+
+    await ensureWorkspaceFile(workspace as any)
+
+    expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({
+      message: expect.stringContaining('/repo'),
+    }))
+    expect(writeFileMock).toHaveBeenCalledWith('/repo/pnpm-workspace.yaml', 'packages: []', 'utf-8')
+    expect(ensureWorkspace).toHaveBeenCalledTimes(1)
+  })
+
+  it('throws when user cancels workspace creation', async () => {
+    confirmMock.mockResolvedValue(false)
+    const ensureWorkspace = vi.fn(async () => {})
+    const workspace = {
+      getOptions: () => createFixtureOptions('pnpm', { yes: false }),
+      getCwd: () => '/repo/packages/app',
+      catalog: {
+        findWorkspaceFile: vi.fn(async () => undefined),
+        ensureWorkspace,
+      },
+    }
+
+    await expect(ensureWorkspaceFile(workspace as any)).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+    expect(writeFileMock).not.toHaveBeenCalled()
+    expect(ensureWorkspace).not.toHaveBeenCalled()
+  })
+
+  it('skips prompt and creates workspace file when yes is enabled', async () => {
+    const ensureWorkspace = vi.fn(async () => {})
+    const workspace = {
+      getOptions: () => createFixtureOptions('vlt', { yes: true }),
+      getCwd: () => '/repo/packages/app',
+      catalog: {
+        findWorkspaceFile: vi.fn(async () => undefined),
+        ensureWorkspace,
+      },
+    }
+
+    await ensureWorkspaceFile(workspace as any)
+
+    expect(confirmMock).not.toHaveBeenCalled()
+    expect(writeFileMock).toHaveBeenCalledWith('/repo/vlt.json', '{}', 'utf-8')
+    expect(ensureWorkspace).toHaveBeenCalledTimes(1)
+  })
+
+  it('delegates directly to catalog ensureWorkspace for bun', async () => {
+    const ensureWorkspace = vi.fn(async () => {})
+    const workspace = {
+      getOptions: () => createFixtureOptions('bun', { yes: false }),
+      getCwd: () => '/repo/packages/app',
+      catalog: {
+        findWorkspaceFile: vi.fn(async () => undefined),
+        ensureWorkspace,
+      },
+    }
+
+    await ensureWorkspaceFile(workspace as any)
+
+    expect(confirmMock).not.toHaveBeenCalled()
+    expect(writeFileMock).not.toHaveBeenCalled()
+    expect(detectWorkspaceRootMock).not.toHaveBeenCalled()
+    expect(ensureWorkspace).toHaveBeenCalledTimes(1)
+  })
+})

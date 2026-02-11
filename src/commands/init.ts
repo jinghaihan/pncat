@@ -1,13 +1,13 @@
-import type { CatalogOptions, CatalogRule, PackageManager, PackageMeta, SpecifierRule } from '../types'
+import type { CatalogOptions, CatalogRule, PackageManager, SpecifierRule } from '../types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
-import { loadPackages } from '../io'
 import { DEFAULT_CATALOG_RULES } from '../rules'
-import { getCwd, hasEslint, hasVSCodeEngine, isDepMatched } from '../utils'
+import { isDepMatched } from '../utils'
+import { WorkspaceManager } from '../workspace-manager'
 
 const INIT_CONFIG_FILENAME = 'pncat.config.ts'
 type InitMode = 'extend' | 'minimal'
@@ -20,7 +20,8 @@ const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
 }
 
 export async function initCommand(options: CatalogOptions): Promise<void> {
-  const cwd = getCwd(options)
+  const workspace = new WorkspaceManager(options)
+  const cwd = workspace.getCwd()
   const filepath = join(cwd, INIT_CONFIG_FILENAME)
 
   if (existsSync(filepath) && !options.yes) {
@@ -35,19 +36,19 @@ export async function initCommand(options: CatalogOptions): Promise<void> {
     }
   }
 
-  const packages = await loadPackages(options)
+  await workspace.loadPackages()
 
   const mode = await promptInitMode(options)
   if (!mode)
     return
 
-  const eslint = await promptEslintFix(options, packages)
+  const eslint = await promptEslintFix(options, workspace)
   if (eslint === null)
     return
 
   const content = mode === 'extend'
-    ? generateExtendConfig(options, packages, eslint)
-    : await generateMinimalConfig(options, packages, eslint)
+    ? generateExtendConfig(options, workspace, eslint)
+    : await generateMinimalConfig(options, workspace, eslint)
 
   if (!content)
     return
@@ -92,8 +93,8 @@ async function promptInitMode(options: CatalogOptions): Promise<InitMode | null>
   return mode
 }
 
-async function promptEslintFix(options: CatalogOptions, packages: PackageMeta[]): Promise<boolean | null> {
-  if (!hasEslint(packages))
+async function promptEslintFix(options: CatalogOptions, workspace: WorkspaceManager): Promise<boolean | null> {
+  if (!workspace.hasEslint())
     return false
 
   if (options.yes)
@@ -112,7 +113,7 @@ async function promptEslintFix(options: CatalogOptions, packages: PackageMeta[])
   return !!enabled
 }
 
-function generateExtendConfig(options: CatalogOptions, packages: PackageMeta[], eslint: boolean): string {
+function generateExtendConfig(options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): string {
   const lines = injectCommonConfigLines([
     `import { defineConfig, mergeCatalogRules } from 'pncat'`,
     ``,
@@ -120,16 +121,16 @@ function generateExtendConfig(options: CatalogOptions, packages: PackageMeta[], 
     `  catalogRules: mergeCatalogRules([]),`,
     `})`,
     ``,
-  ], options, packages, eslint)
+  ], options, workspace, eslint)
 
   return generateConfigContent(lines)
 }
 
-async function generateMinimalConfig(options: CatalogOptions, packages: PackageMeta[], eslint: boolean): Promise<string | null> {
-  const depNames = collectDependencyNames(packages)
+async function generateMinimalConfig(options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): Promise<string | null> {
+  const depNames = workspace.getDepNames()
   const catalogRules = collectMatchedRules(depNames, options)
 
-  p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `Found ${c.yellow(catalogRules.length)} matching rules`)
+  p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `found ${c.yellow(catalogRules.length)} matching rules`)
   if (!options.yes) {
     const confirmed = await p.confirm({ message: 'continue?' })
     if (p.isCancel(confirmed) || !confirmed) {
@@ -168,16 +169,16 @@ async function generateMinimalConfig(options: CatalogOptions, packages: PackageM
   lines.push(`})`)
   lines.push(``)
 
-  return generateConfigContent(injectCommonConfigLines(lines, options, packages, eslint))
+  return generateConfigContent(injectCommonConfigLines(lines, options, workspace, eslint))
 }
 
-function injectCommonConfigLines(lines: string[], options: CatalogOptions, packages: PackageMeta[], eslint: boolean): string[] {
+function injectCommonConfigLines(lines: string[], options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): string[] {
   const closeIndex = lines.lastIndexOf('})')
   if (closeIndex < 0)
     return lines
 
   const inserts: string[] = []
-  if (hasVSCodeEngine(packages))
+  if (workspace.hasVSCodeEngine())
     inserts.push(`  exclude: ['@types/vscode'],`)
 
   if (eslint) {
@@ -193,18 +194,6 @@ function injectCommonConfigLines(lines: string[], options: CatalogOptions, packa
 
 function generateConfigContent(lines: string[]): string {
   return lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
-}
-
-function collectDependencyNames(packages: PackageMeta[]): string[] {
-  const names = new Set<string>()
-  for (const pkg of packages) {
-    if (pkg.type !== 'package.json')
-      continue
-    for (const dep of pkg.deps)
-      names.add(dep.name)
-  }
-
-  return Array.from(names)
 }
 
 function collectMatchedRules(depNames: string[], options: CatalogOptions): CatalogRule[] {

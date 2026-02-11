@@ -1,0 +1,300 @@
+import type { CatalogOptions, PackageJsonMeta, RawDep, WorkspaceSchema } from '../../src/types'
+import * as p from '@clack/prompts'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { resolveMigrate } from '../../src/commands/migrate'
+import { COMMAND_ERROR_CODES } from '../../src/commands/shared'
+import { createFixtureOptions } from '../_shared'
+
+vi.mock('@clack/prompts', () => ({
+  select: vi.fn(),
+  isCancel: vi.fn(),
+  outro: vi.fn(),
+  log: {
+    warn: vi.fn(),
+  },
+}))
+
+const selectMock = vi.mocked(p.select)
+const isCancelMock = vi.mocked(p.isCancel)
+
+interface ResolveWorkspaceLike {
+  loadPackages: () => Promise<PackageJsonMeta[]>
+  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
+  resolveCatalogDependency: (
+    dep: RawDep,
+    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
+    force: boolean,
+  ) => RawDep
+  catalog: {
+    ensureWorkspace: () => Promise<void>
+    toJSON: () => Promise<WorkspaceSchema>
+    generateCatalogs: (deps: RawDep[]) => Promise<void>
+    writeWorkspace: () => Promise<void>
+  }
+}
+
+function createPackage(dep: RawDep, name: string = 'app'): PackageJsonMeta {
+  return {
+    type: 'package.json',
+    name,
+    private: true,
+    version: '0.0.0',
+    filepath: `/repo/packages/${name}/package.json`,
+    relative: `packages/${name}/package.json`,
+    raw: {
+      name,
+      dependencies: {
+        [dep.name]: dep.specifier,
+      },
+    },
+    deps: [dep],
+  }
+}
+
+function createWorkspace(
+  packages: PackageJsonMeta[],
+  workspaceJson: WorkspaceSchema,
+): ResolveWorkspaceLike {
+  const index = new Map<string, { catalogName: string, specifier: string }[]>()
+  if (workspaceJson.catalog) {
+    for (const [name, specifier] of Object.entries(workspaceJson.catalog)) {
+      index.set(name, [
+        ...(index.get(name) || []),
+        { catalogName: 'default', specifier },
+      ])
+    }
+  }
+
+  if (workspaceJson.catalogs) {
+    for (const [catalogName, catalog] of Object.entries(workspaceJson.catalogs)) {
+      if (!catalog)
+        continue
+
+      for (const [name, specifier] of Object.entries(catalog)) {
+        index.set(name, [
+          ...(index.get(name) || []),
+          { catalogName, specifier },
+        ])
+      }
+    }
+  }
+
+  return {
+    loadPackages: async () => packages,
+    getCatalogIndex: async () => index,
+    resolveCatalogDependency: (dep, catalogIndex, force) => {
+      const catalogDeps = catalogIndex.get(dep.name) || []
+
+      if (dep.specifier.startsWith('catalog:')) {
+        if (catalogDeps.length === 0)
+          throw new Error(`Unable to resolve catalog specifier for ${dep.name}`)
+
+        const requestedCatalogName = dep.specifier.slice('catalog:'.length) || 'default'
+        const matched = catalogDeps.find(item => item.catalogName === requestedCatalogName) || catalogDeps[0]
+        return {
+          ...dep,
+          specifier: matched.specifier,
+          catalogName: force ? dep.catalogName : matched.catalogName,
+          update: dep.specifier !== `catalog:${dep.catalogName === 'default' ? '' : dep.catalogName}`,
+        }
+      }
+
+      if (!force && catalogDeps.length > 0) {
+        const matched = catalogDeps.find(item => item.catalogName === dep.catalogName) || catalogDeps[0]
+        return {
+          ...dep,
+          specifier: matched.specifier,
+          catalogName: matched.catalogName,
+          update: dep.specifier !== `catalog:${matched.catalogName === 'default' ? '' : matched.catalogName}`,
+        }
+      }
+
+      return {
+        ...dep,
+        update: dep.specifier !== `catalog:${dep.catalogName === 'default' ? '' : dep.catalogName}`,
+      }
+    },
+    catalog: {
+      ensureWorkspace: async () => {},
+      toJSON: async () => workspaceJson,
+      generateCatalogs: async () => {},
+      writeWorkspace: async () => {},
+    },
+  }
+}
+
+describe('resolveMigrate', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    selectMock.mockResolvedValue('^0.0.0')
+    isCancelMock.mockReturnValue(false)
+  })
+
+  it('converts package dependencies to catalog specifiers', async () => {
+    const dep: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const workspace = createWorkspace([createPackage(dep)], {})
+    const options: CatalogOptions = createFixtureOptions('pnpm')
+
+    const result = await resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        ...dep,
+        update: true,
+      },
+    ])
+    expect(result.updatedPackages?.app.raw.dependencies?.react).toBe('catalog:prod')
+  })
+
+  it('resolves catalog specifier from existing workspace catalog', async () => {
+    const dep: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace([createPackage(dep)], {
+      catalogs: {
+        prod: {
+          react: '^18.3.1',
+        },
+      },
+    })
+    const options: CatalogOptions = createFixtureOptions('pnpm')
+
+    const result = await resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })
+
+    expect(result.dependencies?.[0].specifier).toBe('^18.3.1')
+    expect(result.updatedPackages).toEqual({})
+  })
+
+  it('preserves existing workspace catalogs when no package uses dependency', async () => {
+    const workspace = createWorkspace([], {
+      catalog: {
+        vitest: '^4.0.0',
+      },
+    })
+    const options: CatalogOptions = createFixtureOptions('pnpm')
+
+    const result = await resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        name: 'vitest',
+        specifier: '^4.0.0',
+        source: 'pnpm-workspace',
+        parents: [],
+        catalogable: true,
+        catalogName: 'default',
+        isCatalog: true,
+      },
+    ])
+  })
+
+  it('throws when workspace has unresolved catalog specifier', async () => {
+    const options = createFixtureOptions('pnpm')
+    const dep: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+
+    const workspace = createWorkspace([createPackage(dep)], {})
+    await expect(resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })).rejects.toThrowError('Unable to resolve catalog specifier for react')
+  })
+
+  it('prompts for conflict resolution when multiple specifiers exist', async () => {
+    const depA: RawDep = {
+      name: 'react',
+      specifier: '^18.2.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depB: RawDep = {
+      ...depA,
+      specifier: '~18.3.0',
+    }
+
+    selectMock.mockResolvedValue('~18.3.0')
+
+    const workspace = createWorkspace([
+      createPackage(depA, 'app-a'),
+      createPackage(depB, 'app-b'),
+    ], {})
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+
+    const result = await resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })
+
+    expect(selectMock).toHaveBeenCalledTimes(1)
+    expect(result.dependencies).toEqual([
+      {
+        ...depB,
+        update: true,
+      },
+    ])
+  })
+
+  it('throws when conflict selection is canceled', async () => {
+    const depA: RawDep = {
+      name: 'react',
+      specifier: '^18.2.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depB: RawDep = {
+      ...depA,
+      specifier: '~18.3.0',
+    }
+
+    const cancelSymbol = Symbol('cancel')
+    selectMock.mockResolvedValue(cancelSymbol as any)
+    isCancelMock.mockImplementation(value => value === cancelSymbol)
+
+    const workspace = createWorkspace([
+      createPackage(depA, 'app-a'),
+      createPackage(depB, 'app-b'),
+    ], {})
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+
+    await expect(resolveMigrate({
+      options,
+      workspace: workspace as any,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+  })
+})

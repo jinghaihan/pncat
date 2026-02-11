@@ -1,6 +1,6 @@
-import type { CatalogOptions, RawDep, WorkspaceSchema } from '../types'
+import type { CatalogOptions, DepType, RawDep, WorkspaceSchema } from '../types'
 import { satisfies } from 'semver'
-import { DEPS_TYPE_CATALOG_MAP } from '../constants'
+import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '../constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 
 export function createDepCatalogIndex(workspaceJson?: WorkspaceSchema) {
@@ -74,6 +74,11 @@ export function toCatalogSpecifier(catalogName: string): string {
   return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
 }
 
+export function parseCatalogSpecifier(specifier: string): string {
+  const name = specifier.slice('catalog:'.length)
+  return name || 'default'
+}
+
 export function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
   if (Array.isArray(match))
     return match.some(item => typeof item === 'string' ? depName === item : item.test(depName))
@@ -85,4 +90,34 @@ export function isDepMatched(depName: string, match: string | RegExp | (string |
     return match.test(depName)
 
   return false
+}
+
+export function isCatalogSpecifier(specifier: string): boolean {
+  return specifier.startsWith('catalog:')
+}
+
+export function isCatalogWorkspace(type: DepType): boolean {
+  for (const agent of PACKAGE_MANAGERS) {
+    if (type === `${agent}-workspace`)
+      return true
+  }
+  return false
+}
+
+export function isCatalogPackageName(name: string): boolean {
+  if (!name)
+    return false
+  for (const agent of PACKAGE_MANAGERS) {
+    if (name.startsWith(`${agent}-catalog:`))
+      return true
+  }
+  return false
+}
+
+export function extractCatalogName(name: string): string {
+  let content = name
+  for (const agent of PACKAGE_MANAGERS) {
+    content = content.replace(`${agent}-catalog:`, '')
+  }
+  return content
 }

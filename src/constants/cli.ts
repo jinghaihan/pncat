@@ -8,7 +8,6 @@ export const MODE_CHOICES = [
   'remove',
   'clean',
   'revert',
-  'fix',
 ] as const
 
 export const MODE_ALIASES: Partial<Record<RangeMode, string[]>> = {
@@ -19,5 +18,4 @@ export const MODE_ALIASES: Partial<Record<RangeMode, string[]>> = {
   remove: ['uninstall', 'rm', 'r', 'un', 'u'],
   clean: ['prune', 'cl', 'c'],
   revert: ['restore', 'undo', 'rev'],
-  fix: ['f'],
 }

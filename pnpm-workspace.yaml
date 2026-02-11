@@ -1,16 +1,35 @@
 packages: []
 catalogs:
-  build:
-    tsdown: ^0.20.1
-  cli:
-    bumpp: ^10.4.0
-    taze: ^19.9.2
-  lint:
+  dev:
     '@antfu/eslint-config': ^7.2.0
+    '@antfu/utils': ^9.3.0
+    '@npmcli/config': ^10.5.0
+    '@types/node': ^25.0.10
+    '@types/npm-package-arg': ^6.1.4
+    '@types/npm-registry-fetch': ^8.0.9
+    '@types/semver': ^7.7.1
+    '@vitest/coverage-v8': ^4.0.18
+    bumpp: ^10.4.0
+    deepmerge: ^4.3.1
+    detect-indent: ^7.0.2
+    diff: ^8.0.3
     eslint: ^9.39.2
+    fast-npm-meta: ^1.0.0
     lint-staged: ^16.2.7
+    npm-package-arg: ^13.0.2
+    npm-registry-fetch: ^19.1.1
+    p-retry: ^7.1.1
+    semver: ^7.7.3
     simple-git-hooks: ^2.13.1
-  node:
+    taze: ^19.9.2
+    tildify: ^3.0.0
+    tinyglobby: ^0.2.15
+    tsdown: ^0.20.1
+    tsx: ^4.21.0
+    typescript: ^5.9.3
+    ufo: ^1.6.3
+    vitest: ^4.0.18
+  prod:
     '@clack/prompts': ^0.11.0
     ansis: ^4.2.0
     cac: ^6.7.14
@@ -18,35 +37,8 @@ catalogs:
     package-manager-detector: ^1.6.0
     pathe: ^2.0.3
     pnpm-workspace-yaml: ^1.5.0
-    tildify: ^3.0.0
     tinyexec: ^1.0.2
-    tinyglobby: ^0.2.15
     unconfig: ^7.4.2
-  npm:
-    '@npmcli/config': ^10.5.0
-    fast-npm-meta: ^1.0.0
-    npm-package-arg: ^13.0.2
-    npm-registry-fetch: ^19.1.1
-  script:
-    tsx: ^4.21.0
-  test:
-    '@vitest/coverage-v8': ^4.0.18
-    vitest: ^4.0.18
-  tsc:
-    typescript: ^5.9.3
-  types:
-    '@types/node': ^25.0.10
-    '@types/npm-package-arg': ^6.1.4
-    '@types/npm-registry-fetch': ^8.0.9
-    '@types/semver': ^7.7.1
-  utils:
-    '@antfu/utils': ^9.3.0
-    deepmerge: ^4.3.1
-    detect-indent: ^7.0.2
-    diff: ^8.0.3
-    p-retry: ^7.1.1
-    semver: ^7.7.3
-    ufo: ^1.6.3
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks

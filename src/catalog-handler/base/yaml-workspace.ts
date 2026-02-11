@@ -1,4 +1,11 @@
-import type { CatalogHandler, CatalogOptions, DepFilter, RawDep, WorkspacePackageMeta, WorkspaceSchema } from '../../types'
+import type {
+  CatalogHandler,
+  CatalogOptions,
+  DepFilter,
+  RawDep,
+  WorkspacePackageMeta,
+  WorkspaceSchema,
+} from '../../types'
 import { readFile, writeFile } from 'node:fs/promises'
 import { findUp } from 'find-up'
 import { resolve } from 'pathe'

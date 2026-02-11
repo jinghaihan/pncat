@@ -11,6 +11,7 @@
 - Types derive from constants via `typeof ...[number]`, no duplicate unions.
 - Library code throws errors; CLI handles process exit.
 - In each source file, place publicly exported functions at the top; private helper functions must follow in clear call order and functional order.
+- TTY-facing texts (`@clack/prompts`, spinner/log/outro/note) must start with lowercase letters; only error texts are allowed to start with uppercase letters.
 
 ## Directory Responsibilities
 
@@ -62,6 +63,8 @@
 - Domain/library code: throw typed errors.
 - CLI/command boundary: catch and map to output + exit code.
 - No `process.exit()` outside CLI boundary.
+- `catalog-handler` (including `ensureWorkspace`) is library-layer code: no TTY interaction (`@clack/prompts`, intro/outro/note/confirm/select/spinner/log) is allowed there.
+- Any interactive confirmation or user-facing prompt must live in `src/commands/*`.
 
 ## Import Rules
 - Do not import from `node_modules/...` paths directly.

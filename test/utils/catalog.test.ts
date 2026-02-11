@@ -1,6 +1,6 @@
 import type { CatalogOptions, RawDep, WorkspaceSchema } from '../../src/types'
 import { describe, expect, it } from 'vitest'
-import { createDepCatalogIndex, inferCatalogName, toCatalogSpecifier } from '../../src/utils'
+import { createDepCatalogIndex, inferCatalogName, parseCatalogSpecifier, toCatalogSpecifier } from '../../src/utils'
 import { createFixtureOptions } from '../_shared'
 
 function createDep(overrides: Partial<Omit<RawDep, 'catalogName'>> = {}): Omit<RawDep, 'catalogName'> {
@@ -208,5 +208,15 @@ describe('toCatalogSpecifier', () => {
 
   it('maps named catalog to namespaced catalog protocol', () => {
     expect(toCatalogSpecifier('build')).toBe('catalog:build')
+  })
+})
+
+describe('parseCatalogSpecifier', () => {
+  it('parses default catalog specifier', () => {
+    expect(parseCatalogSpecifier('catalog:')).toBe('default')
+  })
+
+  it('parses named catalog specifier', () => {
+    expect(parseCatalogSpecifier('catalog:build')).toBe('build')
   })
 })

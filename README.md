@@ -20,7 +20,6 @@ pnpm add -D pncat
 - <samp><b>➖ Remove</b></samp> - Safely remove dependencies and worksspace catalogs
 - <samp><b>🧹 Clean</b></samp> - Find and remove unused catalog entries
 - <samp><b>↩️ Revert</b></samp> - Revert cataloged dependencies to package.json
-- <samp><b>🩹 Fix</b></samp> - Fix invalid specifiers in workspace file
 
 <p align='center'>
 <img src='./assets/help.png' />
@@ -158,19 +157,6 @@ pncat undo dep
 
 <p align='center'>
 <img src='./assets/revert-d.png' width='600' />
-</p>
-
-### Fix
-
-```sh
-pncat fix
-pncat f
-```
-
-Automatically detects and fixes invalid catalog specifiers in workspace file by re-resolving and rewriting them to valid versions.
-
-<p align='center'>
-<img src='./assets/fix.png' width='600' />
 </p>
 
 ## Configuration
