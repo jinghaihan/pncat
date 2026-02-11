@@ -1,9 +1,9 @@
-import type { CatalogOptions } from '../src/types'
+import type { CatalogOptions } from '@/types'
 import { realpath } from 'node:fs/promises'
 import process from 'node:process'
 import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { readConfig, resolveConfig } from '../src/config'
+import { readConfig, resolveConfig } from '@/config'
 import { getFixtureCwd, getFixturePath } from './_shared'
 
 describe('resolveConfig', () => {

@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import detect from 'detect-indent'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { detectIndent, readJsonFile, writeJsonFile } from '../../src/io'
+import { detectIndent, readJsonFile, writeJsonFile } from '@/io'
 
 vi.mock('node:fs/promises', () => ({
   readFile: vi.fn(),

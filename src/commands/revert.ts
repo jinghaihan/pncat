@@ -1,21 +1,8 @@
-import type {
-  CatalogOptions,
-  PackageJsonMeta,
-  RawDep,
-  ResolverContext,
-  ResolverResult,
-} from '../types'
+import type { CatalogOptions, PackageJsonMeta, RawDep, ResolverContext, ResolverResult } from '@/types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
-import {
-  cloneDeep,
-  ensurePackageJsonDeps,
-  ensurePnpmOverrides,
-  isCatalogSpecifier,
-  isPackageJsonDepSource,
-  isPnpmOverridesPackageName,
-} from '../utils'
-import { WorkspaceManager } from '../workspace-manager'
+import { isCatalogSpecifier, isPnpmOverridesPackageName } from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
@@ -101,7 +88,7 @@ export async function resolveRevert(context: ResolverContext): Promise<ResolverR
 
       const resolvedDep = workspace.resolveCatalogDependency(dep, catalogIndex, false)
       dependencies.push(resolvedDep)
-      writePackageSpecifier(updatedPackages, pkg, resolvedDep)
+      workspace.setDependencySpecifier(updatedPackages, pkg, resolvedDep, resolvedDep.specifier)
     }
   }
 
@@ -110,24 +97,4 @@ export async function resolveRevert(context: ResolverContext): Promise<ResolverR
     dependencies,
     updatedPackages: Object.fromEntries(updatedPackages.entries()),
   }
-}
-
-function writePackageSpecifier(
-  updatedPackages: Map<string, PackageJsonMeta>,
-  pkg: PackageJsonMeta,
-  dep: RawDep,
-): void {
-  if (!updatedPackages.has(pkg.name))
-    updatedPackages.set(pkg.name, cloneDeep(pkg))
-
-  const updatedPackage = updatedPackages.get(pkg.name)!
-  if (dep.source === 'pnpm.overrides') {
-    ensurePnpmOverrides(updatedPackage.raw)[dep.name] = dep.specifier
-    return
-  }
-
-  if (!isPackageJsonDepSource(dep.source))
-    return
-
-  ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = dep.specifier
 }

@@ -1,6 +1,6 @@
-import type { SpecifierRule } from '../../src/types'
+import type { SpecifierRule } from '@/types'
 import { describe, expect, it } from 'vitest'
-import { cleanSpec, mostSpecificRule, parseSpec } from '../../src/utils'
+import { cleanSpec, mostSpecificRule, parseSpec } from '@/utils'
 import { createFixtureOptions } from '../_shared'
 
 describe('parseSpec', () => {

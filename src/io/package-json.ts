@@ -1,7 +1,7 @@
-import type { CatalogOptions, DepFilter, PackageJson, PackageJsonMeta, RawDep } from '../types'
+import type { CatalogOptions, DepFilter, PackageJson, PackageJsonMeta, RawDep } from '@/types'
 import { resolve } from 'pathe'
-import { DEPS_FIELDS } from '../constants'
-import { getCwd, isDepFieldEnabled, parseDependencies } from '../utils'
+import { DEPS_FIELDS } from '@/constants'
+import { getCwd, isDepFieldEnabled, parseDependencies } from '@/utils'
 import { readJsonFile } from './json'
 
 export async function loadPackageJSON(

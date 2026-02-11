@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { createCatalogHandler } from '../../src/catalog-handler'
-import { PACKAGE_MANAGERS } from '../../src/constants'
+import { createCatalogHandler } from '@/catalog-handler'
+import { PACKAGE_MANAGERS } from '@/constants'
 import { createFixtureOptions, getFixtureCwd } from '../_shared'
 
 describe('createCatalogHandler', () => {

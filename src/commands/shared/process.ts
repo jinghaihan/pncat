@@ -1,11 +1,11 @@
 import type { Agent } from 'package-manager-detector'
-import type { CatalogOptions, HookFunction } from '../../types'
+import type { CatalogOptions, HookFunction } from '@/types'
 import process from 'node:process'
 import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import { resolveCommand } from 'package-manager-detector'
 import { x } from 'tinyexec'
-import { CMD_BOOL_FLAGS, CMD_BOOL_SHORT_FLAGS } from '../../constants'
+import { CMD_BOOL_FLAGS, CMD_BOOL_SHORT_FLAGS } from '@/constants'
 
 export interface AgentCommandOptions extends Pick<CatalogOptions, 'agent' | 'cwd' | 'recursive'> {
   stdio?: 'inherit' | 'pipe' | 'ignore'
@@ -117,7 +117,7 @@ export async function runHooks(
 }
 
 export function parseCommandOptions(args: string[], options: CatalogOptions = {}): ParsedCommandOptions {
-  const { deps } = parseArgs(args)
+  const deps = parseArgs(args)
   const isRecursive = ['--recursive', '-r'].some(flag => args.includes(flag))
   const isProd = ['--save-prod', '-P'].some(flag => args.includes(flag))
   const isDev = ['--save-dev', '-D'].some(flag => args.includes(flag))
@@ -135,8 +135,7 @@ export function parseCommandOptions(args: string[], options: CatalogOptions = {}
   }
 }
 
-function parseArgs(args: string[]): { options: Record<string, unknown>, deps: string[] } {
-  const options: Record<string, unknown> = {}
+function parseArgs(args: string[]): string[] {
   const deps: string[] = []
   let index = 0
 
@@ -151,23 +150,19 @@ function parseArgs(args: string[]): { options: Record<string, unknown>, deps: st
     if (arg.startsWith('--')) {
       const key = arg.slice(2)
       if (key.startsWith('no-')) {
-        options[key.slice(3)] = false
         index++
         continue
       }
 
       if (CMD_BOOL_FLAGS.has(key)) {
-        options[key] = true
         index++
         continue
       }
 
       if (index + 1 < args.length && !args[index + 1].startsWith('-')) {
-        options[key] = args[index + 1]
         index += 2
       }
       else {
-        options[key] = true
         index++
       }
       continue
@@ -176,17 +171,14 @@ function parseArgs(args: string[]): { options: Record<string, unknown>, deps: st
     if (arg.startsWith('-') && arg.length === 2) {
       const key = arg.slice(1)
       if (CMD_BOOL_SHORT_FLAGS.has(key)) {
-        options[key] = true
         index++
         continue
       }
 
       if (index + 1 < args.length && !args[index + 1].startsWith('-')) {
-        options[key] = args[index + 1]
         index += 2
       }
       else {
-        options[key] = true
         index++
       }
       continue
@@ -196,5 +188,5 @@ function parseArgs(args: string[]): { options: Record<string, unknown>, deps: st
     index++
   }
 
-  return { options, deps }
+  return deps
 }

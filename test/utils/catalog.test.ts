@@ -1,6 +1,6 @@
-import type { CatalogOptions, RawDep, WorkspaceSchema } from '../../src/types'
+import type { CatalogOptions, RawDep, WorkspaceSchema } from '@/types'
 import { describe, expect, it } from 'vitest'
-import { createDepCatalogIndex, inferCatalogName, parseCatalogSpecifier, toCatalogSpecifier } from '../../src/utils'
+import { createDepCatalogIndex, inferCatalogName, parseCatalogSpecifier, toCatalogSpecifier } from '@/utils'
 import { createFixtureOptions } from '../_shared'
 
 function createDep(overrides: Partial<Omit<RawDep, 'catalogName'>> = {}): Omit<RawDep, 'catalogName'> {

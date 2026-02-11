@@ -1,7 +1,7 @@
-import type { DepFilter, PackageManager } from '../../src/types'
+import type { DepFilter, PackageManager } from '@/types'
 import { describe, expect, it } from 'vitest'
-import { catalogHandlers } from '../../src/catalog-handler'
-import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '../../src/constants'
+import { catalogHandlers } from '@/catalog-handler'
+import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '@/constants'
 import { createFixtureOptions, getFixturePath } from '../_shared'
 
 const shouldCatalog: DepFilter = () => true

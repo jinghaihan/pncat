@@ -1,8 +1,8 @@
-import type { RawDep, WorkspaceSchema } from '../../../src/types'
+import type { RawDep, WorkspaceSchema } from '@/types'
 import { readFile } from 'node:fs/promises'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { JsonCatalog } from '../../../src/catalog-handler/base/json-workspace'
-import { detectIndent, readJsonFile, writeJsonFile } from '../../../src/io'
+import { JsonCatalog } from '@/catalog-handler/base/json-workspace'
+import { detectIndent, readJsonFile, writeJsonFile } from '@/io'
 import { createFixtureOptions, getFixturePath } from '../../_shared'
 
 vi.mock('../../../src/io', () => ({

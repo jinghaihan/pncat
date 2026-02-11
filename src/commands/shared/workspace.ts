@@ -1,48 +1,20 @@
-import type { CatalogOptions, PackageJson, PackageJsonMeta } from '../../types'
-import type { WorkspaceManager } from '../../workspace-manager'
+import type { CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
 import tildify from 'tildify'
-import { PACKAGE_MANAGER_CONFIG } from '../../constants'
-import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '../../io'
-import { cleanupPackageJSON } from '../../utils'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '@/io'
+import { cleanupPackageJSON } from '@/utils'
 import { diffHighlight } from './diff'
 import { COMMAND_ERROR_CODES, createCommandError } from './error'
 import { runAgentInstall, runHooks } from './process'
 
-interface EnsureWorkspaceCatalogLike {
-  findWorkspaceFile: WorkspaceManager['catalog']['findWorkspaceFile']
-  ensureWorkspace: WorkspaceManager['catalog']['ensureWorkspace']
-}
-
-interface ConfirmWorkspaceCatalogLike {
-  toString: WorkspaceManager['catalog']['toString']
-  updateWorkspaceOverrides?: WorkspaceManager['catalog']['updateWorkspaceOverrides']
-  getWorkspacePath: WorkspaceManager['catalog']['getWorkspacePath']
-  writeWorkspace: WorkspaceManager['catalog']['writeWorkspace']
-}
-
-export interface EnsureWorkspaceLike {
-  getOptions: () => CatalogOptions
-  getCwd: () => string
-  catalog: EnsureWorkspaceCatalogLike
-}
-
-export interface ConfirmWorkspaceLike {
-  getOptions: () => CatalogOptions
-  getCwd: () => string
-  catalog: ConfirmWorkspaceCatalogLike
-}
-
-export interface ReadWorkspacePackageLike {
-  getCwd: () => string
-}
-
-export interface ConfirmationOptions<TWorkspace extends ConfirmWorkspaceLike = WorkspaceManager> extends Pick<CatalogOptions, 'yes' | 'verbose'> {
-  workspace: TWorkspace
+export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
+  workspace: WorkspaceManager
   updatedPackages?: Record<string, PackageJsonMeta>
   bailout?: boolean
   confirmMessage?: string
@@ -50,7 +22,7 @@ export interface ConfirmationOptions<TWorkspace extends ConfirmWorkspaceLike = W
   showDiff?: boolean
 }
 
-export async function readWorkspacePackageJSON(workspace: ReadWorkspacePackageLike): Promise<{
+export async function readWorkspacePackageJSON(workspace: WorkspaceManager): Promise<{
   pkgPath: string
   pkgName: string
   pkgJson: PackageJson
@@ -66,7 +38,7 @@ export async function readWorkspacePackageJSON(workspace: ReadWorkspacePackageLi
   return { pkgPath, pkgName: pkgJson.name, pkgJson }
 }
 
-export async function ensureWorkspaceFile(workspace: EnsureWorkspaceLike): Promise<void> {
+export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<void> {
   const options = workspace.getOptions()
   const agent = options.agent || 'pnpm'
 
@@ -97,9 +69,9 @@ export async function ensureWorkspaceFile(workspace: EnsureWorkspaceLike): Promi
   await workspace.catalog.ensureWorkspace()
 }
 
-export async function confirmWorkspaceChanges<TWorkspace extends ConfirmWorkspaceLike>(
+export async function confirmWorkspaceChanges(
   modifier: () => Promise<void>,
-  options: ConfirmationOptions<TWorkspace>,
+  options: ConfirmationOptions,
 ): Promise<'applied' | 'noop'> {
   const {
     workspace,

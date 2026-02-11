@@ -3,10 +3,12 @@
     "target": "ESNext",
     "lib": ["ESNext"],
     "moduleDetection": "force",
+    "baseUrl": ".",
     "rootDir": ".",
     "module": "ESNext",
     "moduleResolution": "Bundler",
     "paths": {
+      "@/*": ["./src/*"],
       "pncat": ["./src/index.ts"]
     },
     "resolveJsonModule": true,

@@ -1,10 +1,10 @@
-import type { CatalogOptions, DepType, RawDep, WorkspaceSchema } from '../types'
+import type { CatalogIndex, CatalogOptions, DepType, RawDep, WorkspaceSchema } from '@/types'
 import { satisfies } from 'semver'
-import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '../constants'
+import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '@/constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 
 export function createDepCatalogIndex(workspaceJson?: WorkspaceSchema) {
-  const catalogIndex = new Map<string, { catalogName: string, specifier: string }[]>()
+  const catalogIndex: CatalogIndex = new Map()
   if (!workspaceJson)
     return catalogIndex
 

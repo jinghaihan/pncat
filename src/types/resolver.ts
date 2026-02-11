@@ -1,6 +1,6 @@
-import type { WorkspaceManager } from '../workspace-manager'
 import type { CatalogOptions } from './core'
 import type { PackageJsonMeta, RawDep } from './meta'
+import type { WorkspaceManager } from '@/workspace-manager'
 
 export interface ResolverContext {
   args?: string[]

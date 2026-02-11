@@ -3,8 +3,8 @@ import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import { join } from 'pathe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { initCommand } from '../../src/commands/init'
-import { loadPackages } from '../../src/io'
+import { initCommand } from '@/commands/init'
+import { loadPackages } from '@/io'
 import { createFixtureOptions, getFixtureCwd } from '../_shared'
 
 vi.mock('node:fs', () => ({

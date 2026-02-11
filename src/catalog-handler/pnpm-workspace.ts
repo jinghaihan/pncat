@@ -1,8 +1,8 @@
-import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta, WorkspaceSchema } from '../types'
-import { PACKAGE_MANAGER_CONFIG } from '../constants'
-import { loadPackages } from '../io'
-import { createDepCatalogIndex, isCatalogSpecifier, isPnpmOverridesPackageName } from '../utils'
-import { YamlCatalog } from './base/yaml-workspace'
+import type { CatalogOptions, DepFilter, PnpmWorkspaceMeta, WorkspaceSchema } from '@/types'
+import { YamlCatalog } from '@/catalog-handler/base/yaml-workspace'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { loadPackages } from '@/io'
+import { createDepCatalogIndex, isCatalogSpecifier, isPnpmOverridesPackageName } from '@/utils'
 
 export class PnpmCatalog extends YamlCatalog {
   static async loadWorkspace(

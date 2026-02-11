@@ -1,11 +1,11 @@
-import type { PnpmWorkspaceMeta, RawDep, WorkspaceSchema } from '../../src/types'
+import type { PnpmWorkspaceMeta, RawDep, WorkspaceSchema } from '@/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { PnpmCatalog } from '../../src/catalog-handler/pnpm-workspace'
-import { loadPackages } from '../../src/io'
+import { PnpmCatalog } from '@/catalog-handler/pnpm-workspace'
+import { loadPackages } from '@/io'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('../../src/io', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/io')>()
+  const actual = await importOriginal<typeof import('@/io')>()
   return {
     ...actual,
     loadPackages: vi.fn(),

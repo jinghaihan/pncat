@@ -1,11 +1,11 @@
-import type { CatalogOptions, PackageManager } from '../types'
+import type { CatalogOptions, PackageManager } from '@/types'
 import { existsSync } from 'node:fs'
 import process from 'node:process'
 import { findUp } from 'find-up'
 import { dirname, join, resolve } from 'pathe'
 import { glob } from 'tinyglobby'
-import { DEFAULT_IGNORE_PATHS, PACKAGE_MANAGER_CONFIG } from '../constants'
-import { getCwd } from '../utils'
+import { DEFAULT_IGNORE_PATHS, PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { getCwd } from '@/utils'
 
 export async function detectWorkspaceRoot(
   agent: PackageManager = 'pnpm',

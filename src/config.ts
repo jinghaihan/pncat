@@ -3,8 +3,7 @@ import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
 import { DEFAULT_CATALOG_OPTIONS } from './constants'
 import { detectWorkspaceRoot } from './io'
-import { detectPackageManager, getCwd } from './utils'
-import { cloneDeep } from './utils/_internal'
+import { cloneDeep, detectPackageManager, getCwd } from './utils'
 
 function normalizeConfig(options: Partial<CatalogOptions>) {
   // interop

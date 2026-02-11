@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { YarnCatalog } from '../../src/catalog-handler/yarn-workspace'
+import { YarnCatalog } from '@/catalog-handler/yarn-workspace'
 import { createFixtureOptions } from '../_shared'
 
 describe('loadWorkspace', () => {

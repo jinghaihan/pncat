@@ -1,6 +1,6 @@
-import type { CatalogOptions } from '../src/types'
+import type { CatalogOptions } from '@/types'
 import { describe, expect, it } from 'vitest'
-import { defineConfig } from '../src'
+import { defineConfig } from '@/index'
 
 describe('defineConfig', () => {
   it('returns original config object', () => {

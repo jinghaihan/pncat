@@ -1,8 +1,8 @@
-import type { CatalogRule } from '../types'
+import type { CatalogRule } from '@/types'
 import { toArray } from '@antfu/utils'
 import deepmerge from 'deepmerge'
-import { DEFAULT_CATALOG_RULES } from '../rules'
-import { cloneDeep, isObject } from './_internal'
+import { DEFAULT_CATALOG_RULES } from '@/rules'
+import { cloneDeep, isObject } from './helper'
 
 export interface MergeOptions {
   mergeDefaults?: boolean

@@ -3,12 +3,13 @@ import type {
   PackageJsonMeta,
   RawDep,
   ResolverResult,
-} from '../../src/types'
+} from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { detectCommand } from '../../src/commands/detect'
-import { resolveMigrate } from '../../src/commands/migrate'
-import { ensureWorkspaceFile, renderChanges } from '../../src/commands/shared'
+import { detectCommand } from '@/commands/detect'
+import { resolveMigrate } from '@/commands/migrate'
+import { ensureWorkspaceFile, renderChanges } from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -24,7 +25,7 @@ vi.mock('../../src/commands/migrate', () => ({
 }))
 
 vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/commands/shared')>()
+  const actual = await importOriginal<typeof import('@/commands/shared')>()
   return {
     ...actual,
     ensureWorkspaceFile: vi.fn(),
@@ -36,12 +37,7 @@ const resolveMigrateMock = vi.mocked(resolveMigrate)
 const ensureWorkspaceFileMock = vi.mocked(ensureWorkspaceFile)
 const renderChangesMock = vi.mocked(renderChanges)
 
-interface DetectWorkspaceLike {
-  loadPackages: () => Promise<unknown[]>
-  catalog: Record<string, unknown>
-}
-
-let workspaceInstance: DetectWorkspaceLike
+let workspaceInstance: WorkspaceManager
 
 vi.mock('../../src/workspace-manager', () => ({
   WorkspaceManager: class {
@@ -51,11 +47,11 @@ vi.mock('../../src/workspace-manager', () => ({
   },
 }))
 
-function createWorkspace() {
+function createWorkspace(): WorkspaceManager {
   return {
     loadPackages: vi.fn(async () => []),
     catalog: {},
-  }
+  } as unknown as WorkspaceManager
 }
 
 function createDep(update: boolean): RawDep {

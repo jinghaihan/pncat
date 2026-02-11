@@ -1,14 +1,12 @@
 import type {
   CatalogOptions,
-  PackageJsonMeta,
   RawDep,
   ResolverContext,
   ResolverResult,
-} from '../types'
+} from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { isCatalogSpecifier, parseCatalogSpecifier, toCatalogSpecifier } from '../utils'
-import { WorkspaceManager } from '../workspace-manager'
+import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
@@ -58,9 +56,7 @@ export async function resolveClean(context: ResolverContext): Promise<ResolverRe
 
   for (const pkg of workspacePackages) {
     for (const dep of pkg.deps) {
-      if (isDependencyUsedByCatalogSpecifier(dep, projectPackages))
-        continue
-      if (isDependencyUsedByPnpmOverrides(dep, projectPackages))
+      if (workspace.isCatalogDependencyReferenced(dep.name, dep.catalogName, projectPackages))
         continue
       dependencies.push(dep)
     }
@@ -102,36 +98,4 @@ function dedupeDependencies(dependencies: RawDep[]): RawDep[] {
   }
 
   return unique
-}
-
-function isDependencyUsedByCatalogSpecifier(dep: RawDep, packages: PackageJsonMeta[]): boolean {
-  for (const pkg of packages) {
-    for (const pkgDep of pkg.deps) {
-      if (pkgDep.name !== dep.name)
-        continue
-      if (!isCatalogSpecifier(pkgDep.specifier))
-        continue
-      if (parseCatalogSpecifier(pkgDep.specifier) === dep.catalogName)
-        return true
-    }
-  }
-
-  return false
-}
-
-function isDependencyUsedByPnpmOverrides(dep: RawDep, packages: PackageJsonMeta[]): boolean {
-  const expected = toCatalogSpecifier(dep.catalogName)
-
-  for (const pkg of packages) {
-    for (const pkgDep of pkg.deps) {
-      if (pkgDep.source !== 'pnpm.overrides')
-        continue
-      if (pkgDep.name !== dep.name)
-        continue
-      if (pkgDep.specifier === expected)
-        return true
-    }
-  }
-
-  return false
 }

@@ -3,15 +3,16 @@ import type {
   PackageJsonMeta,
   RawDep,
   WorkspacePackageMeta,
-} from '../../src/types'
+} from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { cleanCommand } from '../../src/commands/clean'
+import { cleanCommand } from '@/commands/clean'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
   ensureWorkspaceFile,
-} from '../../src/commands/shared'
+} from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -24,7 +25,7 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/commands/shared')>()
+  const actual = await importOriginal<typeof import('@/commands/shared')>()
   return {
     ...actual,
     ensureWorkspaceFile: vi.fn(),
@@ -35,15 +36,7 @@ vi.mock('../../src/commands/shared', async (importOriginal) => {
   }
 })
 
-interface CleanWorkspaceLike {
-  loadPackages: () => Promise<Array<PackageJsonMeta | WorkspacePackageMeta>>
-  catalog: {
-    findWorkspaceFile: () => Promise<string | undefined>
-    removePackages: (deps: RawDep[]) => Promise<void>
-  }
-}
-
-let workspaceInstance: CleanWorkspaceLike
+let workspaceInstance: WorkspaceManager
 
 vi.mock('../../src/workspace-manager', () => ({
   WorkspaceManager: class {
@@ -87,14 +80,28 @@ function createWorkspacePackage(dep: RawDep): WorkspacePackageMeta {
 function createWorkspace(
   packages: Array<PackageJsonMeta | WorkspacePackageMeta>,
   filepath: string | undefined,
-): CleanWorkspaceLike {
+): WorkspaceManager {
+  const projectPackages = packages.filter(
+    (pkg): pkg is PackageJsonMeta => pkg.type === 'package.json',
+  )
+
   return {
     loadPackages: vi.fn(async () => packages),
+    isCatalogDependencyReferenced: vi.fn((
+      depName: string,
+      catalogName: string,
+      availablePackages: PackageJsonMeta[] = projectPackages,
+    ) => {
+      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+      return availablePackages.some(pkg =>
+        pkg.deps.some(dep => dep.name === depName && dep.specifier === expected),
+      )
+    }),
     catalog: {
       findWorkspaceFile: vi.fn(async () => filepath),
       removePackages: vi.fn(async () => {}),
     },
-  }
+  } as unknown as WorkspaceManager
 }
 
 describe('cleanCommand', () => {

@@ -1,4 +1,4 @@
-import type { PackageJson } from '../../src/types'
+import type { PackageJson } from '@/types'
 import { describe, expect, it } from 'vitest'
 import {
   cleanupPackageJSON,
@@ -7,7 +7,7 @@ import {
   getPackageJsonDeps,
   getPnpmOverrides,
   isPackageJsonDepSource,
-} from '../../src/utils/package-json'
+} from '@/utils/package-json'
 
 describe('isPackageJsonDepSource', () => {
   it('returns true for package.json dependency source fields', () => {

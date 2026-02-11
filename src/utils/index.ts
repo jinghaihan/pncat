@@ -1,4 +1,3 @@
-export * from './_internal'
 export * from './catalog'
 export * from './dependency'
 export * from './filter'

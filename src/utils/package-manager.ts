@@ -1,7 +1,7 @@
-import type { PackageManager } from '../types'
+import type { PackageManager } from '@/types'
 import { findUp } from 'find-up'
 import { detect } from 'package-manager-detector'
-import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '../constants'
+import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '@/constants'
 import { getCwd } from './helper'
 
 export async function detectPackageManager(dir?: string): Promise<PackageManager> {

@@ -4,21 +4,12 @@ import type {
   RawDep,
   ResolverContext,
   ResolverResult,
-} from '../types'
+} from '@/types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
-import {
-  cloneDeep,
-  ensurePnpmOverrides,
-  getPackageJsonDeps,
-  isCatalogSpecifier,
-  isPackageJsonDepSource,
-  isPnpmOverridesPackageName,
-  parseCatalogSpecifier,
-} from '../utils'
-import { WorkspaceManager } from '../workspace-manager'
+import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
@@ -107,18 +98,17 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
 
     const selectedCatalogs = await selectCatalogs(depName, catalogDeps, options)
     for (const catalogName of selectedCatalogs) {
-      removeCatalogDepFromTargetPackages(targetPackages, depName, catalogName, updatedPackages)
+      const removed = workspace.removeCatalogDependencyFromPackages(
+        updatedPackages,
+        targetPackages,
+        depName,
+        catalogName,
+      )
+      if (!removed)
+        continue
 
-      const hasRemainingReference = projectPackages.some((pkg) => {
-        if (targetPackagePaths.has(pkg.filepath))
-          return false
-
-        return pkg.deps.some(dep =>
-          dep.name === depName
-          && isCatalogSpecifier(dep.specifier)
-          && parseCatalogSpecifier(dep.specifier) === catalogName,
-        )
-      })
+      const remainingPackages = projectPackages.filter(pkg => !targetPackagePaths.has(pkg.filepath))
+      const hasRemainingReference = workspace.isCatalogDependencyReferenced(depName, catalogName, remainingPackages)
 
       if (!hasRemainingReference) {
         const removable = catalogDeps.find(dep => dep.catalogName === catalogName)
@@ -164,38 +154,4 @@ async function selectCatalogs(depName: string, catalogDeps: RawDep[], options: C
     throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'no catalog selected, aborting')
 
   return selected
-}
-
-function removeCatalogDepFromTargetPackages(
-  targetPackages: PackageJsonMeta[],
-  depName: string,
-  catalogName: string,
-  updatedPackages: Map<string, PackageJsonMeta>,
-): void {
-  for (const pkg of targetPackages) {
-    for (const dep of pkg.deps) {
-      if (dep.name !== depName)
-        continue
-
-      if (!isCatalogSpecifier(dep.specifier) || parseCatalogSpecifier(dep.specifier) !== catalogName)
-        continue
-
-      if (!updatedPackages.has(pkg.name))
-        updatedPackages.set(pkg.name, cloneDeep(pkg))
-
-      const updatedPackage = updatedPackages.get(pkg.name)!
-      if (dep.source === 'pnpm.overrides') {
-        delete ensurePnpmOverrides(updatedPackage.raw)[dep.name]
-        continue
-      }
-
-      if (isPnpmOverridesPackageName(pkg.name))
-        continue
-
-      if (!isPackageJsonDepSource(dep.source))
-        continue
-
-      delete getPackageJsonDeps(updatedPackage.raw, dep.source)?.[dep.name]
-    }
-  }
 }

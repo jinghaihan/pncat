@@ -1,18 +1,17 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep, ResolverContext, ResolverResult } from '../types'
+import type {
+  CatalogIndex,
+  CatalogOptions,
+  PackageJsonMeta,
+  RawDep,
+  ResolverContext,
+  ResolverResult,
+} from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { gt } from 'semver'
-import { PACKAGE_MANAGER_CONFIG } from '../constants'
-import {
-  cleanSpec,
-  cloneDeep,
-  ensurePackageJsonDeps,
-  ensurePnpmOverrides,
-  isCatalogWorkspace,
-  isPackageJsonDepSource,
-  toCatalogSpecifier,
-} from '../utils'
-import { WorkspaceManager } from '../workspace-manager'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { cleanSpec, toCatalogSpecifier } from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
 import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, createCommandError, ensureWorkspaceFile } from './shared'
 
 export async function migrateCommand(options: CatalogOptions): Promise<void> {
@@ -44,9 +43,7 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
   const packages = await workspace.loadPackages()
   const workspaceCatalogIndex = await workspace.getCatalogIndex()
 
-  // groupedDeps: depName -> catalogName -> all observed dep entries
   const groupedDeps = new Map<string, Map<string, RawDep[]>>()
-  // updatedPackages: packageName -> mutated package.json clone for pending writes
   const updatedPackages = new Map<string, PackageJsonMeta>()
 
   for (const pkg of packages) {
@@ -61,7 +58,7 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
       addDependency(groupedDeps, resolvedDep)
 
       if (resolvedDep.update)
-        updatePackageDep(updatedPackages, pkg, resolvedDep)
+        workspace.setDependencySpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
     }
   }
 
@@ -75,7 +72,6 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
   }
 }
 
-// Append one resolved dependency into the in-memory grouping index.
 function addDependency(groupedDeps: Map<string, Map<string, RawDep[]>>, dep: RawDep): void {
   if (!groupedDeps.has(dep.name))
     groupedDeps.set(dep.name, new Map())
@@ -87,34 +83,6 @@ function addDependency(groupedDeps: Map<string, Map<string, RawDep[]>>, dep: Raw
   catalogDeps.get(dep.catalogName)!.push(dep)
 }
 
-// Stage one dependency rewrite in package.json to catalog:<name> form.
-function updatePackageDep(
-  updatedPackages: Map<string, PackageJsonMeta>,
-  pkg: PackageJsonMeta,
-  dep: RawDep,
-): void {
-  const packageName = pkg.name
-  if (!updatedPackages.has(packageName))
-    updatedPackages.set(packageName, cloneDeep(pkg))
-
-  const updatedPackage = updatedPackages.get(packageName)!
-  const nextSpecifier = toCatalogSpecifier(dep.catalogName)
-
-  if (dep.source === 'pnpm.overrides') {
-    ensurePnpmOverrides(updatedPackage.raw)[dep.name] = nextSpecifier
-    return
-  }
-
-  if (isCatalogWorkspace(dep.source))
-    return
-
-  if (!isPackageJsonDepSource(dep.source))
-    return
-
-  ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = nextSpecifier
-}
-
-// Resolve same-package conflicts where one dep/catalog pair has multiple specifiers.
 async function resolveConflicts(
   groupedDeps: Map<string, Map<string, RawDep[]>>,
   options: CatalogOptions,
@@ -143,7 +111,6 @@ async function resolveConflicts(
   return dependencies
 }
 
-// Count how many dep/catalog groups need conflict resolution.
 function countConflicts(groupedDeps: Map<string, Map<string, RawDep[]>>): number {
   let total = 0
   for (const [, catalogDeps] of groupedDeps) {
@@ -156,7 +123,6 @@ function countConflicts(groupedDeps: Map<string, Map<string, RawDep[]>>): number
   return total
 }
 
-// Pick one preferred specifier (semver-aware, highest first when comparable).
 async function selectSpecifier(
   specifiers: string[],
   depName: string,
@@ -191,10 +157,9 @@ async function selectSpecifier(
   return selected
 }
 
-// Keep existing workspace catalog entries that are not referenced by current packages.
 function preserveWorkspaceDeps(
   dependencies: RawDep[],
-  catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
+  catalogIndex: CatalogIndex,
   options: CatalogOptions,
 ): void {
   const usedDeps = new Set(dependencies.map(dep => dep.name))

@@ -1,10 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { VltCatalog } from '../../src/catalog-handler/vlt-workspace'
-import { readJsonFile } from '../../src/io'
+import { VltCatalog } from '@/catalog-handler/vlt-workspace'
+import { readJsonFile } from '@/io'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('../../src/io', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/io')>()
+  const actual = await importOriginal<typeof import('@/io')>()
   return {
     ...actual,
     readJsonFile: vi.fn(),

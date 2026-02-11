@@ -1,14 +1,15 @@
 import type {
+  CatalogIndex,
   CatalogOptions,
   ParsedSpec,
   RawDep,
   ResolverContext,
   ResolverResult,
-} from '../types'
+} from '@/types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { COMMON_DEPS_FIELDS } from '../constants'
+import { COMMON_DEPS_FIELDS } from '@/constants'
 import {
   ensurePackageJsonDeps,
   getDepSource,
@@ -17,8 +18,8 @@ import {
   isCatalogSpecifier,
   parseSpec,
   toCatalogSpecifier,
-} from '../utils'
-import { WorkspaceManager } from '../workspace-manager'
+} from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
@@ -133,7 +134,7 @@ async function resolveDependencySpec(
     source: ReturnType<typeof getDepSource>
     isExact: boolean
     workspacePackageNames: string[]
-    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>
+    catalogIndex: CatalogIndex
   },
 ): Promise<void> {
   const { options, source, isExact, workspacePackageNames, catalogIndex } = context

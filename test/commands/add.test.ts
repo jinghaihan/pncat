@@ -1,9 +1,9 @@
-import type { CatalogOptions, PackageJsonMeta } from '../../src/types'
-import type { WorkspaceManager } from '../../src/workspace-manager'
+import type { CatalogOptions, PackageJsonMeta } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveAdd } from '../../src/commands/add'
-import { COMMAND_ERROR_CODES } from '../../src/commands/shared'
-import { getLatestVersion } from '../../src/utils'
+import { resolveAdd } from '@/commands/add'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import { getLatestVersion } from '@/utils'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -14,7 +14,7 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../src/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/utils')>()
+  const actual = await importOriginal<typeof import('@/utils')>()
   return {
     ...actual,
     getLatestVersion: vi.fn(),
@@ -22,12 +22,6 @@ vi.mock('../../src/utils', async (importOriginal) => {
 })
 
 const getLatestVersionMock = vi.mocked(getLatestVersion)
-
-interface AddWorkspaceLike {
-  loadPackages: () => Promise<PackageJsonMeta[]>
-  getProjectPackages: () => PackageJsonMeta[]
-  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
-}
 
 function createPackage(name: string): PackageJsonMeta {
   return {
@@ -47,16 +41,12 @@ function createPackage(name: string): PackageJsonMeta {
 function createWorkspace(
   packages: PackageJsonMeta[],
   catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
-): AddWorkspaceLike {
+): WorkspaceManager {
   return {
     loadPackages: async () => packages,
     getProjectPackages: () => packages,
     getCatalogIndex: async () => catalogIndex,
-  }
-}
-
-function toWorkspaceManager(workspace: AddWorkspaceLike): WorkspaceManager {
-  return workspace as unknown as WorkspaceManager
+  } as unknown as WorkspaceManager
 }
 
 describe('resolveAdd', () => {
@@ -72,7 +62,7 @@ describe('resolveAdd', () => {
     await expect(resolveAdd({
       args: [],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
   })
 
@@ -85,7 +75,7 @@ describe('resolveAdd', () => {
     const result = await resolveAdd({
       args: ['react'],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([
@@ -112,7 +102,7 @@ describe('resolveAdd', () => {
     const result = await resolveAdd({
       args: ['shared'],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies?.[0]).toMatchObject({
@@ -128,7 +118,7 @@ describe('resolveAdd', () => {
     const result = await resolveAdd({
       args: ['vitest'],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(getLatestVersionMock).toHaveBeenCalledWith('vitest')
@@ -152,7 +142,7 @@ describe('resolveAdd', () => {
     const result = await resolveAdd({
       args: ['vitest', '-D', '-E'],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.isDev).toBe(true)

@@ -2,7 +2,7 @@ import type { DetectResult } from 'package-manager-detector'
 import { findUp } from 'find-up'
 import { detect } from 'package-manager-detector'
 import { describe, expect, it, vi } from 'vitest'
-import { detectPackageManager } from '../../src/utils'
+import { detectPackageManager } from '@/utils'
 
 vi.mock('package-manager-detector', () => ({
   detect: vi.fn(),

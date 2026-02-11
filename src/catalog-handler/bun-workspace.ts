@@ -6,13 +6,13 @@ import type {
   PackageMeta,
   RawDep,
   WorkspaceSchema,
-} from '../types'
+} from '@/types'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'pathe'
-import { PACKAGE_MANAGER_CONFIG } from '../constants'
-import { detectWorkspaceRoot, loadPackageJSON, loadPackages, readJsonFile } from '../io'
-import { getCwd, parseDependency } from '../utils'
-import { JsonCatalog } from './base/json-workspace'
+import { JsonCatalog } from '@/catalog-handler/base/json-workspace'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { detectWorkspaceRoot, loadPackageJSON, loadPackages, readJsonFile } from '@/io'
+import { getCwd, parseDependency } from '@/utils'
 
 export class BunCatalog extends JsonCatalog {
   static async loadWorkspace(

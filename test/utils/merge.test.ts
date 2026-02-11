@@ -1,6 +1,6 @@
-import type { CatalogRule } from '../../src/types'
+import type { CatalogRule } from '@/types'
 import { describe, expect, it } from 'vitest'
-import { mergeCatalogRules } from '../../src/utils'
+import { mergeCatalogRules } from '@/utils'
 
 describe('mergeCatalogRules', () => {
   it('merges with defaults by default', () => {

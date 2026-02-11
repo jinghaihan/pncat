@@ -1,8 +1,8 @@
-import type { CatalogOptions, PackageManager } from '../src/types'
+import type { CatalogOptions, PackageManager } from '@/types'
 import { fileURLToPath } from 'node:url'
 import deepmerge from 'deepmerge'
 import { dirname, join } from 'pathe'
-import { DEFAULT_CATALOG_OPTIONS } from '../src/constants'
+import { DEFAULT_CATALOG_OPTIONS } from '@/constants'
 
 const TEST_DIR = dirname(fileURLToPath(import.meta.url))
 const FIXTURES_DIR = join(TEST_DIR, 'fixtures')

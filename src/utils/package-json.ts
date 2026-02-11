@@ -1,7 +1,7 @@
-import type { DepType, PackageJson, PackageJsonDepSource, PnpmConfig } from '../types'
-import { DEPS_FIELDS } from '../constants'
-import { isObject } from './_internal'
+import type { DepType, PackageJson, PackageJsonDepSource, PnpmConfig } from '@/types'
+import { DEPS_FIELDS } from '@/constants'
 import { isCatalogWorkspace } from './catalog'
+import { isObject } from './helper'
 
 export function isPackageJsonDepSource(source: DepType): source is PackageJsonDepSource {
   return source !== 'pnpm.overrides' && !isCatalogWorkspace(source)

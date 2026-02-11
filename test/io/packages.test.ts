@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { PACKAGE_MANAGERS } from '../../src/constants'
-import { loadPackages } from '../../src/io'
+import { PACKAGE_MANAGERS } from '@/constants'
+import { loadPackages } from '@/io'
 import { createFixtureOptions, getSnapshotPath } from '../_shared'
 
 describe('loadPackages', () => {

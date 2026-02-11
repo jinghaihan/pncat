@@ -1,4 +1,4 @@
-import type { CatalogOptions } from '../types'
+import type { CatalogOptions } from '@/types'
 
 export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
   mode: 'detect',

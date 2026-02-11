@@ -1,12 +1,13 @@
-import type { CatalogOptions, PackageJson, PackageJsonMeta } from '../../src/types'
+import type { CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { addCommand } from '../../src/commands/add'
+import { addCommand } from '@/commands/add'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
   ensureWorkspaceFile,
   readWorkspacePackageJSON,
-} from '../../src/commands/shared'
+} from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -17,7 +18,7 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/commands/shared')>()
+  const actual = await importOriginal<typeof import('@/commands/shared')>()
   return {
     ...actual,
     ensureWorkspaceFile: vi.fn(),
@@ -29,16 +30,7 @@ vi.mock('../../src/commands/shared', async (importOriginal) => {
   }
 })
 
-interface AddWorkspaceLike {
-  loadPackages: () => Promise<unknown[]>
-  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
-  getProjectPackages: () => PackageJsonMeta[]
-  catalog: {
-    setPackage: (catalogName: string, depName: string, specifier: string) => Promise<void>
-  }
-}
-
-let workspaceInstance: AddWorkspaceLike
+let workspaceInstance: WorkspaceManager
 
 vi.mock('../../src/workspace-manager', () => ({
   WorkspaceManager: class {
@@ -52,7 +44,7 @@ const ensureWorkspaceFileMock = vi.mocked(ensureWorkspaceFile)
 const readWorkspacePackageJSONMock = vi.mocked(readWorkspacePackageJSON)
 const confirmWorkspaceChangesMock = vi.mocked(confirmWorkspaceChanges)
 
-function createWorkspace(): AddWorkspaceLike {
+function createWorkspace(): WorkspaceManager {
   const appPackage: PackageJsonMeta = {
     type: 'package.json',
     name: 'app',
@@ -71,7 +63,7 @@ function createWorkspace(): AddWorkspaceLike {
     catalog: {
       setPackage: vi.fn(async () => {}),
     },
-  }
+  } as unknown as WorkspaceManager
 }
 
 describe('addCommand', () => {

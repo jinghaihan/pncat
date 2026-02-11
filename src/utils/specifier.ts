@@ -1,4 +1,4 @@
-import type { CatalogOptions, ParsedSpec, SpecifierRule } from '../types'
+import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
 import { clean, coerce, gt, minVersion, subset, valid } from 'semver'
 
 export function parseSpec(spec: string): ParsedSpec {

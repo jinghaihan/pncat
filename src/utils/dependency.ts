@@ -1,12 +1,11 @@
-import type { CatalogOptions, DependencyEntry, DepFilter, DepType, RawDep } from '../types'
-import { getValueByPath, isObject } from './_internal'
+import type { CatalogOptions, DependencyEntry, DepFilter, DepType, RawDep } from '@/types'
 import {
   extractCatalogName,
   inferCatalogName,
   isCatalogSpecifier,
   isCatalogWorkspace,
 } from './catalog'
-import { isPnpmOverridesPackageName } from './helper'
+import { getValueByPath, isObject, isPnpmOverridesPackageName } from './helper'
 
 export function parseDependencies(
   pkg: Record<string, unknown>,

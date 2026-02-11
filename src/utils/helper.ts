@@ -1,6 +1,26 @@
-import type { CatalogOptions, DepType, PackageJsonDepSource, PackageMeta } from '../types'
+import type { CatalogOptions, DepType, PackageJsonDepSource, PackageMeta } from '@/types'
 import process from 'node:process'
 import { resolve } from 'pathe'
+
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+export function cloneDeep<T>(data: T): T {
+  return structuredClone(data)
+}
+
+export function getValueByPath(input: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (!isObject(current))
+      return undefined
+    return current[key]
+  }, input)
+}
+
+export function getCwd(options?: CatalogOptions): string {
+  return resolve(options?.cwd || process.cwd())
+}
 
 export function getDepSource(
   isDev: boolean = false,
@@ -12,10 +32,6 @@ export function getDepSource(
     : isOptional
       ? 'optionalDependencies'
       : isPeer ? 'peerDependencies' : 'dependencies'
-}
-
-export function getCwd(options?: CatalogOptions): string {
-  return resolve(options?.cwd || process.cwd())
 }
 
 export function isDepFieldEnabled(options: CatalogOptions, depType: DepType): boolean {

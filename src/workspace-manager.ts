@@ -1,5 +1,6 @@
 import type {
   CatalogHandler,
+  CatalogIndex,
   CatalogOptions,
   PackageJsonMeta,
   PackageMeta,
@@ -9,11 +10,17 @@ import type {
 import { createCatalogHandler } from './catalog-handler'
 import { loadPackages } from './io'
 import {
+  cloneDeep,
   createDepCatalogIndex,
+  ensurePackageJsonDeps,
+  ensurePnpmOverrides,
   getCwd,
+  getPackageJsonDeps,
   hasEslint,
   hasVSCodeEngine,
   isCatalogSpecifier,
+  isPackageJsonDepSource,
+  isPnpmOverridesPackageName,
   parseCatalogSpecifier,
   toCatalogSpecifier,
 } from './utils'
@@ -81,13 +88,13 @@ export class WorkspaceManager {
     return await this.loadTask
   }
 
-  async getCatalogIndex(): Promise<Map<string, { catalogName: string, specifier: string }[]>> {
+  async getCatalogIndex(): Promise<CatalogIndex> {
     return createDepCatalogIndex(await this.catalog.toJSON())
   }
 
   resolveCatalogDependency(
     dep: RawDep,
-    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
+    catalogIndex: CatalogIndex,
     force: boolean = !!this.options.force,
   ): RawDep {
     let catalogName = dep.catalogName
@@ -124,6 +131,102 @@ export class WorkspaceManager {
     this.loadTask = null
     this.packages = []
     this.depNames.clear()
+  }
+
+  isCatalogDependencyReferenced(
+    depName: string,
+    catalogName: string,
+    packages: PackageJsonMeta[] = this.getProjectPackages(),
+  ): boolean {
+    const expectedSpecifier = toCatalogSpecifier(catalogName)
+
+    for (const pkg of packages) {
+      for (const dep of pkg.deps) {
+        if (dep.name !== depName)
+          continue
+
+        if (dep.source === 'pnpm.overrides') {
+          if (dep.specifier === expectedSpecifier)
+            return true
+          continue
+        }
+
+        if (!isCatalogSpecifier(dep.specifier))
+          continue
+
+        if (parseCatalogSpecifier(dep.specifier) === catalogName)
+          return true
+      }
+    }
+
+    return false
+  }
+
+  setDependencySpecifier(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    pkg: PackageJsonMeta,
+    dep: RawDep,
+    specifier: string,
+  ): void {
+    const updatedPackage = this.getOrCreateUpdatedPackage(updatedPackages, pkg)
+
+    if (dep.source === 'pnpm.overrides') {
+      ensurePnpmOverrides(updatedPackage.raw)[dep.name] = specifier
+      return
+    }
+
+    if (!isPackageJsonDepSource(dep.source))
+      return
+
+    ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = specifier
+  }
+
+  removeCatalogDependencyFromPackages(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    packages: PackageJsonMeta[],
+    depName: string,
+    catalogName: string,
+  ): boolean {
+    let removed = false
+
+    for (const pkg of packages) {
+      for (const dep of pkg.deps) {
+        if (dep.name !== depName)
+          continue
+        if (!isCatalogSpecifier(dep.specifier))
+          continue
+        if (parseCatalogSpecifier(dep.specifier) !== catalogName)
+          continue
+
+        const updatedPackage = this.getOrCreateUpdatedPackage(updatedPackages, pkg)
+        if (dep.source === 'pnpm.overrides') {
+          delete ensurePnpmOverrides(updatedPackage.raw)[dep.name]
+          removed = true
+          continue
+        }
+
+        if (isPnpmOverridesPackageName(pkg.name))
+          continue
+
+        if (!isPackageJsonDepSource(dep.source))
+          continue
+
+        delete getPackageJsonDeps(updatedPackage.raw, dep.source)?.[dep.name]
+        removed = true
+      }
+    }
+
+    return removed
+  }
+
+  private getOrCreateUpdatedPackage(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    pkg: PackageJsonMeta,
+  ): PackageJsonMeta {
+    if (!updatedPackages.has(pkg.name))
+      updatedPackages.set(pkg.name, cloneDeep(pkg))
+
+    return updatedPackages.get(pkg.name)!
   }
 
   private buildIndexes(): void {

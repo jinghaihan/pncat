@@ -1,6 +1,6 @@
-import type { DEPS_FIELDS, MODE_CHOICES, PACKAGE_MANAGERS } from '../constants'
 import type { HookFunction } from './fn'
 import type { CatalogRule, SpecifierOptions } from './rules'
+import type { DEPS_FIELDS, MODE_CHOICES, PACKAGE_MANAGERS } from '@/constants'
 
 export type RangeMode = (typeof MODE_CHOICES)[number]
 

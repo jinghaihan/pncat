@@ -7,7 +7,7 @@ import {
   runAgentInstall,
   runAgentRemove,
   runHooks,
-} from '../../../src/commands/shared'
+} from '@/commands/shared'
 import { createFixtureOptions } from '../../_shared'
 
 vi.mock('@clack/prompts', () => ({

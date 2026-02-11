@@ -4,6 +4,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
+import { reportCommandError } from '@/commands/shared'
 import {
   addCommand,
   cleanCommand,
@@ -13,7 +14,6 @@ import {
   removeCommand,
   revertCommand,
 } from './commands'
-import { reportCommandError } from './commands/shared'
 import { resolveConfig } from './config'
 import { MODE_ALIASES, MODE_CHOICES, NAME, VERSION } from './constants'
 

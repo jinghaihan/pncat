@@ -1,7 +1,7 @@
-import type { CatalogOptions } from '../types'
+import type { CatalogOptions } from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { WorkspaceManager } from '../workspace-manager'
+import { WorkspaceManager } from '@/workspace-manager'
 import { resolveMigrate } from './migrate'
 import { ensureWorkspaceFile, renderChanges } from './shared'
 

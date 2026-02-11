@@ -5,14 +5,13 @@ import type {
   RawDep,
   WorkspacePackageMeta,
   WorkspaceSchema,
-} from '../../types'
+} from '@/types'
 import { readFile, writeFile } from 'node:fs/promises'
 import { findUp } from 'find-up'
 import { resolve } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
-import { PACKAGE_MANAGER_CONFIG } from '../../constants'
-import { getCwd, parseDependency } from '../../utils'
-import { cloneDeep } from '../../utils/_internal'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { cloneDeep, getCwd, parseDependency } from '@/utils'
 
 type WorkspaceYamlContext = ReturnType<typeof parsePnpmWorkspaceYaml>
 

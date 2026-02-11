@@ -1,9 +1,9 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep, WorkspaceSchema } from '../../src/types'
-import type { WorkspaceManager } from '../../src/workspace-manager'
+import type { CatalogOptions, PackageJsonMeta, RawDep, WorkspaceSchema } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveMigrate } from '../../src/commands/migrate'
-import { COMMAND_ERROR_CODES } from '../../src/commands/shared'
+import { resolveMigrate } from '@/commands/migrate'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -17,22 +17,6 @@ vi.mock('@clack/prompts', () => ({
 
 const selectMock = vi.mocked(p.select)
 const isCancelMock = vi.mocked(p.isCancel)
-
-interface ResolveWorkspaceLike {
-  loadPackages: () => Promise<PackageJsonMeta[]>
-  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
-  resolveCatalogDependency: (
-    dep: RawDep,
-    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
-    force: boolean,
-  ) => RawDep
-  catalog: {
-    ensureWorkspace: () => Promise<void>
-    toJSON: () => Promise<WorkspaceSchema>
-    generateCatalogs: (deps: RawDep[]) => Promise<void>
-    writeWorkspace: () => Promise<void>
-  }
-}
 
 function createPackage(dep: RawDep, name: string = 'app'): PackageJsonMeta {
   return {
@@ -55,7 +39,7 @@ function createPackage(dep: RawDep, name: string = 'app'): PackageJsonMeta {
 function createWorkspace(
   packages: PackageJsonMeta[],
   workspaceJson: WorkspaceSchema,
-): ResolveWorkspaceLike {
+): WorkspaceManager {
   const index = new Map<string, { catalogName: string, specifier: string }[]>()
   if (workspaceJson.catalog) {
     for (const [name, specifier] of Object.entries(workspaceJson.catalog)) {
@@ -83,7 +67,31 @@ function createWorkspace(
   return {
     loadPackages: async () => packages,
     getCatalogIndex: async () => index,
-    resolveCatalogDependency: (dep, catalogIndex, force) => {
+    setDependencySpecifier: (
+      updatedPackages: Map<string, PackageJsonMeta>,
+      pkg: PackageJsonMeta,
+      dep: RawDep,
+      specifier: string,
+    ) => {
+      if (!updatedPackages.has(pkg.name))
+        updatedPackages.set(pkg.name, structuredClone(pkg))
+
+      const updated = updatedPackages.get(pkg.name)!
+      if (dep.source === 'pnpm.overrides') {
+        updated.raw.pnpm ??= {}
+        updated.raw.pnpm.overrides ??= {}
+        updated.raw.pnpm.overrides[dep.name] = specifier
+        return
+      }
+
+      updated.raw[dep.source] ??= {}
+      ;(updated.raw[dep.source] as Record<string, string>)[dep.name] = specifier
+    },
+    resolveCatalogDependency: (
+      dep: RawDep,
+      catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
+      force: boolean,
+    ) => {
       const catalogDeps = catalogIndex.get(dep.name) || []
 
       if (dep.specifier.startsWith('catalog:')) {
@@ -91,7 +99,7 @@ function createWorkspace(
           throw new Error(`Unable to resolve catalog specifier for ${dep.name}`)
 
         const requestedCatalogName = dep.specifier.slice('catalog:'.length) || 'default'
-        const matched = catalogDeps.find(item => item.catalogName === requestedCatalogName) || catalogDeps[0]
+        const matched = catalogDeps.find((item: { catalogName: string, specifier: string }) => item.catalogName === requestedCatalogName) || catalogDeps[0]
         return {
           ...dep,
           specifier: matched.specifier,
@@ -101,7 +109,7 @@ function createWorkspace(
       }
 
       if (!force && catalogDeps.length > 0) {
-        const matched = catalogDeps.find(item => item.catalogName === dep.catalogName) || catalogDeps[0]
+        const matched = catalogDeps.find((item: { catalogName: string, specifier: string }) => item.catalogName === dep.catalogName) || catalogDeps[0]
         return {
           ...dep,
           specifier: matched.specifier,
@@ -121,11 +129,7 @@ function createWorkspace(
       generateCatalogs: async () => {},
       writeWorkspace: async () => {},
     },
-  }
-}
-
-function toWorkspaceManager(workspace: ResolveWorkspaceLike): WorkspaceManager {
-  return workspace as unknown as WorkspaceManager
+  } as unknown as WorkspaceManager
 }
 
 describe('resolveMigrate', () => {
@@ -150,7 +154,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([
@@ -183,7 +187,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies?.[0].specifier).toBe('^18.3.1')
@@ -200,7 +204,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([
@@ -231,7 +235,7 @@ describe('resolveMigrate', () => {
     const workspace = createWorkspace([createPackage(dep)], {})
     await expect(resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })).rejects.toThrowError('Unable to resolve catalog specifier for react')
   })
 
@@ -260,7 +264,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(selectMock).toHaveBeenCalledTimes(1)
@@ -298,7 +302,7 @@ describe('resolveMigrate', () => {
 
     await expect(resolveMigrate({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
   })
 })

@@ -1,12 +1,13 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep } from '../../src/types'
+import type { CatalogOptions, PackageJsonMeta, RawDep } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { revertCommand } from '../../src/commands/revert'
+import { revertCommand } from '@/commands/revert'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
   ensureWorkspaceFile,
-} from '../../src/commands/shared'
+} from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -15,7 +16,7 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/commands/shared')>()
+  const actual = await importOriginal<typeof import('@/commands/shared')>()
   return {
     ...actual,
     ensureWorkspaceFile: vi.fn(),
@@ -26,23 +27,7 @@ vi.mock('../../src/commands/shared', async (importOriginal) => {
   }
 })
 
-interface RevertWorkspaceLike {
-  loadPackages: () => Promise<PackageJsonMeta[]>
-  getProjectPackages: () => PackageJsonMeta[]
-  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
-  resolveCatalogDependency: (
-    dep: RawDep,
-    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
-    force: boolean,
-  ) => RawDep
-  catalog: {
-    findWorkspaceFile: () => Promise<string | undefined>
-    clearCatalogs: () => Promise<void>
-    removePackages: (deps: RawDep[]) => Promise<void>
-  }
-}
-
-let workspaceInstance: RevertWorkspaceLike
+let workspaceInstance: WorkspaceManager
 
 vi.mock('../../src/workspace-manager', () => ({
   WorkspaceManager: class {
@@ -81,11 +66,26 @@ function createWorkspace(
   packages: PackageJsonMeta[],
   catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
   filepath: string | undefined,
-): RevertWorkspaceLike {
+): WorkspaceManager {
   return {
     loadPackages: vi.fn(async () => packages),
     getProjectPackages: vi.fn(() => packages),
     getCatalogIndex: vi.fn(async () => catalogIndex),
+    setDependencySpecifier: vi.fn((updatedPackages, pkg, dep, specifier) => {
+      if (!updatedPackages.has(pkg.name))
+        updatedPackages.set(pkg.name, structuredClone(pkg))
+
+      const updated = updatedPackages.get(pkg.name)!
+      if (dep.source === 'pnpm.overrides') {
+        updated.raw.pnpm ??= {}
+        updated.raw.pnpm.overrides ??= {}
+        updated.raw.pnpm.overrides[dep.name] = specifier
+        return
+      }
+
+      updated.raw[dep.source] ??= {}
+      ;(updated.raw[dep.source] as Record<string, string>)[dep.name] = specifier
+    }),
     resolveCatalogDependency: vi.fn((dep, index) => {
       const matched = (index.get(dep.name) || [])[0]
       return {
@@ -98,7 +98,7 @@ function createWorkspace(
       clearCatalogs: vi.fn(async () => {}),
       removePackages: vi.fn(async () => {}),
     },
-  }
+  } as unknown as WorkspaceManager
 }
 
 describe('revertCommand', () => {

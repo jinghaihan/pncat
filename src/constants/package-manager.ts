@@ -1,4 +1,4 @@
-import type { DepType, PackageManager, PackageManagerConfig } from '../types'
+import type { DepType, PackageManager, PackageManagerConfig } from '@/types'
 
 export const PACKAGE_MANAGERS = ['pnpm', 'yarn', 'bun', 'vlt'] as const
 

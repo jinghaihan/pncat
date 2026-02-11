@@ -1,8 +1,8 @@
-import type { CatalogHandler, CatalogOptions, PackageMeta } from '../src/types'
+import type { CatalogHandler, CatalogOptions, PackageMeta } from '@/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { createCatalogHandler } from '../src/catalog-handler'
-import { loadPackages } from '../src/io'
-import { WorkspaceManager } from '../src/workspace-manager'
+import { createCatalogHandler } from '@/catalog-handler'
+import { loadPackages } from '@/io'
+import { WorkspaceManager } from '@/workspace-manager'
 import { createFixtureOptions, getFixtureCwd } from './_shared'
 
 vi.mock('../src/catalog-handler', () => ({

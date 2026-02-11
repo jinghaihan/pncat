@@ -3,16 +3,17 @@ import type {
   PackageJsonMeta,
   RawDep,
   WorkspacePackageMeta,
-} from '../../src/types'
+} from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { removeCommand } from '../../src/commands/remove'
+import { removeCommand } from '@/commands/remove'
 import {
   COMMAND_ERROR_CODES,
   confirmWorkspaceChanges,
   ensureWorkspaceFile,
   runAgentRemove,
-} from '../../src/commands/shared'
+} from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -25,7 +26,7 @@ vi.mock('@clack/prompts', () => ({
 }))
 
 vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/commands/shared')>()
+  const actual = await importOriginal<typeof import('@/commands/shared')>()
   return {
     ...actual,
     ensureWorkspaceFile: vi.fn(),
@@ -37,18 +38,7 @@ vi.mock('../../src/commands/shared', async (importOriginal) => {
   }
 })
 
-interface RemoveWorkspaceLike {
-  loadPackages: () => Promise<Array<PackageJsonMeta | WorkspacePackageMeta>>
-  getProjectPackages: () => PackageJsonMeta[]
-  getWorkspacePackages: () => WorkspacePackageMeta[]
-  getCwd: () => string
-  catalog: {
-    findWorkspaceFile: () => Promise<string | undefined>
-    removePackages: (deps: RawDep[]) => Promise<void>
-  }
-}
-
-let workspaceInstance: RemoveWorkspaceLike
+let workspaceInstance: WorkspaceManager
 
 vi.mock('../../src/workspace-manager', () => ({
   WorkspaceManager: class {
@@ -94,17 +84,43 @@ function createWorkspace(
   projectPackages: PackageJsonMeta[],
   workspacePackages: WorkspacePackageMeta[],
   filepath: string | undefined,
-): RemoveWorkspaceLike {
+): WorkspaceManager {
   return {
     loadPackages: vi.fn(async () => [...projectPackages, ...workspacePackages]),
     getProjectPackages: vi.fn(() => projectPackages),
     getWorkspacePackages: vi.fn(() => workspacePackages),
     getCwd: vi.fn(() => '/repo'),
+    removeCatalogDependencyFromPackages: vi.fn((updatedPackages, packages, depName, catalogName) => {
+      let removed = false
+      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+
+      for (const pkg of packages) {
+        for (const dep of pkg.deps) {
+          if (dep.name !== depName || dep.specifier !== expected)
+            continue
+
+          if (!updatedPackages.has(pkg.name))
+            updatedPackages.set(pkg.name, structuredClone(pkg))
+
+          const updated = updatedPackages.get(pkg.name)!
+          delete (updated.raw as Record<string, Record<string, string> | undefined>)[dep.source]?.[dep.name]
+          removed = true
+        }
+      }
+
+      return removed
+    }),
+    isCatalogDependencyReferenced: vi.fn((depName, catalogName, packages = projectPackages) => {
+      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+      return packages.some((pkg: PackageJsonMeta) =>
+        pkg.deps.some((dep: RawDep) => dep.name === depName && dep.specifier === expected),
+      )
+    }),
     catalog: {
       findWorkspaceFile: vi.fn(async () => filepath),
       removePackages: vi.fn(async () => {}),
     },
-  }
+  } as unknown as WorkspaceManager
 }
 
 describe('removeCommand', () => {

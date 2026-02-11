@@ -1,6 +1,6 @@
-import type { PackageJsonMeta, RawDep } from '../../types'
+import type { PackageJsonMeta, RawDep } from '@/types'
 import c from 'ansis'
-import { DEPS_TYPE_SHORT_MAP } from '../../constants'
+import { DEPS_TYPE_SHORT_MAP } from '@/constants'
 
 const MIN_DEP_NAME_WIDTH = 12
 const MIN_DEP_TYPE_WIDTH = 6

@@ -5,7 +5,7 @@ import process from 'node:process'
 import pRetry from 'p-retry'
 import { dirname, join } from 'pathe'
 import { joinURL } from 'ufo'
-import { isObject } from './_internal'
+import { isObject } from './helper'
 
 interface DistTagResponse {
   'dist-tags'?: {

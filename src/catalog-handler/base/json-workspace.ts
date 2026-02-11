@@ -1,9 +1,8 @@
-import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '../../types'
+import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '@/types'
 import { findUp } from 'find-up'
-import { PACKAGE_MANAGER_CONFIG } from '../../constants'
-import { detectIndent, readJsonFile, writeJsonFile } from '../../io'
-import { getCwd } from '../../utils'
-import { cloneDeep } from '../../utils/_internal'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { detectIndent, readJsonFile, writeJsonFile } from '@/io'
+import { cloneDeep, getCwd } from '@/utils'
 
 export class JsonCatalog implements CatalogHandler {
   public readonly options: CatalogOptions

@@ -3,12 +3,12 @@ import type {
   PackageJsonMeta,
   RawDep,
   WorkspacePackageMeta,
-} from '../../src/types'
-import type { WorkspaceManager } from '../../src/workspace-manager'
+} from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { resolveClean } from '../../src/commands/clean'
-import { COMMAND_ERROR_CODES } from '../../src/commands/shared'
+import { resolveClean } from '@/commands/clean'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -18,10 +18,6 @@ vi.mock('@clack/prompts', () => ({
 
 const multiselectMock = vi.mocked(p.multiselect)
 const isCancelMock = vi.mocked(p.isCancel)
-
-interface CleanWorkspaceLike {
-  loadPackages: () => Promise<Array<PackageJsonMeta | WorkspacePackageMeta>>
-}
 
 function createProjectPackage(deps: RawDep[]): PackageJsonMeta {
   return {
@@ -67,14 +63,27 @@ function createWorkspacePackage(deps: RawDep[]): WorkspacePackageMeta {
 function createWorkspace(
   projectPackages: PackageJsonMeta[],
   workspacePackages: WorkspacePackageMeta[],
-): CleanWorkspaceLike {
+): WorkspaceManager {
   return {
     loadPackages: async () => [...projectPackages, ...workspacePackages],
-  }
-}
+    isCatalogDependencyReferenced: (
+      depName: string,
+      catalogName: string,
+      packages: PackageJsonMeta[] = projectPackages,
+    ): boolean => {
+      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
 
-function toWorkspaceManager(workspace: CleanWorkspaceLike): WorkspaceManager {
-  return workspace as unknown as WorkspaceManager
+      return packages.some(pkg =>
+        pkg.deps.some(dep =>
+          dep.name === depName
+          && (
+            dep.specifier === expected
+            || dep.specifier === `catalog:${catalogName}`
+          ),
+        ),
+      )
+    },
+  } as unknown as WorkspaceManager
 }
 
 describe('resolveClean', () => {
@@ -102,7 +111,7 @@ describe('resolveClean', () => {
 
     const result = await resolveClean({
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([workspaceDep])
@@ -134,7 +143,7 @@ describe('resolveClean', () => {
 
     const result = await resolveClean({
       options: createFixtureOptions('pnpm', { yes: true }),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([])
@@ -166,7 +175,7 @@ describe('resolveClean', () => {
 
     const result = await resolveClean({
       options: createFixtureOptions('pnpm', { yes: true }),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([])
@@ -199,7 +208,7 @@ describe('resolveClean', () => {
 
     const result = await resolveClean({
       options: createFixtureOptions('pnpm', { yes: false }),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(multiselectMock).toHaveBeenCalledTimes(1)
@@ -229,7 +238,7 @@ describe('resolveClean', () => {
 
     await expect(resolveClean({
       options: createFixtureOptions('pnpm', { yes: false }),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
   })
 })

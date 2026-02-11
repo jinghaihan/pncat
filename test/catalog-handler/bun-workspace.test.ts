@@ -1,11 +1,11 @@
-import type { BunWorkspaceMeta, PackageJson, PackageJsonMeta } from '../../src/types'
+import type { BunWorkspaceMeta, PackageJson, PackageJsonMeta } from '@/types'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { BunCatalog } from '../../src/catalog-handler/bun-workspace'
-import { detectWorkspaceRoot, loadPackages, readJsonFile } from '../../src/io'
+import { BunCatalog } from '@/catalog-handler/bun-workspace'
+import { detectWorkspaceRoot, loadPackages, readJsonFile } from '@/io'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('../../src/io', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('../../src/io')>()
+  const actual = await importOriginal<typeof import('@/io')>()
   return {
     ...actual,
     detectWorkspaceRoot: vi.fn(),

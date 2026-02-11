@@ -1,12 +1,12 @@
-import type { ConfirmWorkspaceLike, EnsureWorkspaceLike, ReadWorkspacePackageLike } from '../../../src/commands/shared'
-import type { CatalogOptions, PackageJsonMeta } from '../../../src/types'
+import type { CatalogOptions, PackageJsonMeta } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile, readWorkspacePackageJSON } from '../../../src/commands/shared'
-import { runAgentInstall, runHooks } from '../../../src/commands/shared/process'
-import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '../../../src/io'
+import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile, readWorkspacePackageJSON } from '@/commands/shared'
+import { runAgentInstall, runHooks } from '@/commands/shared/process'
+import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '@/io'
 import { createFixtureOptions } from '../../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -49,7 +49,11 @@ const readJsonFileMock = vi.mocked(readJsonFile)
 const runAgentInstallMock = vi.mocked(runAgentInstall)
 const runHooksMock = vi.mocked(runHooks)
 
-function createWorkspace(rawText: string, nextText: string, overrides: Partial<CatalogOptions> = {}) {
+function toWorkspaceManager(value: unknown): WorkspaceManager {
+  return value as WorkspaceManager
+}
+
+function createWorkspace(rawText: string, nextText: string, overrides: Partial<CatalogOptions> = {}): WorkspaceManager & { apply: () => void } {
   let content = rawText
   return {
     getOptions: () => createFixtureOptions('pnpm', { yes: true, ...overrides }),
@@ -63,7 +67,7 @@ function createWorkspace(rawText: string, nextText: string, overrides: Partial<C
     apply: () => {
       content = nextText
     },
-  } satisfies ConfirmWorkspaceLike & { apply: () => void }
+  } as unknown as WorkspaceManager & { apply: () => void }
 }
 
 function createUpdatedPackage(): Record<string, PackageJsonMeta> {
@@ -216,9 +220,9 @@ describe('ensureWorkspaceFile', () => {
         findWorkspaceFile: vi.fn(async () => undefined),
         ensureWorkspace,
       },
-    } satisfies EnsureWorkspaceLike
+    }
 
-    await ensureWorkspaceFile(workspace)
+    await ensureWorkspaceFile(toWorkspaceManager(workspace))
 
     expect(confirmMock).toHaveBeenCalledWith(expect.objectContaining({
       message: expect.stringContaining('/repo'),
@@ -237,9 +241,9 @@ describe('ensureWorkspaceFile', () => {
         findWorkspaceFile: vi.fn(async () => undefined),
         ensureWorkspace,
       },
-    } satisfies EnsureWorkspaceLike
+    }
 
-    await expect(ensureWorkspaceFile(workspace)).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+    await expect(ensureWorkspaceFile(toWorkspaceManager(workspace))).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
     expect(writeFileMock).not.toHaveBeenCalled()
     expect(ensureWorkspace).not.toHaveBeenCalled()
   })
@@ -253,9 +257,9 @@ describe('ensureWorkspaceFile', () => {
         findWorkspaceFile: vi.fn(async () => undefined),
         ensureWorkspace,
       },
-    } satisfies EnsureWorkspaceLike
+    }
 
-    await ensureWorkspaceFile(workspace)
+    await ensureWorkspaceFile(toWorkspaceManager(workspace))
 
     expect(confirmMock).not.toHaveBeenCalled()
     expect(writeFileMock).toHaveBeenCalledWith('/repo/vlt.json', '{}', 'utf-8')
@@ -271,9 +275,9 @@ describe('ensureWorkspaceFile', () => {
         findWorkspaceFile: vi.fn(async () => undefined),
         ensureWorkspace,
       },
-    } satisfies EnsureWorkspaceLike
+    }
 
-    await ensureWorkspaceFile(workspace)
+    await ensureWorkspaceFile(toWorkspaceManager(workspace))
 
     expect(confirmMock).not.toHaveBeenCalled()
     expect(writeFileMock).not.toHaveBeenCalled()
@@ -292,9 +296,9 @@ describe('readWorkspacePackageJSON', () => {
   it('returns package.json path and parsed content when valid', async () => {
     const workspace = {
       getCwd: () => '/repo',
-    } satisfies ReadWorkspacePackageLike
+    }
 
-    const result = await readWorkspacePackageJSON(workspace)
+    const result = await readWorkspacePackageJSON(toWorkspaceManager(workspace))
 
     expect(result.pkgPath).toBe('/repo/package.json')
     expect(result.pkgName).toBe('app')
@@ -305,9 +309,9 @@ describe('readWorkspacePackageJSON', () => {
     existsSyncMock.mockReturnValue(false)
     const workspace = {
       getCwd: () => '/repo',
-    } satisfies ReadWorkspacePackageLike
+    }
 
-    await expect(readWorkspacePackageJSON(workspace)).rejects.toMatchObject({
+    await expect(readWorkspacePackageJSON(toWorkspaceManager(workspace))).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.NOT_FOUND,
     })
   })
@@ -316,9 +320,9 @@ describe('readWorkspacePackageJSON', () => {
     readJsonFileMock.mockResolvedValue({})
     const workspace = {
       getCwd: () => '/repo',
-    } satisfies ReadWorkspacePackageLike
+    }
 
-    await expect(readWorkspacePackageJSON(workspace)).rejects.toMatchObject({
+    await expect(readWorkspacePackageJSON(toWorkspaceManager(workspace))).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.INVALID_INPUT,
     })
   })

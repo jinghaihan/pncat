@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CATALOG_OPTIONS } from '../../src/constants'
-import { createDependenciesFilter, specFilter } from '../../src/utils'
+import { DEFAULT_CATALOG_OPTIONS } from '@/constants'
+import { createDependenciesFilter, specFilter } from '@/utils'
 
 describe('specFilter', () => {
   it('rejects blank specifier', () => {

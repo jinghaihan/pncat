@@ -1,19 +1,8 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep } from '../../src/types'
-import type { WorkspaceManager } from '../../src/workspace-manager'
+import type { CatalogOptions, PackageJsonMeta, RawDep } from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
 import { describe, expect, it } from 'vitest'
-import { resolveRevert } from '../../src/commands/revert'
+import { resolveRevert } from '@/commands/revert'
 import { createFixtureOptions } from '../_shared'
-
-interface RevertWorkspaceLike {
-  loadPackages: () => Promise<PackageJsonMeta[]>
-  getProjectPackages: () => PackageJsonMeta[]
-  getCatalogIndex: () => Promise<Map<string, { catalogName: string, specifier: string }[]>>
-  resolveCatalogDependency: (
-    dep: RawDep,
-    catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
-    force: boolean,
-  ) => RawDep
-}
 
 function createPackage(
   name: string,
@@ -48,24 +37,43 @@ function createPackage(
 function createWorkspace(
   packages: PackageJsonMeta[],
   catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
-): RevertWorkspaceLike {
+): WorkspaceManager {
   return {
     loadPackages: async () => packages,
     getProjectPackages: () => packages,
     getCatalogIndex: async () => catalogIndex,
-    resolveCatalogDependency: (dep, index) => {
+    setDependencySpecifier: (
+      updatedPackages: Map<string, PackageJsonMeta>,
+      pkg: PackageJsonMeta,
+      dep: RawDep,
+      specifier: string,
+    ) => {
+      if (!updatedPackages.has(pkg.name))
+        updatedPackages.set(pkg.name, structuredClone(pkg))
+
+      const updated = updatedPackages.get(pkg.name)!
+      if (dep.source === 'pnpm.overrides') {
+        updated.raw.pnpm ??= {}
+        updated.raw.pnpm.overrides ??= {}
+        updated.raw.pnpm.overrides[dep.name] = specifier
+        return
+      }
+
+      updated.raw[dep.source] ??= {}
+      ;(updated.raw[dep.source] as Record<string, string>)[dep.name] = specifier
+    },
+    resolveCatalogDependency: (
+      dep: RawDep,
+      index: Map<string, { catalogName: string, specifier: string }[]>,
+    ) => {
       const entries = index.get(dep.name) || []
-      const matched = entries.find(item => item.catalogName === dep.catalogName) || entries[0]
+      const matched = entries.find((item: { catalogName: string, specifier: string }) => item.catalogName === dep.catalogName) || entries[0]
       return {
         ...dep,
         specifier: matched?.specifier || dep.specifier,
       }
     },
-  }
-}
-
-function toWorkspaceManager(workspace: RevertWorkspaceLike): WorkspaceManager {
-  return workspace as unknown as WorkspaceManager
+  } as unknown as WorkspaceManager
 }
 
 describe('resolveRevert', () => {
@@ -88,7 +96,7 @@ describe('resolveRevert', () => {
     const result = await resolveRevert({
       args: [],
       options,
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
     const { updatedPackages = {} } = result
 
@@ -133,7 +141,7 @@ describe('resolveRevert', () => {
     const result = await resolveRevert({
       args: ['react'],
       options: createFixtureOptions('pnpm'),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
     const { updatedPackages = {} } = result
 
@@ -166,7 +174,7 @@ describe('resolveRevert', () => {
     const result = await resolveRevert({
       args: ['react'],
       options: createFixtureOptions('pnpm'),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
     const { updatedPackages = {} } = result
 
@@ -191,7 +199,7 @@ describe('resolveRevert', () => {
     const result = await resolveRevert({
       args: [],
       options: createFixtureOptions('pnpm'),
-      workspace: toWorkspaceManager(workspace),
+      workspace,
     })
 
     expect(result.dependencies).toEqual([])

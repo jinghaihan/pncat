@@ -1,4 +1,4 @@
-import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '../types'
+import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '@/types'
 import { toArray } from '@antfu/utils'
 
 const RANGE_X_WILDCARD_RE = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d+)*)$/

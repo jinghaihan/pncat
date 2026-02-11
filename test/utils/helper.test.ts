@@ -1,8 +1,8 @@
-import type { CatalogOptions } from '../../src/types'
+import type { CatalogOptions } from '@/types'
 import process from 'node:process'
 import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { DEFAULT_CATALOG_OPTIONS } from '../../src/constants'
+import { DEFAULT_CATALOG_OPTIONS } from '@/constants'
 import {
   extractCatalogName,
   getCwd,
@@ -14,7 +14,7 @@ import {
   isCatalogWorkspace,
   isDepFieldEnabled,
   isPnpmOverridesPackageName,
-} from '../../src/utils'
+} from '@/utils'
 
 describe('getDepSource', () => {
   it('returns dependency source based on save flags', () => {

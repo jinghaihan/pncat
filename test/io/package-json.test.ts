@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { loadPackageJSON } from '../../src/io/package-json'
+import { loadPackageJSON } from '@/io/package-json'
 import { createFixtureOptions, getFixturePath } from '../_shared'
 
 describe('loadPackageJSON', () => {

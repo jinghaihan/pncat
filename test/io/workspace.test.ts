@@ -1,8 +1,8 @@
-import type { PackageManager } from '../../src/types'
+import type { PackageManager } from '@/types'
 import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
-import { PACKAGE_MANAGERS } from '../../src/constants'
-import { detectWorkspaceRoot, findPackageJsonPaths } from '../../src/io'
+import { PACKAGE_MANAGERS } from '@/constants'
+import { detectWorkspaceRoot, findPackageJsonPaths } from '@/io'
 import { createFixtureOptions, getFixtureCwd, getFixturePath } from '../_shared'
 
 describe('findPackageJsonPaths', () => {

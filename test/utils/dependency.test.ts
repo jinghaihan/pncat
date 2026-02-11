@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseDependencies, parseDependency } from '../../src/utils'
+import { parseDependencies, parseDependency } from '@/utils'
 import { createFixtureOptions } from '../_shared'
 
 describe('parseDependencies', () => {

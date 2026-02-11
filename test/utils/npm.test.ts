@@ -62,7 +62,7 @@ async function setupNpmUtils(options: SetupOptions = {}) {
   }))
   vi.doMock('p-retry', () => ({ default: pRetryMock }))
 
-  const mod = await import('../../src/utils/npm')
+  const mod = await import('@/utils/npm')
   return {
     mod,
     NPM_REGISTRY,

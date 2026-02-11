@@ -1,7 +1,6 @@
-import type { CatalogOptions, DepFilter, PackageMeta } from '../types'
-import { catalogHandlers } from '../catalog-handler'
-import { PACKAGE_MANAGERS } from '../constants'
-import { createDependenciesFilter } from '../utils'
+import type { CatalogOptions, DepFilter, PackageMeta } from '@/types'
+import { PACKAGE_MANAGERS } from '@/constants'
+import { createDependenciesFilter } from '@/utils'
 import { loadPackageJSON } from './package-json'
 import { findPackageJsonPaths } from './workspace'
 
@@ -34,6 +33,8 @@ async function loadWorkspacePackage(
   options: CatalogOptions,
   shouldCatalog: DepFilter,
 ): Promise<PackageMeta[] | null> {
+  const { catalogHandlers } = await import('@/catalog-handler')
+
   for (const agent of PACKAGE_MANAGERS) {
     const handler = catalogHandlers[agent]
     const workspacePackage = await handler.loadWorkspace(relative, options, shouldCatalog)

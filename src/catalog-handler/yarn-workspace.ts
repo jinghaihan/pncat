@@ -1,6 +1,6 @@
-import type { CatalogOptions, DepFilter, YarnWorkspaceMeta } from '../types'
-import { PACKAGE_MANAGER_CONFIG } from '../constants'
-import { YamlCatalog } from './base/yaml-workspace'
+import type { CatalogOptions, DepFilter, YarnWorkspaceMeta } from '@/types'
+import { YamlCatalog } from '@/catalog-handler/base/yaml-workspace'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 
 export class YarnCatalog extends YamlCatalog {
   static async loadWorkspace(

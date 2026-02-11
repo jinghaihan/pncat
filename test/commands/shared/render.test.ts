@@ -1,7 +1,7 @@
-import type { PackageJsonMeta, RawDep } from '../../../src/types'
+import type { PackageJsonMeta, RawDep } from '@/types'
 import c from 'ansis'
 import { describe, expect, it } from 'vitest'
-import { renderChanges } from '../../../src/commands/shared'
+import { renderChanges } from '@/commands/shared'
 
 function createDep(name: string, source: RawDep['source'], specifier: string, catalogName: string): RawDep {
   return {

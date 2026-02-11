@@ -1,4 +1,4 @@
-import type { CatalogHandler, CatalogOptions } from '../types'
+import type { CatalogHandler, CatalogOptions } from '@/types'
 import { BunCatalog } from './bun-workspace'
 import { PnpmCatalog } from './pnpm-workspace'
 import { VltCatalog } from './vlt-workspace'

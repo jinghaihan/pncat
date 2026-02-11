@@ -6,7 +6,7 @@ import {
   createCommandError,
   isCommandError,
   reportCommandError,
-} from '../../../src/commands/shared'
+} from '@/commands/shared'
 
 vi.mock('@clack/prompts', () => ({
   outro: vi.fn(),
