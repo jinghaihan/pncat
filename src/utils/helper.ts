@@ -1,4 +1,4 @@
-import type { CatalogOptions, DepType } from '../types'
+import type { CatalogOptions, DepType, PackageMeta } from '../types'
 import process from 'node:process'
 import { resolve } from 'pathe'
 import { PACKAGE_MANAGERS } from '../constants'
@@ -43,4 +43,28 @@ export function extractCatalogName(name: string): string {
 
 export function isPnpmOverridesPackageName(pkgName?: string): boolean {
   return pkgName === 'pnpm-workspace:overrides'
+}
+
+export function hasEslint(packages: PackageMeta[]): boolean {
+  for (const pkg of packages) {
+    if (pkg.type !== 'package.json')
+      continue
+
+    if (pkg.deps.some(dep => dep.name === 'eslint'))
+      return true
+  }
+
+  return false
+}
+
+export function hasVSCodeEngine(packages: PackageMeta[]): boolean {
+  for (const pkg of packages) {
+    if (pkg.type !== 'package.json')
+      continue
+
+    if (pkg.raw.engines?.vscode)
+      return true
+  }
+
+  return false
 }

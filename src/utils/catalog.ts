@@ -70,7 +70,11 @@ export function inferCatalogName(dep: Omit<RawDep, 'catalogName'>, options: Cata
   return DEPS_TYPE_CATALOG_MAP[dep.source] || 'default'
 }
 
-function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
+export function toCatalogSpecifier(catalogName: string): string {
+  return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+}
+
+export function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
   if (Array.isArray(match))
     return match.some(item => typeof item === 'string' ? depName === item : item.test(depName))
 

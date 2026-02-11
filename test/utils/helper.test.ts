@@ -6,6 +6,8 @@ import { DEFAULT_CATALOG_OPTIONS } from '../../src/constants'
 import {
   extractCatalogName,
   getCwd,
+  hasEslint,
+  hasVSCodeEngine,
   isCatalogPackageName,
   isCatalogSpecifier,
   isCatalogWorkspace,
@@ -82,5 +84,94 @@ describe('isPnpmOverridesPackageName', () => {
     expect(isPnpmOverridesPackageName('pnpm-workspace:overrides')).toBe(true)
     expect(isPnpmOverridesPackageName('pnpm-catalog:default')).toBe(false)
     expect(isPnpmOverridesPackageName(undefined)).toBe(false)
+  })
+})
+
+describe('hasEslint', () => {
+  it('returns true when package.json deps contain eslint', () => {
+    expect(hasEslint([
+      {
+        type: 'package.json',
+        name: 'app',
+        private: true,
+        version: '0.0.0',
+        filepath: '/repo/package.json',
+        relative: 'package.json',
+        raw: {},
+        deps: [
+          {
+            name: 'eslint',
+            specifier: '^9.0.0',
+            source: 'devDependencies',
+            parents: [],
+            catalogable: true,
+            catalogName: 'default',
+            isCatalog: false,
+          },
+        ],
+      },
+    ])).toBe(true)
+  })
+
+  it('returns false when only workspace packages contain eslint', () => {
+    expect(hasEslint([
+      {
+        type: 'pnpm-workspace.yaml',
+        name: 'pnpm-catalog:lint',
+        private: true,
+        version: '',
+        filepath: '/repo/pnpm-workspace.yaml',
+        relative: 'pnpm-workspace.yaml',
+        raw: {},
+        context: {},
+        deps: [
+          {
+            name: 'eslint',
+            specifier: '^9.0.0',
+            source: 'pnpm-workspace',
+            parents: [],
+            catalogable: true,
+            catalogName: 'lint',
+            isCatalog: true,
+          },
+        ],
+      },
+    ])).toBe(false)
+  })
+})
+
+describe('hasVSCodeEngine', () => {
+  it('returns true when package.json engines.vscode exists', () => {
+    expect(hasVSCodeEngine([
+      {
+        type: 'package.json',
+        name: 'extension',
+        private: true,
+        version: '0.0.0',
+        filepath: '/repo/package.json',
+        relative: 'package.json',
+        raw: {
+          engines: {
+            vscode: '^1.95.0',
+          },
+        },
+        deps: [],
+      },
+    ])).toBe(true)
+  })
+
+  it('returns false when no package.json has engines.vscode', () => {
+    expect(hasVSCodeEngine([
+      {
+        type: 'package.json',
+        name: 'app',
+        private: true,
+        version: '0.0.0',
+        filepath: '/repo/package.json',
+        relative: 'package.json',
+        raw: {},
+        deps: [],
+      },
+    ])).toBe(false)
   })
 })

@@ -4,6 +4,7 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
+import { initCommand } from './commands'
 import { resolveConfig } from './config'
 import { MODE_ALIASES, MODE_CHOICES, NAME, VERSION } from './constants'
 
@@ -43,6 +44,7 @@ try {
 
       switch (config.mode) {
         case 'init':
+          await initCommand(config)
           break
         case 'detect':
           break

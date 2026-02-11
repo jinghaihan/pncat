@@ -10,6 +10,7 @@
 - Constants are the single source of truth for literal domains.
 - Types derive from constants via `typeof ...[number]`, no duplicate unions.
 - Library code throws errors; CLI handles process exit.
+- In each source file, place publicly exported functions at the top; private helper functions must follow in clear call order and functional order.
 
 ## Directory Responsibilities
 
