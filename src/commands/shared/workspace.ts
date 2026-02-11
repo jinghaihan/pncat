@@ -13,7 +13,7 @@ import { diffHighlight } from './diff'
 import { COMMAND_ERROR_CODES, createCommandError } from './error'
 import { runAgentInstall, runHooks } from './process'
 
-export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
+interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
   workspace: WorkspaceManager
   updatedPackages?: Record<string, PackageJsonMeta>
   bailout?: boolean
