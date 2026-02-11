@@ -1,6 +1,18 @@
-import type { CatalogOptions, DepType, PackageMeta } from '../types'
+import type { CatalogOptions, DepType, PackageJsonDepSource, PackageMeta } from '../types'
 import process from 'node:process'
 import { resolve } from 'pathe'
+
+export function getDepSource(
+  isDev: boolean = false,
+  isOptional: boolean = false,
+  isPeer: boolean = false,
+): PackageJsonDepSource {
+  return isDev
+    ? 'devDependencies'
+    : isOptional
+      ? 'optionalDependencies'
+      : isPeer ? 'peerDependencies' : 'dependencies'
+}
 
 export function getCwd(options?: CatalogOptions): string {
   return resolve(options?.cwd || process.cwd())

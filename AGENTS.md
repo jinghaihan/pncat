@@ -12,6 +12,9 @@
 - Library code throws errors; CLI handles process exit.
 - In each source file, place publicly exported functions at the top; private helper functions must follow in clear call order and functional order.
 - TTY-facing texts (`@clack/prompts`, spinner/log/outro/note) must start with lowercase letters; only error texts are allowed to start with uppercase letters.
+- Interface placement:
+  - If an interface/type is shared across multiple modules, define it under `src/types`.
+  - If an interface/type is only used by one module, define it at the top of that module file.
 
 ## Directory Responsibilities
 

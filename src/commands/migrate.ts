@@ -3,7 +3,15 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { gt } from 'semver'
 import { PACKAGE_MANAGER_CONFIG } from '../constants'
-import { cleanSpec, cloneDeep, isCatalogWorkspace, toCatalogSpecifier } from '../utils'
+import {
+  cleanSpec,
+  cloneDeep,
+  ensurePackageJsonDeps,
+  ensurePnpmOverrides,
+  isCatalogWorkspace,
+  isPackageJsonDepSource,
+  toCatalogSpecifier,
+} from '../utils'
 import { WorkspaceManager } from '../workspace-manager'
 import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, createCommandError, ensureWorkspaceFile } from './shared'
 
@@ -93,17 +101,17 @@ function updatePackageDep(
   const nextSpecifier = toCatalogSpecifier(dep.catalogName)
 
   if (dep.source === 'pnpm.overrides') {
-    updatedPackage.raw.pnpm ??= {}
-    updatedPackage.raw.pnpm.overrides ??= {}
-    updatedPackage.raw.pnpm.overrides[dep.name] = nextSpecifier
+    ensurePnpmOverrides(updatedPackage.raw)[dep.name] = nextSpecifier
     return
   }
 
   if (isCatalogWorkspace(dep.source))
     return
 
-  updatedPackage.raw[dep.source] ??= {}
-  updatedPackage.raw[dep.source][dep.name] = nextSpecifier
+  if (!isPackageJsonDepSource(dep.source))
+    return
+
+  ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = nextSpecifier
 }
 
 // Resolve same-package conflicts where one dep/catalog pair has multiple specifiers.

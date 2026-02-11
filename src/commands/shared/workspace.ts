@@ -1,19 +1,48 @@
-import type { CatalogOptions, PackageJsonMeta } from '../../types'
+import type { CatalogOptions, PackageJson, PackageJsonMeta } from '../../types'
 import type { WorkspaceManager } from '../../workspace-manager'
+import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
 import tildify from 'tildify'
 import { PACKAGE_MANAGER_CONFIG } from '../../constants'
-import { detectWorkspaceRoot, writeJsonFile } from '../../io'
+import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '../../io'
 import { cleanupPackageJSON } from '../../utils'
 import { diffHighlight } from './diff'
 import { COMMAND_ERROR_CODES, createCommandError } from './error'
 import { runAgentInstall, runHooks } from './process'
 
-export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
-  workspace: WorkspaceManager
+interface EnsureWorkspaceCatalogLike {
+  findWorkspaceFile: WorkspaceManager['catalog']['findWorkspaceFile']
+  ensureWorkspace: WorkspaceManager['catalog']['ensureWorkspace']
+}
+
+interface ConfirmWorkspaceCatalogLike {
+  toString: WorkspaceManager['catalog']['toString']
+  updateWorkspaceOverrides?: WorkspaceManager['catalog']['updateWorkspaceOverrides']
+  getWorkspacePath: WorkspaceManager['catalog']['getWorkspacePath']
+  writeWorkspace: WorkspaceManager['catalog']['writeWorkspace']
+}
+
+export interface EnsureWorkspaceLike {
+  getOptions: () => CatalogOptions
+  getCwd: () => string
+  catalog: EnsureWorkspaceCatalogLike
+}
+
+export interface ConfirmWorkspaceLike {
+  getOptions: () => CatalogOptions
+  getCwd: () => string
+  catalog: ConfirmWorkspaceCatalogLike
+}
+
+export interface ReadWorkspacePackageLike {
+  getCwd: () => string
+}
+
+export interface ConfirmationOptions<TWorkspace extends ConfirmWorkspaceLike = WorkspaceManager> extends Pick<CatalogOptions, 'yes' | 'verbose'> {
+  workspace: TWorkspace
   updatedPackages?: Record<string, PackageJsonMeta>
   bailout?: boolean
   confirmMessage?: string
@@ -21,7 +50,23 @@ export interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbo
   showDiff?: boolean
 }
 
-export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<void> {
+export async function readWorkspacePackageJSON(workspace: ReadWorkspacePackageLike): Promise<{
+  pkgPath: string
+  pkgName: string
+  pkgJson: PackageJson
+}> {
+  const pkgPath = join(workspace.getCwd(), 'package.json')
+  if (!existsSync(pkgPath))
+    throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no package.json found, aborting')
+
+  const pkgJson = await readJsonFile<PackageJson>(pkgPath)
+  if (typeof pkgJson.name !== 'string')
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'package.json is missing name, aborting')
+
+  return { pkgPath, pkgName: pkgJson.name, pkgJson }
+}
+
+export async function ensureWorkspaceFile(workspace: EnsureWorkspaceLike): Promise<void> {
   const options = workspace.getOptions()
   const agent = options.agent || 'pnpm'
 
@@ -52,9 +97,9 @@ export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<
   await workspace.catalog.ensureWorkspace()
 }
 
-export async function confirmWorkspaceChanges(
+export async function confirmWorkspaceChanges<TWorkspace extends ConfirmWorkspaceLike>(
   modifier: () => Promise<void>,
-  options: ConfirmationOptions,
+  options: ConfirmationOptions<TWorkspace>,
 ): Promise<'applied' | 'noop'> {
   const {
     workspace,

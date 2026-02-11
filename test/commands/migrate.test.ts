@@ -1,4 +1,5 @@
 import type { CatalogOptions, PackageJsonMeta, RawDep, WorkspaceSchema } from '../../src/types'
+import type { WorkspaceManager } from '../../src/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveMigrate } from '../../src/commands/migrate'
@@ -123,6 +124,10 @@ function createWorkspace(
   }
 }
 
+function toWorkspaceManager(workspace: ResolveWorkspaceLike): WorkspaceManager {
+  return workspace as unknown as WorkspaceManager
+}
+
 describe('resolveMigrate', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -145,7 +150,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })
 
     expect(result.dependencies).toEqual([
@@ -178,7 +183,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })
 
     expect(result.dependencies?.[0].specifier).toBe('^18.3.1')
@@ -195,7 +200,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })
 
     expect(result.dependencies).toEqual([
@@ -226,7 +231,7 @@ describe('resolveMigrate', () => {
     const workspace = createWorkspace([createPackage(dep)], {})
     await expect(resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })).rejects.toThrowError('Unable to resolve catalog specifier for react')
   })
 
@@ -255,7 +260,7 @@ describe('resolveMigrate', () => {
 
     const result = await resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })
 
     expect(selectMock).toHaveBeenCalledTimes(1)
@@ -282,9 +287,8 @@ describe('resolveMigrate', () => {
       specifier: '~18.3.0',
     }
 
-    const cancelSymbol = Symbol('cancel')
-    selectMock.mockResolvedValue(cancelSymbol as any)
-    isCancelMock.mockImplementation(value => value === cancelSymbol)
+    selectMock.mockResolvedValue('^18.2.0')
+    isCancelMock.mockReturnValue(true)
 
     const workspace = createWorkspace([
       createPackage(depA, 'app-a'),
@@ -294,7 +298,7 @@ describe('resolveMigrate', () => {
 
     await expect(resolveMigrate({
       options,
-      workspace: workspace as any,
+      workspace: toWorkspaceManager(workspace),
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
   })
 })

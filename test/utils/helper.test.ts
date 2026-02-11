@@ -6,6 +6,7 @@ import { DEFAULT_CATALOG_OPTIONS } from '../../src/constants'
 import {
   extractCatalogName,
   getCwd,
+  getDepSource,
   hasEslint,
   hasVSCodeEngine,
   isCatalogPackageName,
@@ -14,6 +15,15 @@ import {
   isDepFieldEnabled,
   isPnpmOverridesPackageName,
 } from '../../src/utils'
+
+describe('getDepSource', () => {
+  it('returns dependency source based on save flags', () => {
+    expect(getDepSource()).toBe('dependencies')
+    expect(getDepSource(true, false, false)).toBe('devDependencies')
+    expect(getDepSource(false, true, false)).toBe('optionalDependencies')
+    expect(getDepSource(false, false, true)).toBe('peerDependencies')
+  })
+})
 
 describe('getCwd', () => {
   it('returns resolved options cwd', () => {

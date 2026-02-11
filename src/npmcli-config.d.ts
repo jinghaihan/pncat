@@ -1,5 +1,5 @@
 declare module '@npmcli/config' {
-  type Recordable = Record<string, any>
+  type Recordable = Record<string, unknown>
 
   export interface NpmcliConfigOptions {
     definitions: Recordable

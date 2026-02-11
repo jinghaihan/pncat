@@ -4,7 +4,15 @@ import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { cac } from 'cac'
-import { initCommand, migrateCommand } from './commands'
+import {
+  addCommand,
+  cleanCommand,
+  detectCommand,
+  initCommand,
+  migrateCommand,
+  removeCommand,
+  revertCommand,
+} from './commands'
 import { reportCommandError } from './commands/shared'
 import { resolveConfig } from './config'
 import { MODE_ALIASES, MODE_CHOICES, NAME, VERSION } from './constants'
@@ -45,7 +53,7 @@ async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): 
     })
 
     if (!MODE_CHOICES.includes(mode))
-      throw new Error(`Invalid mode: ${mode}. Please use one of the following: ${MODE_CHOICES.join(', ')}`)
+      throw new Error(`invalid mode: ${mode}. please use one of the following: ${MODE_CHOICES.join(', ')}`)
 
     options.mode = mode
   }
@@ -58,17 +66,22 @@ async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): 
       await initCommand(config)
       break
     case 'detect':
+      await detectCommand(config)
       break
     case 'migrate':
       await migrateCommand(config)
       break
     case 'add':
+      await addCommand(config)
       break
     case 'remove':
+      await removeCommand(config)
       break
     case 'clean':
+      await cleanCommand(config)
       break
     case 'revert':
+      await revertCommand(config)
       break
   }
 }

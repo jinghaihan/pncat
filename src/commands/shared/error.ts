@@ -3,10 +3,14 @@ import c from 'ansis'
 
 export const COMMAND_ERROR_CODES = {
   ABORT: 'abort',
+  INVALID_INPUT: 'invalid_input',
+  NOT_FOUND: 'not_found',
 } as const
 
 export const COMMAND_ERROR_MESSAGES: Record<CommandErrorCode, string> = {
   [COMMAND_ERROR_CODES.ABORT]: 'aborting',
+  [COMMAND_ERROR_CODES.INVALID_INPUT]: 'invalid input',
+  [COMMAND_ERROR_CODES.NOT_FOUND]: 'resource not found',
 }
 
 export type CommandErrorCode = typeof COMMAND_ERROR_CODES[keyof typeof COMMAND_ERROR_CODES]
@@ -30,7 +34,7 @@ export function isCommandError(error: unknown): error is CommandError {
 }
 
 export function reportCommandError(error: unknown): void {
-  if (isCommandError(error) && error.code === COMMAND_ERROR_CODES.ABORT) {
+  if (isCommandError(error)) {
     p.outro(c.red(error.message || COMMAND_ERROR_MESSAGES[error.code]))
     return
   }

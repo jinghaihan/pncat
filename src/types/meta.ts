@@ -5,7 +5,7 @@ export interface WorkspaceSchema {
   catalog?: Record<string, string>
   catalogs?: Record<string, Record<string, string>>
   overrides?: Record<string, string>
-  [key: string]: any
+  [key: string]: unknown
 }
 
 export interface RawDep {

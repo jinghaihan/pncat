@@ -9,6 +9,7 @@ export default defineConfig({
         './src/types/**',
         './src/constants/**',
         './src/**/**/index.ts',
+        './src/cli.ts',
       ],
       reportsDirectory: 'node_modules/.vitest/coverage',
     },
