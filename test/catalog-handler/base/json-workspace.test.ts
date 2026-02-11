@@ -1,15 +1,8 @@
 import type { RawDep, WorkspaceSchema } from '@/types'
-import { readFile } from 'node:fs/promises'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { JsonCatalog } from '@/catalog-handler/base'
-import { detectIndent, readJsonFile, writeJsonFile } from '@/io'
-import { createFixtureOptions, getFixturePath } from '../../_shared'
-
-vi.mock('../../../src/io', () => ({
-  detectIndent: vi.fn().mockResolvedValue('  '),
-  readJsonFile: vi.fn((filepath: string) => readFile(filepath, 'utf-8').then(content => JSON.parse(content))),
-  writeJsonFile: vi.fn(),
-}))
+import * as io from '@/io'
+import { createFixtureOptions, getFixturePath, getFixtureScenarioPath } from '../../_shared'
 
 function createRawDep(overrides: Partial<RawDep>): RawDep {
   return {
@@ -39,14 +32,8 @@ function setWorkspace(catalog: TestJsonCatalog, workspaceJson: WorkspaceSchema, 
   catalog.setWorkspaceForTest(workspaceJson, workspacePath)
 }
 
-const detectIndentMock = vi.mocked(detectIndent)
-const readJsonFileMock = vi.mocked(readJsonFile)
-const writeJsonFileMock = vi.mocked(writeJsonFile)
-
 beforeEach(() => {
   vi.clearAllMocks()
-  detectIndentMock.mockResolvedValue('  ')
-  readJsonFileMock.mockImplementation((filepath: string) => readFile(filepath, 'utf-8').then(content => JSON.parse(content)))
 })
 
 describe('findWorkspaceFile', () => {
@@ -70,7 +57,7 @@ describe('ensureWorkspace', () => {
   })
 
   it('throws when workspace file is not found', async () => {
-    const catalog = new JsonCatalog(createFixtureOptions('vlt', { cwd: getFixturePath('plain') }), 'vlt')
+    const catalog = new JsonCatalog(createFixtureOptions('vlt', { cwd: getFixtureScenarioPath('no-dependencies') }), 'vlt')
     await expect(catalog.ensureWorkspace()).rejects.toThrowError('No vlt.json found')
   })
 })
@@ -92,10 +79,9 @@ describe('toString', () => {
   it('formats workspace json with detected indentation', async () => {
     const catalog = new JsonCatalog(createFixtureOptions('vlt'), 'vlt')
     await catalog.ensureWorkspace()
-    detectIndentMock.mockResolvedValue('\t')
 
     const result = await catalog.toString()
-    expect(result).toContain('\n\t"catalog": {')
+    expect(result).toContain('\n  "catalog": {')
   })
 })
 
@@ -237,29 +223,27 @@ describe('getWorkspacePath', () => {
 describe('writeWorkspace', () => {
   it('writes bun workspaces field when agent is bun', async () => {
     const catalog = new TestJsonCatalog(createFixtureOptions('bun'), 'bun')
-    setWorkspace(catalog, { catalog: { react: '^18.3.1' } }, '/repo/package.json')
-    const raw = { name: 'repo', workspaces: {} }
-    readJsonFileMock.mockResolvedValue(raw)
+    const filepath = getFixturePath('bun', 'package.json')
+    const writeJsonFileSpy = vi.spyOn(io, 'writeJsonFile').mockResolvedValue(undefined)
+    setWorkspace(catalog, { catalog: { react: '^18.3.1' } }, filepath)
 
     await catalog.writeWorkspace()
-    expect(writeJsonFileMock).toHaveBeenCalledWith('/repo/package.json', {
-      name: 'repo',
+    expect(writeJsonFileSpy).toHaveBeenCalledWith(filepath, expect.objectContaining({
       workspaces: { catalog: { react: '^18.3.1' } },
-    })
+    }))
   })
 
   it('writes vlt catalog fields when agent is vlt', async () => {
     const catalog = new TestJsonCatalog(createFixtureOptions('vlt'), 'vlt')
-    setWorkspace(catalog, { catalog: { svelte: '^5.0.0' } }, '/repo/vlt.json')
-    const raw = { name: 'repo' }
-    readJsonFileMock.mockResolvedValue(raw)
+    const filepath = getFixturePath('vlt', 'vlt.json')
+    const writeJsonFileSpy = vi.spyOn(io, 'writeJsonFile').mockResolvedValue(undefined)
+    setWorkspace(catalog, { catalog: { svelte: '^5.0.0' } }, filepath)
 
     await catalog.writeWorkspace()
-    expect(writeJsonFileMock).toHaveBeenCalledWith('/repo/vlt.json', {
-      name: 'repo',
+    expect(writeJsonFileSpy).toHaveBeenCalledWith(filepath, expect.objectContaining({
       catalog: { svelte: '^5.0.0' },
       catalogs: undefined,
-    })
+    }))
   })
 })
 

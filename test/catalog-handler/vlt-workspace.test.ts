@@ -1,51 +1,19 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { VltCatalog } from '@/catalog-handler/vlt-workspace'
-import { readJsonFile } from '@/io'
 import { createFixtureOptions } from '../_shared'
 
-vi.mock('../../src/io', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/io')>()
-  return {
-    ...actual,
-    readJsonFile: vi.fn(),
-  }
-})
-
-const readJsonFileMock = vi.mocked(readJsonFile)
-
 describe('loadWorkspace', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('returns null when relative path is not vlt workspace file', async () => {
     const workspace = await VltCatalog.loadWorkspace('package.json', createFixtureOptions('vlt'), () => true)
     expect(workspace).toBeNull()
   })
 
-  it('loads only default catalog when named catalogs are missing', async () => {
-    const workspace = {
-      catalog: {
-        svelte: '^5.0.0',
-      },
-    }
-    readJsonFileMock.mockResolvedValue(workspace)
-
+  it('loads default and named catalogs from fixture', async () => {
     const loaded = await VltCatalog.loadWorkspace('vlt.json', createFixtureOptions('vlt'), () => true)
-    expect(loaded?.map(item => item.name)).toEqual(['vlt-catalog:default'])
-  })
-
-  it('loads only named catalogs when default catalog is missing', async () => {
-    const workspace = {
-      catalogs: {
-        build: {
-          vite: '^7.0.0',
-        },
-      },
-    }
-    readJsonFileMock.mockResolvedValue(workspace)
-
-    const loaded = await VltCatalog.loadWorkspace('vlt.json', createFixtureOptions('vlt'), () => true)
-    expect(loaded?.map(item => item.name)).toEqual(['vlt-catalog:build'])
+    expect(loaded?.map(item => item.name)).toEqual([
+      'vlt-catalog:default',
+      'vlt-catalog:build',
+    ])
+    expect(loaded?.flatMap(item => item.deps).every(dep => dep.source === 'vlt-workspace')).toBe(true)
   })
 })

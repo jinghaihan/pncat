@@ -1,0 +1,17 @@
+{
+  "name": "fixture-command-add",
+  "version": "0.0.0",
+  "private": true,
+  "peerDependencies": {
+    "react": "^17.0.0"
+  },
+  "optionalDependencies": {
+    "react": "^17.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ],
+  "devDependencies": {
+    "react": "catalog:dev"
+  }
+}

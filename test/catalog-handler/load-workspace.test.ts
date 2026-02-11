@@ -2,7 +2,7 @@ import type { DepFilter, PackageManager } from '@/types'
 import { describe, expect, it } from 'vitest'
 import { catalogHandlers } from '@/catalog-handler'
 import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '@/constants'
-import { createFixtureOptions, getFixturePath } from '../_shared'
+import { createFixtureOptions, createFixtureScenarioOptions } from '../_shared'
 
 const shouldCatalog: DepFilter = () => true
 
@@ -36,7 +36,7 @@ describe('loadWorkspace', () => {
   it('bun returns null when lockfile is missing', async () => {
     const workspace = await catalogHandlers.bun.loadWorkspace(
       'package.json',
-      createFixtureOptions('bun', { cwd: getFixturePath('bun-no-lock') }),
+      createFixtureScenarioOptions('bun-no-lock'),
       shouldCatalog,
     )
     expect(workspace).toBeNull()
@@ -45,7 +45,7 @@ describe('loadWorkspace', () => {
   it('bun returns null when lockfile exists but no workspace catalogs', async () => {
     const workspace = await catalogHandlers.bun.loadWorkspace(
       'package.json',
-      createFixtureOptions('bun', { cwd: getFixturePath('bun-no-catalog') }),
+      createFixtureScenarioOptions('bun-no-catalog'),
       shouldCatalog,
     )
     expect(workspace).toBeNull()

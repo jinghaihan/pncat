@@ -1,0 +1,8 @@
+{
+  "name": "app-pnpm-update-overrides",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "catalog:"
+  }
+}

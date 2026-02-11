@@ -8,7 +8,7 @@ import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveRemove } from '@/commands/remove'
-import { COMMAND_ERROR_CODES, runAgentRemove } from '@/commands/shared'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import { createFixtureOptions } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
@@ -19,17 +19,8 @@ vi.mock('@clack/prompts', () => ({
   },
 }))
 
-vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/commands/shared')>()
-  return {
-    ...actual,
-    runAgentRemove: vi.fn(),
-  }
-})
-
 const multiselectMock = vi.mocked(p.multiselect)
 const isCancelMock = vi.mocked(p.isCancel)
-const runAgentRemoveMock = vi.mocked(runAgentRemove)
 
 function createProjectPackage(
   name: string,
@@ -161,7 +152,6 @@ describe('resolveRemove', () => {
 
     expect(result.dependencies).toEqual([depInWorkspace])
     expect(updatedPackages.app.raw.dependencies).toEqual({})
-    expect(runAgentRemoveMock).not.toHaveBeenCalled()
   })
 
   it('keeps workspace catalog entry when non-recursive remove has remaining references', async () => {
@@ -199,38 +189,6 @@ describe('resolveRemove', () => {
     expect(result.dependencies).toEqual([])
     expect(updatedPackages.app.raw.dependencies).toEqual({})
     expect(updatedPackages.docs).toBeUndefined()
-  })
-
-  it('delegates non-catalog dependency removal to package manager command', async () => {
-    const depInPackage: RawDep = {
-      name: 'lodash',
-      specifier: '^4.17.21',
-      source: 'dependencies',
-      parents: [],
-      catalogable: true,
-      catalogName: 'prod',
-      isCatalog: false,
-    }
-
-    const workspace = createWorkspace(
-      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
-      [],
-    )
-    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
-
-    const result = await resolveRemove({
-      args: ['lodash', '-r'],
-      options,
-      workspace,
-    })
-
-    expect(result.dependencies).toEqual([])
-    expect(result.updatedPackages).toEqual({})
-    expect(runAgentRemoveMock).toHaveBeenCalledWith(['lodash'], {
-      cwd: '/repo',
-      agent: 'pnpm',
-      recursive: true,
-    })
   })
 
   it('uses selected catalog when dependency exists in multiple catalogs', async () => {

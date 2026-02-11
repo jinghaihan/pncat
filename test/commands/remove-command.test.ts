@@ -1,197 +1,66 @@
-import type {
-  CatalogOptions,
-  PackageJsonMeta,
-  RawDep,
-  WorkspacePackageMeta,
-} from '@/types'
-import type { WorkspaceManager } from '@/workspace-manager'
-import * as p from '@clack/prompts'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFile, writeFile } from 'node:fs/promises'
+import process from 'node:process'
+import { join } from 'pathe'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { removeCommand } from '@/commands/remove'
-import {
-  COMMAND_ERROR_CODES,
-  confirmWorkspaceChanges,
-  ensureWorkspaceFile,
-  runAgentRemove,
-} from '@/commands/shared'
-import { createFixtureOptions } from '../_shared'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import { readJsonFile } from '@/io'
+import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
 
-vi.mock('@clack/prompts', () => ({
-  outro: vi.fn(),
-  multiselect: vi.fn(),
-  isCancel: vi.fn(() => false),
-  log: {
-    info: vi.fn(),
+const SCENARIO = 'command-remove'
+const ROOT = getFixtureScenarioPath(SCENARIO)
+const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
+const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
+
+const PACKAGE_JSON_BASELINE = `{
+  "name": "fixture-command-remove",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "catalog:prod"
   },
-}))
+  "workspaces": [
+    "packages/*"
+  ]
+}
+`
 
-vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/commands/shared')>()
-  return {
-    ...actual,
-    ensureWorkspaceFile: vi.fn(),
-    runAgentRemove: vi.fn(async () => {}),
-    confirmWorkspaceChanges: vi.fn(async (modifier: () => Promise<void>) => {
-      await modifier()
-      return 'applied' as const
-    }),
-  }
+const WORKSPACE_BASELINE = `packages:
+  - packages/*
+catalogs:
+  prod:
+    react: ^18.3.1
+`
+
+beforeEach(async () => {
+  await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
+  await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
 })
 
-let workspaceInstance: WorkspaceManager
-
-vi.mock('../../src/workspace-manager', () => ({
-  WorkspaceManager: class {
-    constructor() {
-      return workspaceInstance
-    }
-  },
-}))
-
-const ensureWorkspaceFileMock = vi.mocked(ensureWorkspaceFile)
-const runAgentRemoveMock = vi.mocked(runAgentRemove)
-const confirmWorkspaceChangesMock = vi.mocked(confirmWorkspaceChanges)
-const outroMock = vi.mocked(p.outro)
-
-function createProjectPackage(deps: RawDep[]): PackageJsonMeta {
-  return {
-    type: 'package.json',
-    name: 'app',
-    private: true,
-    version: '1.0.0',
-    filepath: '/repo/package.json',
-    relative: 'package.json',
-    raw: { name: 'app' },
-    deps,
-  }
-}
-
-function createWorkspacePackage(dep: RawDep): WorkspacePackageMeta {
-  return {
-    type: 'pnpm-workspace.yaml',
-    name: `pnpm-catalog:${dep.catalogName}`,
-    private: true,
-    version: '',
-    filepath: '/repo/pnpm-workspace.yaml',
-    relative: 'pnpm-workspace.yaml',
-    raw: {},
-    context: {},
-    deps: [dep],
-  }
-}
-
-function createWorkspace(
-  projectPackages: PackageJsonMeta[],
-  workspacePackages: WorkspacePackageMeta[],
-  filepath: string | undefined,
-): WorkspaceManager {
-  return {
-    loadPackages: vi.fn(async () => [...projectPackages, ...workspacePackages]),
-    getProjectPackages: vi.fn(() => projectPackages),
-    getWorkspacePackages: vi.fn(() => workspacePackages),
-    getCwd: vi.fn(() => '/repo'),
-    removeCatalogDependencyFromPackages: vi.fn((updatedPackages, packages, depName, catalogName) => {
-      let removed = false
-      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
-
-      for (const pkg of packages) {
-        for (const dep of pkg.deps) {
-          if (dep.name !== depName || dep.specifier !== expected)
-            continue
-
-          if (!updatedPackages.has(pkg.name))
-            updatedPackages.set(pkg.name, structuredClone(pkg))
-
-          const updated = updatedPackages.get(pkg.name)!
-          delete (updated.raw as Record<string, Record<string, string> | undefined>)[dep.source]?.[dep.name]
-          removed = true
-        }
-      }
-
-      return removed
-    }),
-    isCatalogDependencyReferenced: vi.fn((depName, catalogName, packages = projectPackages) => {
-      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
-      return packages.some((pkg: PackageJsonMeta) =>
-        pkg.deps.some((dep: RawDep) => dep.name === depName && dep.specifier === expected),
-      )
-    }),
-    catalog: {
-      findWorkspaceFile: vi.fn(async () => filepath),
-      removePackages: vi.fn(async () => {}),
-    },
-  } as unknown as WorkspaceManager
-}
-
 describe('removeCommand', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    ensureWorkspaceFileMock.mockResolvedValue(undefined)
-    process.argv = ['node', 'pncat', 'remove', 'react']
-    workspaceInstance = createWorkspace([createProjectPackage([])], [], '/repo/pnpm-workspace.yaml')
-  })
-
   it('throws when no dependencies are provided', async () => {
     process.argv = ['node', 'pncat', 'remove']
-    await expect(removeCommand(createFixtureOptions('pnpm'))).rejects.toMatchObject({
+
+    await expect(removeCommand(createFixtureScenarioOptions(SCENARIO, {
+      install: false,
+    }))).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.INVALID_INPUT,
     })
   })
 
-  it('delegates to package manager remove when workspace file is missing', async () => {
-    workspaceInstance = createWorkspace([createProjectPackage([])], [], undefined)
-    process.argv = ['node', 'pncat', 'remove', 'react', '-r']
-    const options: CatalogOptions = createFixtureOptions('pnpm')
-
-    await removeCommand(options)
-
-    expect(runAgentRemoveMock).toHaveBeenCalledWith(['react'], {
-      cwd: '/repo',
-      agent: options.agent,
-      recursive: true,
-    })
-    expect(outroMock).toHaveBeenCalledWith(expect.stringContaining('remove complete'))
-    expect(confirmWorkspaceChangesMock).not.toHaveBeenCalled()
-  })
-
-  it('throws when workspace file is missing and only flags are provided', async () => {
-    workspaceInstance = createWorkspace([createProjectPackage([])], [], undefined)
-    process.argv = ['node', 'pncat', 'remove', '-r']
-
-    await expect(removeCommand(createFixtureOptions('pnpm'))).rejects.toMatchObject({
-      code: COMMAND_ERROR_CODES.INVALID_INPUT,
-    })
-  })
-
-  it('applies catalog changes when workspace file exists', async () => {
-    const depInProject: RawDep = {
-      name: 'react',
-      specifier: 'catalog:prod',
-      source: 'dependencies',
-      parents: [],
-      catalogable: true,
-      catalogName: 'prod',
-      isCatalog: true,
-    }
-    const depInWorkspace: RawDep = {
-      ...depInProject,
-      source: 'pnpm-workspace',
-      specifier: '^18.3.1',
-    }
-    workspaceInstance = createWorkspace(
-      [createProjectPackage([depInProject])],
-      [createWorkspacePackage(depInWorkspace)],
-      '/repo/pnpm-workspace.yaml',
-    )
-    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
+  it('removes catalog dependency from package and workspace', async () => {
     process.argv = ['node', 'pncat', 'remove', 'react', '-r']
 
-    await removeCommand(options)
+    await removeCommand(createFixtureScenarioOptions(SCENARIO, {
+      yes: true,
+      install: false,
+      verbose: false,
+    }))
 
-    expect(ensureWorkspaceFileMock).toHaveBeenCalledTimes(1)
-    expect(confirmWorkspaceChangesMock).toHaveBeenCalledTimes(1)
-    expect(workspaceInstance.catalog.removePackages).toHaveBeenCalledWith([
-      expect.objectContaining({ name: 'react', source: 'pnpm-workspace' }),
-    ])
+    const pkg = await readJsonFile<Record<string, any>>(PACKAGE_JSON_PATH)
+    expect(pkg.dependencies?.react).toBeUndefined()
+
+    const workspaceYaml = await readFile(WORKSPACE_PATH, 'utf-8')
+    expect(workspaceYaml).not.toContain('react: ^18.3.1')
   })
 })

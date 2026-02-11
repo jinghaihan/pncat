@@ -1,0 +1,7 @@
+packages:
+  - packages/*
+catalog:
+  react: ^17.0.0
+catalogs:
+  dev:
+    react: ^18.3.1

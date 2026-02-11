@@ -3,7 +3,7 @@ import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
 import { PACKAGE_MANAGERS } from '@/constants'
 import { detectWorkspaceRoot, findPackageJsonPaths } from '@/io'
-import { createFixtureOptions, getFixtureCwd, getFixturePath } from '../_shared'
+import { createFixtureOptions, createFixtureScenarioOptions, getFixtureCwd, getFixturePath } from '../_shared'
 
 describe('findPackageJsonPaths', () => {
   it('returns stable workspace-first paths', async () => {
@@ -36,8 +36,7 @@ describe('findPackageJsonPaths', () => {
   })
 
   it('filters nested workspaces and respects ignorePaths', async () => {
-    const paths = await findPackageJsonPaths(createFixtureOptions('pnpm', {
-      cwd: getFixturePath('workspace-filter'),
+    const paths = await findPackageJsonPaths(createFixtureScenarioOptions('workspace-filter', {
       recursive: true,
       ignoreOtherWorkspaces: true,
       ignorePaths: ['skip/**'],

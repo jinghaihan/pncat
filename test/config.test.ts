@@ -4,12 +4,12 @@ import process from 'node:process'
 import { resolve } from 'pathe'
 import { describe, expect, it } from 'vitest'
 import { readConfig, resolveConfig } from '@/config'
-import { getFixtureCwd, getFixturePath } from './_shared'
+import { getFixtureCwd, getFixturePath, getFixtureScenarioPath } from './_shared'
 
 describe('resolveConfig', () => {
   it('loads config from pncat.config.ts default export', async () => {
     const config = await readConfig({
-      cwd: getFixturePath('config-source'),
+      cwd: getFixtureScenarioPath('config-file'),
     })
 
     expect(config.agent).toBe('yarn')

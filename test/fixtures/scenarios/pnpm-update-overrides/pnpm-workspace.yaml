@@ -1,0 +1,13 @@
+packages:
+  - packages/*
+catalog:
+  react: ^18.3.1
+catalogs:
+  legacy:
+    svelte: ~5.0.0
+    solid: ~1.0.0
+overrides:
+  react: ^18.3.1
+  vue: catalog:test
+  svelte: catalog:legacy
+  solid: catalog:legacy

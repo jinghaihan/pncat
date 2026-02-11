@@ -1,119 +1,76 @@
-import type { CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
-import type { WorkspaceManager } from '@/workspace-manager'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { readFile, writeFile } from 'node:fs/promises'
+import process from 'node:process'
+import { join } from 'pathe'
+import { beforeEach, describe, expect, it } from 'vitest'
 import { addCommand } from '@/commands/add'
-import {
-  COMMAND_ERROR_CODES,
-  confirmWorkspaceChanges,
-  ensureWorkspaceFile,
-  readWorkspacePackageJSON,
-} from '@/commands/shared'
-import { createFixtureOptions } from '../_shared'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import { readJsonFile } from '@/io'
+import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
 
-vi.mock('@clack/prompts', () => ({
-  spinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-  })),
-}))
+const SCENARIO = 'command-add'
+const ROOT = getFixtureScenarioPath(SCENARIO)
+const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
+const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
 
-vi.mock('../../src/commands/shared', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/commands/shared')>()
-  return {
-    ...actual,
-    ensureWorkspaceFile: vi.fn(),
-    readWorkspacePackageJSON: vi.fn(),
-    confirmWorkspaceChanges: vi.fn(async (modifier: () => Promise<void>) => {
-      await modifier()
-      return 'applied' as const
-    }),
-  }
+const PACKAGE_JSON_BASELINE = `{
+  "name": "fixture-command-add",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^17.0.0"
+  },
+  "peerDependencies": {
+    "react": "^17.0.0"
+  },
+  "optionalDependencies": {
+    "react": "^17.0.0"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}
+`
+
+const WORKSPACE_BASELINE = `packages:
+  - packages/*
+catalog:
+  react: ^17.0.0
+`
+
+beforeEach(async () => {
+  await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
+  await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
 })
 
-let workspaceInstance: WorkspaceManager
-
-vi.mock('../../src/workspace-manager', () => ({
-  WorkspaceManager: class {
-    constructor() {
-      return workspaceInstance
-    }
-  },
-}))
-
-const ensureWorkspaceFileMock = vi.mocked(ensureWorkspaceFile)
-const readWorkspacePackageJSONMock = vi.mocked(readWorkspacePackageJSON)
-const confirmWorkspaceChangesMock = vi.mocked(confirmWorkspaceChanges)
-
-function createWorkspace(): WorkspaceManager {
-  const appPackage: PackageJsonMeta = {
-    type: 'package.json',
-    name: 'app',
-    private: true,
-    version: '1.0.0',
-    filepath: '/repo/package.json',
-    relative: 'package.json',
-    raw: { name: 'app' },
-    deps: [],
-  }
-
-  return {
-    loadPackages: vi.fn(async () => []),
-    getCatalogIndex: vi.fn(async () => new Map()),
-    getProjectPackages: vi.fn(() => [appPackage]),
-    catalog: {
-      setPackage: vi.fn(async () => {}),
-    },
-  } as unknown as WorkspaceManager
-}
-
 describe('addCommand', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    workspaceInstance = createWorkspace()
-    ensureWorkspaceFileMock.mockResolvedValue(undefined)
-    process.argv = ['node', 'pncat', 'add', 'react@^18.3.1']
-  })
-
   it('throws when no dependencies are provided', async () => {
     process.argv = ['node', 'pncat', 'add']
-    await expect(addCommand(createFixtureOptions('pnpm'))).rejects.toMatchObject({
+
+    await expect(addCommand(createFixtureScenarioOptions(SCENARIO, {
+      install: false,
+    }))).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.INVALID_INPUT,
     })
   })
 
   it('updates package json deps and writes catalog entry', async () => {
-    const pkgJson: PackageJson = {
-      name: 'app',
-      version: '1.0.0',
-      dependencies: {
-        react: '^17.0.0',
-      },
-      devDependencies: {},
-      peerDependencies: {
-        react: '^17.0.0',
-      },
-      optionalDependencies: {
-        react: '^17.0.0',
-      },
-    }
-    readWorkspacePackageJSONMock.mockResolvedValue({
-      pkgPath: '/repo/package.json',
-      pkgName: 'app',
-      pkgJson,
-    })
-
     process.argv = ['node', 'pncat', 'add', 'react@^18.3.1', '-D']
-    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
-    await addCommand(options)
 
-    expect(ensureWorkspaceFileMock).toHaveBeenCalledTimes(1)
-    expect(workspaceInstance.loadPackages).toHaveBeenCalledTimes(2)
-    expect(pkgJson.dependencies?.react).toBeUndefined()
-    expect(pkgJson.peerDependencies?.react).toBe('^17.0.0')
-    expect(pkgJson.optionalDependencies?.react).toBe('^17.0.0')
-    expect(pkgJson.devDependencies?.react).toBe('catalog:dev')
+    await addCommand(createFixtureScenarioOptions(SCENARIO, {
+      yes: true,
+      install: false,
+      verbose: false,
+    }))
 
-    expect(confirmWorkspaceChangesMock).toHaveBeenCalledTimes(1)
-    expect(workspaceInstance.catalog.setPackage).toHaveBeenCalledWith('dev', 'react', '^18.3.1')
+    const pkg = await readJsonFile<Record<string, any>>(PACKAGE_JSON_PATH)
+    expect(pkg.dependencies?.react).toBeUndefined()
+    expect(pkg.peerDependencies?.react).toBe('^17.0.0')
+    expect(pkg.optionalDependencies?.react).toBe('^17.0.0')
+    expect(pkg.devDependencies?.react).toBe('catalog:dev')
+
+    const workspaceYaml = await readFile(WORKSPACE_PATH, 'utf-8')
+    expect(workspaceYaml).toContain('catalogs:')
+    expect(workspaceYaml).toContain('dev:')
+    expect(workspaceYaml).toContain('react: ^18.3.1')
   })
 })

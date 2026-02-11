@@ -1,27 +1,9 @@
 import type { CatalogOptions, PackageJsonMeta } from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { describe, expect, it } from 'vitest'
 import { resolveAdd } from '@/commands/add'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
-import { getLatestVersion } from '@/utils'
 import { createFixtureOptions } from '../_shared'
-
-vi.mock('@clack/prompts', () => ({
-  spinner: vi.fn(() => ({
-    start: vi.fn(),
-    stop: vi.fn(),
-  })),
-}))
-
-vi.mock('../../src/utils', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/utils')>()
-  return {
-    ...actual,
-    getLatestVersion: vi.fn(),
-  }
-})
-
-const getLatestVersionMock = vi.mocked(getLatestVersion)
 
 function createPackage(name: string): PackageJsonMeta {
   return {
@@ -31,9 +13,7 @@ function createPackage(name: string): PackageJsonMeta {
     version: '0.0.0',
     filepath: `/repo/packages/${name}/package.json`,
     relative: `packages/${name}/package.json`,
-    raw: {
-      name,
-    },
+    raw: { name },
     deps: [],
   }
 }
@@ -50,18 +30,12 @@ function createWorkspace(
 }
 
 describe('resolveAdd', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-    getLatestVersionMock.mockResolvedValue('1.2.3')
-  })
-
   it('throws when no dependency names are provided', async () => {
     const workspace = createWorkspace([createPackage('app')], new Map())
-    const options = createFixtureOptions('pnpm')
 
     await expect(resolveAdd({
       args: [],
-      options,
+      options: createFixtureOptions('pnpm'),
       workspace,
     })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
   })
@@ -70,11 +44,10 @@ describe('resolveAdd', () => {
     const workspace = createWorkspace([createPackage('app')], new Map([
       ['react', [{ catalogName: 'prod', specifier: '^18.3.1' }]],
     ]))
-    const options = createFixtureOptions('pnpm')
 
     const result = await resolveAdd({
       args: ['react'],
-      options,
+      options: createFixtureOptions('pnpm'),
       workspace,
     })
 
@@ -89,7 +62,6 @@ describe('resolveAdd', () => {
         isCatalog: false,
       },
     ])
-    expect(getLatestVersionMock).not.toHaveBeenCalled()
   })
 
   it('assigns workspace protocol for local packages without explicit specifier', async () => {
@@ -97,11 +69,10 @@ describe('resolveAdd', () => {
       createPackage('app'),
       createPackage('shared'),
     ], new Map())
-    const options = createFixtureOptions('pnpm')
 
     const result = await resolveAdd({
       args: ['shared'],
-      options,
+      options: createFixtureOptions('pnpm'),
       workspace,
     })
 
@@ -111,21 +82,20 @@ describe('resolveAdd', () => {
     })
   })
 
-  it('resolves latest npm version when dependency is missing from workspace catalogs', async () => {
+  it('uses provided specifier and catalog option without resolving from npm', async () => {
     const workspace = createWorkspace([createPackage('app')], new Map())
     const options = createFixtureOptions('pnpm', { catalog: 'prod' })
 
     const result = await resolveAdd({
-      args: ['vitest'],
+      args: ['vitest@^4.0.0'],
       options,
       workspace,
     })
 
-    expect(getLatestVersionMock).toHaveBeenCalledWith('vitest')
     expect(result.dependencies).toEqual([
       {
         name: 'vitest',
-        specifier: '^1.2.3',
+        specifier: '^4.0.0',
         source: 'dependencies',
         parents: [],
         catalogable: true,
@@ -140,7 +110,7 @@ describe('resolveAdd', () => {
     const options: CatalogOptions = createFixtureOptions('pnpm')
 
     const result = await resolveAdd({
-      args: ['vitest', '-D', '-E'],
+      args: ['vitest@1.2.3', '-D', '-E'],
       options,
       workspace,
     })

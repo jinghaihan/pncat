@@ -8,6 +8,10 @@ export default defineConfig({
     },
   },
   test: {
+    forceRerunTriggers: [
+      'package.json',
+      '**/{vitest,vite}.config.*',
+    ],
     coverage: {
       include: ['./src'],
       exclude: [

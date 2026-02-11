@@ -3,7 +3,7 @@ import { writeFile } from 'node:fs/promises'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { YamlCatalog } from '@/catalog-handler/base'
-import { createFixtureOptions, getFixturePath } from '../../_shared'
+import { createFixtureOptions, createFixtureScenarioOptions, getFixturePath } from '../../_shared'
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>()
@@ -53,8 +53,8 @@ describe('loadWorkspace', () => {
 
   it('returns empty entries when yaml has no catalog fields', async () => {
     const packages = await YamlCatalog.loadWorkspace(
-      'pnpm-workspace.empty.yaml',
-      createFixtureOptions(),
+      'pnpm-workspace.yaml',
+      createFixtureScenarioOptions('pnpm-empty-workspace'),
       () => true,
     )
 

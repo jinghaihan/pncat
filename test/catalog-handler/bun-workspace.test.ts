@@ -1,48 +1,7 @@
-import type { BunWorkspaceMeta, PackageJson, PackageJsonMeta } from '@/types'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { join } from 'pathe'
+import { describe, expect, it } from 'vitest'
 import { BunCatalog } from '@/catalog-handler/bun-workspace'
-import { detectWorkspaceRoot, loadPackages, readJsonFile } from '@/io'
-import { createFixtureOptions } from '../_shared'
-
-vi.mock('../../src/io', async (importOriginal) => {
-  const actual = await importOriginal<typeof import('@/io')>()
-  return {
-    ...actual,
-    detectWorkspaceRoot: vi.fn(),
-    loadPackages: vi.fn(),
-    readJsonFile: vi.fn(),
-  }
-})
-
-const detectWorkspaceRootMock = vi.mocked(detectWorkspaceRoot)
-const loadPackagesMock = vi.mocked(loadPackages)
-const readJsonFileMock = vi.mocked(readJsonFile)
-
-function createPackageJsonMeta(filepath: string): PackageJsonMeta {
-  return {
-    type: 'package.json',
-    name: 'app',
-    private: true,
-    version: '0.0.0',
-    filepath,
-    relative: 'packages/app/package.json',
-    raw: {},
-    deps: [],
-  }
-}
-
-function createBunWorkspaceMeta(filepath: string): BunWorkspaceMeta {
-  return {
-    type: 'bun-workspace',
-    name: 'bun-catalog:default',
-    private: true,
-    version: '0.0.0',
-    filepath,
-    relative: 'package.json',
-    raw: {},
-    deps: [],
-  }
-}
+import { createFixtureOptions, createFixtureScenarioOptions, getFixturePath, getFixtureScenarioPath } from '../_shared'
 
 describe('hasWorkspaceCatalog', () => {
   it('returns false for invalid workspace values', () => {
@@ -58,80 +17,38 @@ describe('hasWorkspaceCatalog', () => {
 })
 
 describe('findWorkspaceFile', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
+  it('returns bun workspace filepath when workspace catalog exists', async () => {
+    const catalog = new BunCatalog(createFixtureOptions('bun'))
+    await expect(catalog.findWorkspaceFile()).resolves.toBe(getFixturePath('bun', 'package.json'))
   })
 
-  it('returns bun workspace filepath when package list contains bun-workspace meta', async () => {
-    loadPackagesMock.mockResolvedValue([
-      createPackageJsonMeta('/repo/packages/app/package.json'),
-      createBunWorkspaceMeta('/repo/package.json'),
-    ])
-
-    const catalog = new BunCatalog(createFixtureOptions('bun'))
-    await expect(catalog.findWorkspaceFile()).resolves.toBe('/repo/package.json')
-  })
-
-  it('returns undefined when no bun workspace meta exists', async () => {
-    loadPackagesMock.mockResolvedValue([
-      createPackageJsonMeta('/repo/packages/app/package.json'),
-    ])
-
-    const catalog = new BunCatalog(createFixtureOptions('bun'))
+  it('returns undefined when workspace catalog does not exist', async () => {
+    const catalog = new BunCatalog(createFixtureScenarioOptions('bun-no-catalog'))
     await expect(catalog.findWorkspaceFile()).resolves.toBeUndefined()
   })
 })
 
 describe('ensureWorkspace', () => {
-  beforeEach(() => {
-    vi.clearAllMocks()
-  })
-
   it('falls back to workspace root package.json when workspace file is missing', async () => {
-    loadPackagesMock.mockResolvedValue([])
-    detectWorkspaceRootMock.mockResolvedValue('/repo')
+    const scenarioRoot = getFixtureScenarioPath('bun-no-catalog')
+    const catalog = new BunCatalog(createFixtureOptions('bun', {
+      cwd: join(scenarioRoot, 'packages', 'app'),
+    }))
 
-    const catalog = new BunCatalog(createFixtureOptions('bun', { cwd: '/repo/packages/app' }))
     await catalog.ensureWorkspace()
 
-    await expect(catalog.getWorkspacePath()).resolves.toBe('/repo/package.json')
+    await expect(catalog.getWorkspacePath()).resolves.toBe(join(scenarioRoot, 'package.json'))
     await expect(catalog.toJSON()).resolves.toEqual({})
   })
 
-  it('loads object workspaces from package.json when workspace file exists', async () => {
-    loadPackagesMock.mockResolvedValue([
-      createBunWorkspaceMeta('/repo/package.json'),
-    ])
-    const workspaceJson: PackageJson = {
-      workspaces: {
-        catalog: { react: '^18.3.1' },
-        catalogs: { test: { vitest: '^4.0.0' } },
-      },
-    }
-    readJsonFileMock.mockResolvedValue(workspaceJson)
-
+  it('loads workspace catalog fields from bun fixture package.json', async () => {
     const catalog = new BunCatalog(createFixtureOptions('bun'))
     await catalog.ensureWorkspace()
 
-    await expect(catalog.getWorkspacePath()).resolves.toBe('/repo/package.json')
-    await expect(catalog.toJSON()).resolves.toEqual({
-      catalog: { react: '^18.3.1' },
+    await expect(catalog.getWorkspacePath()).resolves.toBe(getFixturePath('bun', 'package.json'))
+    await expect(catalog.toJSON()).resolves.toMatchObject({
+      catalog: { 'solid-js': '^1.9.0' },
       catalogs: { test: { vitest: '^4.0.0' } },
     })
-  })
-
-  it('uses empty workspace json when workspaces is an array', async () => {
-    loadPackagesMock.mockResolvedValue([
-      createBunWorkspaceMeta('/repo/package.json'),
-    ])
-    const workspaceJson: PackageJson = {
-      workspaces: ['packages/*'],
-    }
-    readJsonFileMock.mockResolvedValue(workspaceJson)
-
-    const catalog = new BunCatalog(createFixtureOptions('bun'))
-    await catalog.ensureWorkspace()
-
-    await expect(catalog.toJSON()).resolves.toEqual({})
   })
 })

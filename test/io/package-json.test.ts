@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { loadPackageJSON } from '@/io'
-import { createFixtureOptions, getFixturePath } from '../_shared'
+import { createFixtureOptions, createFixtureScenarioOptions, getFixturePath } from '../_shared'
 
 describe('loadPackageJSON', () => {
   it('uses package name and version from package.json when valid', async () => {
@@ -17,7 +17,7 @@ describe('loadPackageJSON', () => {
   it('falls back to relative path name when package name is missing', async () => {
     const packages = await loadPackageJSON(
       'package.json',
-      createFixtureOptions('pnpm', { cwd: getFixturePath('unnamed-package') }),
+      createFixtureScenarioOptions('unnamed-package'),
       () => true,
     )
 
