@@ -35,16 +35,20 @@ export function specFilter(specifier: string, options?: SpecifierOptions): boole
   if (!specifier.trim())
     return false
 
-  const normalizedSpecifier = normalizeSpecifier(specifier)
-  if (normalizedSpecifier.startsWith('catalog:'))
-    return true
-
   const {
     skipComplexRanges = true,
     skipRangeTypes = [],
     allowPreReleases = true,
     allowWildcards = false,
+    allowNpmAliases = true,
   } = options ?? {}
+
+  if (!allowNpmAliases && NPM_ALIAS_RE.test(specifier))
+    return false
+
+  const normalizedSpecifier = normalizeSpecifier(specifier)
+  if (normalizedSpecifier.startsWith('catalog:'))
+    return true
 
   const checks: Record<SpecifierRangeType, (input: string) => boolean> = {
     '||': input => input.includes('||'),

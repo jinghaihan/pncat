@@ -20,6 +20,7 @@ export interface SpecifierOptions {
   skipComplexRanges?: boolean
   allowPreReleases?: boolean
   allowWildcards?: boolean
+  allowNpmAliases?: boolean
   skipRangeTypes?: SpecifierRangeType[]
 }
 

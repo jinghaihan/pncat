@@ -19,6 +19,7 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
     skipComplexRanges: true,
     allowPreReleases: true,
     allowWildcards: false,
+    allowNpmAliases: true,
   },
   yes: false,
   saveExact: false,
