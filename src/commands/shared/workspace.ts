@@ -85,7 +85,7 @@ export async function confirmWorkspaceChanges(
     await writePackageJSONs(updatedPackages)
 
   if (!hasWorkspaceChanges)
-    p.log.info(c.green(`no changes to ${filename}, applying package.json updates`))
+    p.log.info(`no changes to ${c.yellow(filename)}, applying ${c.yellow('package.json')} updates`)
 
   if (hasWorkspaceChanges && diff) {
     p.log.info(`writing ${filename}`)

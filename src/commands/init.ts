@@ -101,7 +101,7 @@ async function promptEslintFix(options: CatalogOptions, workspace: WorkspaceMana
     return true
 
   const enabled = await p.confirm({
-    message: 'do you want to run eslint --fix after command complete?',
+    message: `do you want to run ${c.yellow('eslint --fix')} after command complete?`,
     initialValue: true,
   })
 

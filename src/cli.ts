@@ -51,6 +51,7 @@ async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): 
     options.mode = mode
   }
 
+  console.log()
   p.intro(`${c.yellow`${NAME} `}${c.dim`v${VERSION}`}`)
   const config = await resolveConfig(options)
 
