@@ -40,9 +40,9 @@ function createWorkspace(
 ): WorkspaceManager {
   return {
     loadPackages: async () => packages,
-    getProjectPackages: () => packages,
+    listProjectPackages: () => packages,
     getCatalogIndex: async () => catalogIndex,
-    setDependencySpecifier: (
+    setDepSpecifier: (
       updatedPackages: Map<string, PackageJsonMeta>,
       pkg: PackageJsonMeta,
       dep: RawDep,
@@ -62,7 +62,7 @@ function createWorkspace(
       updated.raw[dep.source] ??= {}
       ;(updated.raw[dep.source] as Record<string, string>)[dep.name] = specifier
     },
-    resolveCatalogDependency: (
+    resolveCatalogDep: (
       dep: RawDep,
       index: Map<string, { catalogName: string, specifier: string }[]>,
     ) => {

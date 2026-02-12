@@ -38,13 +38,6 @@ cli
 cli.help()
 cli.version(VERSION)
 
-try {
-  cli.parse()
-}
-catch (error) {
-  handleCliError(error)
-}
-
 async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): Promise<void> {
   if (mode) {
     Object.entries(MODE_ALIASES).forEach(([key, value]: [string, string[]]) => {
@@ -89,4 +82,11 @@ async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): 
 function handleCliError(error: unknown): never {
   reportCommandError(error)
   process.exit(1)
+}
+
+try {
+  cli.parse()
+}
+catch (error) {
+  handleCliError(error)
 }

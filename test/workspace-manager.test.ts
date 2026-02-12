@@ -43,21 +43,21 @@ describe('loadPackages', () => {
   })
 })
 
-describe('getProjectPackages', () => {
+describe('listProjectPackages', () => {
   it('returns only package.json packages', async () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
     await manager.loadPackages()
 
-    expect(manager.getProjectPackages().every(pkg => pkg.type === 'package.json')).toBe(true)
+    expect(manager.listProjectPackages().every(pkg => pkg.type === 'package.json')).toBe(true)
   })
 })
 
-describe('getWorkspacePackages', () => {
+describe('listWorkspacePackages', () => {
   it('returns only workspace packages', async () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
     await manager.loadPackages()
 
-    const workspacePackages = manager.getWorkspacePackages()
+    const workspacePackages = manager.listWorkspacePackages()
     expect(workspacePackages.length).toBeGreaterThan(0)
     expect(workspacePackages.every(pkg => pkg.name.includes('catalog') || pkg.name.includes('workspace'))).toBe(true)
   })
@@ -99,10 +99,10 @@ describe('getCatalogIndex', () => {
   })
 })
 
-describe('resolveCatalogDependency', () => {
+describe('resolveCatalogDep', () => {
   it('resolves catalog specifier from catalog index', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
-    const resolved = manager.resolveCatalogDependency(
+    const resolved = manager.resolveCatalogDep(
       {
         name: 'react',
         specifier: 'catalog:prod',
@@ -125,7 +125,7 @@ describe('resolveCatalogDependency', () => {
 
   it('keeps original catalog name when force is enabled', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
-    const resolved = manager.resolveCatalogDependency(
+    const resolved = manager.resolveCatalogDep(
       {
         name: 'react',
         specifier: 'catalog:prod',
@@ -147,7 +147,7 @@ describe('resolveCatalogDependency', () => {
   it('throws when catalog specifier cannot be resolved from index', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
 
-    expect(() => manager.resolveCatalogDependency(
+    expect(() => manager.resolveCatalogDep(
       {
         name: 'react',
         specifier: 'catalog:prod',
@@ -164,7 +164,7 @@ describe('resolveCatalogDependency', () => {
 
   it('reuses indexed entry for non-catalog specifier when force is disabled', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
-    const resolved = manager.resolveCatalogDependency(
+    const resolved = manager.resolveCatalogDep(
       {
         name: 'react',
         specifier: '^18.3.1',
@@ -186,7 +186,7 @@ describe('resolveCatalogDependency', () => {
   })
 })
 
-describe('isCatalogDependencyReferenced', () => {
+describe('isCatalogDepReferenced', () => {
   it('returns true when pnpm overrides references expected catalog specifier', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
     const pkg = createPackageJsonMeta('app', [
@@ -203,7 +203,7 @@ describe('isCatalogDependencyReferenced', () => {
       },
     })
 
-    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(true)
+    expect(manager.isCatalogDepReferenced('react', 'prod', [pkg])).toBe(true)
   })
 
   it('returns false when dependency is not a catalog specifier', () => {
@@ -220,7 +220,7 @@ describe('isCatalogDependencyReferenced', () => {
       },
     })
 
-    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+    expect(manager.isCatalogDepReferenced('react', 'prod', [pkg])).toBe(false)
   })
 
   it('returns true when package dependency references the target catalog', () => {
@@ -237,7 +237,7 @@ describe('isCatalogDependencyReferenced', () => {
       },
     })
 
-    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(true)
+    expect(manager.isCatalogDepReferenced('react', 'prod', [pkg])).toBe(true)
   })
 
   it('continues scanning when pnpm overrides entry points to a different catalog', () => {
@@ -257,7 +257,7 @@ describe('isCatalogDependencyReferenced', () => {
       },
     })
 
-    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+    expect(manager.isCatalogDepReferenced('react', 'prod', [pkg])).toBe(false)
   })
 
   it('ignores dependencies with different names while scanning package references', () => {
@@ -274,11 +274,11 @@ describe('isCatalogDependencyReferenced', () => {
       },
     })
 
-    expect(manager.isCatalogDependencyReferenced('react', 'prod', [pkg])).toBe(false)
+    expect(manager.isCatalogDepReferenced('react', 'prod', [pkg])).toBe(false)
   })
 })
 
-describe('setDependencySpecifier', () => {
+describe('setDepSpecifier', () => {
   it('writes specifier into pnpm overrides source', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
     const pkg = createPackageJsonMeta('app', [
@@ -290,7 +290,7 @@ describe('setDependencySpecifier', () => {
     ], {})
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    manager.setDependencySpecifier(
+    manager.setDepSpecifier(
       updatedPackages,
       pkg,
       pkg.deps[0],
@@ -312,7 +312,7 @@ describe('setDependencySpecifier', () => {
     ], {})
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    manager.setDependencySpecifier(
+    manager.setDepSpecifier(
       updatedPackages,
       pkg,
       pkg.deps[0],
@@ -326,7 +326,7 @@ describe('setDependencySpecifier', () => {
   })
 })
 
-describe('removeCatalogDependencyFromPackages', () => {
+describe('removeCatalogDepFromPackages', () => {
   it('removes dependency from pnpm overrides source', () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
     const pkg = createPackageJsonMeta('app', [
@@ -344,7 +344,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     })
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',
@@ -370,7 +370,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     })
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',
@@ -396,7 +396,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     })
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',
@@ -418,7 +418,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     ], {})
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',
@@ -451,7 +451,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     })
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',
@@ -478,7 +478,7 @@ describe('removeCatalogDependencyFromPackages', () => {
     })
 
     const updatedPackages = new Map<string, PackageJsonMeta>()
-    const removed = manager.removeCatalogDependencyFromPackages(
+    const removed = manager.removeCatalogDepFromPackages(
       updatedPackages,
       [pkg],
       'react',

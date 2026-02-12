@@ -67,7 +67,7 @@ function createWorkspace(
   return {
     loadPackages: async () => packages,
     getCatalogIndex: async () => index,
-    setDependencySpecifier: (
+    setDepSpecifier: (
       updatedPackages: Map<string, PackageJsonMeta>,
       pkg: PackageJsonMeta,
       dep: RawDep,
@@ -87,7 +87,7 @@ function createWorkspace(
       updated.raw[dep.source] ??= {}
       ;(updated.raw[dep.source] as Record<string, string>)[dep.name] = specifier
     },
-    resolveCatalogDependency: (
+    resolveCatalogDep: (
       dep: RawDep,
       catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
       force: boolean,

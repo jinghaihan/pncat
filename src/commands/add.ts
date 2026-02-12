@@ -106,7 +106,7 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
     .map(dep => parseSpec(dep))
 
   const catalogIndex = await workspace.getCatalogIndex()
-  const workspacePackageNames = workspace.getProjectPackages().map(pkg => pkg.name)
+  const workspacePackageNames = workspace.listProjectPackages().map(pkg => pkg.name)
   const source = getDepSource(isDev, isOptional, isPeer)
 
   for (const dep of parsedDeps) {

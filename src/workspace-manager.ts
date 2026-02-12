@@ -51,24 +51,16 @@ export class WorkspaceManager {
     return this.packages
   }
 
-  getProjectPackages(): PackageJsonMeta[] {
+  listProjectPackages(): PackageJsonMeta[] {
     return this.packages.filter(pkg => pkg.type === 'package.json')
   }
 
-  getWorkspacePackages(): WorkspacePackageMeta[] {
+  listWorkspacePackages(): WorkspacePackageMeta[] {
     return this.packages.filter(pkg => pkg.type !== 'package.json')
   }
 
   getDepNames(): string[] {
     return Array.from(this.depNames)
-  }
-
-  hasEslint(): boolean {
-    return hasEslint(this.packages)
-  }
-
-  hasVSCodeEngine(): boolean {
-    return hasVSCodeEngine(this.packages)
   }
 
   async loadPackages(): Promise<PackageMeta[]> {
@@ -92,7 +84,7 @@ export class WorkspaceManager {
     return createDepCatalogIndex(await this.catalog.toJSON())
   }
 
-  resolveCatalogDependency(
+  resolveCatalogDep(
     dep: RawDep,
     catalogIndex: CatalogIndex,
     force: boolean = !!this.options.force,
@@ -126,17 +118,10 @@ export class WorkspaceManager {
     }
   }
 
-  reset(): void {
-    this.loaded = false
-    this.loadTask = null
-    this.packages = []
-    this.depNames.clear()
-  }
-
-  isCatalogDependencyReferenced(
+  isCatalogDepReferenced(
     depName: string,
     catalogName: string,
-    packages: PackageJsonMeta[] = this.getProjectPackages(),
+    packages: PackageJsonMeta[] = this.listProjectPackages(),
   ): boolean {
     const expectedSpecifier = toCatalogSpecifier(catalogName)
 
@@ -162,13 +147,13 @@ export class WorkspaceManager {
     return false
   }
 
-  setDependencySpecifier(
+  setDepSpecifier(
     updatedPackages: Map<string, PackageJsonMeta>,
     pkg: PackageJsonMeta,
     dep: RawDep,
     specifier: string,
   ): void {
-    const updatedPackage = this.getOrCreateUpdatedPackage(updatedPackages, pkg)
+    const updatedPackage = this.ensureUpdatedPackage(updatedPackages, pkg)
 
     if (dep.source === 'pnpm.overrides') {
       ensurePnpmOverrides(updatedPackage.raw)[dep.name] = specifier
@@ -181,7 +166,7 @@ export class WorkspaceManager {
     ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = specifier
   }
 
-  removeCatalogDependencyFromPackages(
+  removeCatalogDepFromPackages(
     updatedPackages: Map<string, PackageJsonMeta>,
     packages: PackageJsonMeta[],
     depName: string,
@@ -198,7 +183,7 @@ export class WorkspaceManager {
         if (parseCatalogSpecifier(dep.specifier) !== catalogName)
           continue
 
-        const updatedPackage = this.getOrCreateUpdatedPackage(updatedPackages, pkg)
+        const updatedPackage = this.ensureUpdatedPackage(updatedPackages, pkg)
         if (dep.source === 'pnpm.overrides') {
           delete ensurePnpmOverrides(updatedPackage.raw)[dep.name]
           removed = true
@@ -219,7 +204,22 @@ export class WorkspaceManager {
     return removed
   }
 
-  private getOrCreateUpdatedPackage(
+  hasEslint(): boolean {
+    return hasEslint(this.packages)
+  }
+
+  hasVSCodeEngine(): boolean {
+    return hasVSCodeEngine(this.packages)
+  }
+
+  reset(): void {
+    this.loaded = false
+    this.loadTask = null
+    this.packages = []
+    this.depNames.clear()
+  }
+
+  private ensureUpdatedPackage(
     updatedPackages: Map<string, PackageJsonMeta>,
     pkg: PackageJsonMeta,
   ): PackageJsonMeta {
@@ -232,7 +232,7 @@ export class WorkspaceManager {
   private buildIndexes(): void {
     this.depNames.clear()
 
-    for (const pkg of this.getProjectPackages()) {
+    for (const pkg of this.listProjectPackages()) {
       for (const dep of pkg.deps)
         this.depNames.add(dep.name)
     }

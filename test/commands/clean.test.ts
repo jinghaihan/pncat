@@ -66,7 +66,7 @@ function createWorkspace(
 ): WorkspaceManager {
   return {
     loadPackages: async () => [...projectPackages, ...workspacePackages],
-    isCatalogDependencyReferenced: (
+    isCatalogDepReferenced: (
       depName: string,
       catalogName: string,
       packages: PackageJsonMeta[] = projectPackages,

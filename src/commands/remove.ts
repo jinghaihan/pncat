@@ -74,8 +74,8 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
   const dependencies: RawDep[] = []
   const noncatalogDeps: string[] = []
 
-  const projectPackages = workspace.getProjectPackages()
-  const workspacePackages = workspace.getWorkspacePackages()
+  const projectPackages = workspace.listProjectPackages()
+  const workspacePackages = workspace.listWorkspacePackages()
   const currentPackagePath = join(workspace.getCwd(), 'package.json')
   const targetPackages = isRecursive
     ? projectPackages
@@ -98,7 +98,7 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
 
     const selectedCatalogs = await selectCatalogs(depName, catalogDeps, options)
     for (const catalogName of selectedCatalogs) {
-      const removed = workspace.removeCatalogDependencyFromPackages(
+      const removed = workspace.removeCatalogDepFromPackages(
         updatedPackages,
         targetPackages,
         depName,
@@ -108,7 +108,7 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
         continue
 
       const remainingPackages = projectPackages.filter(pkg => !targetPackagePaths.has(pkg.filepath))
-      const hasRemainingReference = workspace.isCatalogDependencyReferenced(depName, catalogName, remainingPackages)
+      const hasRemainingReference = workspace.isCatalogDepReferenced(depName, catalogName, remainingPackages)
 
       if (!hasRemainingReference) {
         const removable = catalogDeps.find(dep => dep.catalogName === catalogName)

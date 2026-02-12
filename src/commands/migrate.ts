@@ -54,11 +54,11 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
       if (!dep.catalogable)
         continue
 
-      const resolvedDep = workspace.resolveCatalogDependency(dep, workspaceCatalogIndex, !!options.force)
+      const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
       addDependency(groupedDeps, resolvedDep)
 
       if (resolvedDep.update)
-        workspace.setDependencySpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
+        workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
     }
   }
 

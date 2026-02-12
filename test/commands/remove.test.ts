@@ -76,10 +76,10 @@ function createWorkspace(
 ): WorkspaceManager {
   return {
     loadPackages: async () => [...projectPackages, ...workspacePackages],
-    getProjectPackages: () => projectPackages,
-    getWorkspacePackages: () => workspacePackages,
+    listProjectPackages: () => projectPackages,
+    listWorkspacePackages: () => workspacePackages,
     getCwd: () => '/repo',
-    removeCatalogDependencyFromPackages: (
+    removeCatalogDepFromPackages: (
       updatedPackages: Map<string, PackageJsonMeta>,
       packages: PackageJsonMeta[],
       depName: string,
@@ -111,7 +111,7 @@ function createWorkspace(
 
       return removed
     },
-    isCatalogDependencyReferenced: (
+    isCatalogDepReferenced: (
       depName: string,
       catalogName: string,
       packages: PackageJsonMeta[] = projectPackages,

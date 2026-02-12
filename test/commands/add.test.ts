@@ -35,7 +35,7 @@ function createWorkspace(
 ): WorkspaceManager {
   return {
     loadPackages: async () => packages,
-    getProjectPackages: () => packages,
+    listProjectPackages: () => packages,
     getCatalogIndex: async () => catalogIndex,
   } as unknown as WorkspaceManager
 }

@@ -56,7 +56,7 @@ export async function resolveClean(context: ResolverContext): Promise<ResolverRe
 
   for (const pkg of workspacePackages) {
     for (const dep of pkg.deps) {
-      if (workspace.isCatalogDependencyReferenced(dep.name, dep.catalogName, projectPackages))
+      if (workspace.isCatalogDepReferenced(dep.name, dep.catalogName, projectPackages))
         continue
       dependencies.push(dep)
     }
