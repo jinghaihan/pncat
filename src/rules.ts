@@ -33,7 +33,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'frontend',
-    match: [/(^|[@/.-])(vue|pinia|@vueuse|react|zustand|redux|tailwindcss|unocss)($|[@/.-])/],
+    match: [/(^|[@/.-])(vue|pinia|@vueuse|react|zustand|redux|solid|solidjs|svelte|tailwindcss|unocss)($|[@/.-])/],
     priority: 30,
   },
   {
