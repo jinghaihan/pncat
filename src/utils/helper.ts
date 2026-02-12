@@ -1,8 +1,32 @@
-import type { PackageJsonMeta, PackageMeta, RawDep } from '../types'
-import type { Workspace } from '../workspace-manager'
-import { normalizeCatalogName } from './catalog'
+import type { CatalogOptions, DepType, PackageJsonDepSource, PackageMeta } from '@/types'
+import process from 'node:process'
+import { resolve } from 'pathe'
 
-export function getDepSource(isDev: boolean = false, isOptional: boolean = false, isPeer: boolean = false) {
+export function isObject(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value)
+}
+
+export function cloneDeep<T>(data: T): T {
+  return structuredClone(data)
+}
+
+export function getValueByPath(input: Record<string, unknown>, path: string): unknown {
+  return path.split('.').reduce<unknown>((current, key) => {
+    if (!isObject(current))
+      return undefined
+    return current[key]
+  }, input)
+}
+
+export function getCwd(options?: CatalogOptions): string {
+  return resolve(options?.cwd || process.cwd())
+}
+
+export function getDepSource(
+  isDev: boolean = false,
+  isOptional: boolean = false,
+  isPeer: boolean = false,
+): PackageJsonDepSource {
   return isDev
     ? 'devDependencies'
     : isOptional
@@ -10,49 +34,34 @@ export function getDepSource(isDev: boolean = false, isOptional: boolean = false
       : isPeer ? 'peerDependencies' : 'dependencies'
 }
 
+export function isDepFieldEnabled(options: CatalogOptions, depType: DepType): boolean {
+  return !!options.depFields?.[depType]
+}
+
 export function isPnpmOverridesPackageName(pkgName?: string): boolean {
   return pkgName === 'pnpm-workspace:overrides'
 }
 
-export async function updatePackageToCatalog(dep: RawDep, data: PackageJsonMeta, workspace: Workspace) {
-  if (dep.source === 'pnpm.overrides') {
-    data.raw.pnpm.overrides[dep.name] = normalizeCatalogName(dep.catalogName)
-    return
-  }
-
-  if (dep.source === 'pnpm-workspace') {
-    await workspace.catalog.setPackage(normalizeCatalogName(dep.catalogName), dep.name, dep.specifier)
-    return
-  }
-
-  data.raw[dep.source][dep.name] = normalizeCatalogName(dep.catalogName)
-}
-
-export async function updatePackageToSpecifier(dep: RawDep, data: PackageJsonMeta) {
-  if (dep.source === 'pnpm.overrides') {
-    data.raw.pnpm.overrides[dep.name] = dep.specifier
-    return
-  }
-  data.raw[dep.source][dep.name] = dep.specifier
-}
-
-export function containsESLint(packages: PackageMeta[]): boolean {
+export function hasEslint(packages: PackageMeta[]): boolean {
   for (const pkg of packages) {
-    if (pkg.type === 'package.json') {
-      if (pkg.deps.find(i => i.name === 'eslint'))
-        return true
-    }
+    if (pkg.type !== 'package.json')
+      continue
+
+    if (pkg.deps.some(dep => dep.name === 'eslint'))
+      return true
   }
+
   return false
 }
 
-export function containsVSCodeExtension(packages: PackageMeta[]): boolean {
+export function hasVSCodeEngine(packages: PackageMeta[]): boolean {
   for (const pkg of packages) {
-    if (pkg.type === 'package.json') {
-      const { vscode } = pkg.raw.engines ?? {}
-      if (vscode)
-        return true
-    }
+    if (pkg.type !== 'package.json')
+      continue
+
+    if (pkg.raw.engines?.vscode)
+      return true
   }
+
   return false
 }

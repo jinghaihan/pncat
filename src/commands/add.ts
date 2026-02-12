@@ -1,68 +1,92 @@
 import type {
+  CatalogIndex,
   CatalogOptions,
-  PackageJsonMeta,
   ParsedSpec,
   RawDep,
   ResolverContext,
   ResolverResult,
-} from '../types'
+} from '@/types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { COMMON_DEPS_FIELDS } from '../constants'
-import { normalizeCatalogName } from '../utils/catalog'
-import { getDepSource } from '../utils/helper'
-import { getLatestVersion } from '../utils/npm'
-import { parseCommandOptions } from '../utils/process'
-import { parseSpec } from '../utils/specifier'
-import { confirmWorkspaceChanges, readPackageJSON } from '../utils/workspace'
-import { Workspace } from '../workspace-manager'
+import { relative } from 'pathe'
+import { COMMON_DEPS_FIELDS } from '@/constants'
+import {
+  ensurePackageJsonDeps,
+  getDepSource,
+  getLatestVersion,
+  inferCatalogName,
+  isCatalogSpecifier,
+  parseSpec,
+  toCatalogSpecifier,
+} from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
+import {
+  COMMAND_ERROR_CODES,
+  confirmWorkspaceChanges,
+  createCommandError,
+  ensureWorkspaceFile,
+  parseCommandOptions,
+  readWorkspacePackageJSON,
+} from './shared'
 
-export async function addCommand(options: CatalogOptions) {
+export async function addCommand(options: CatalogOptions): Promise<void> {
   const args = process.argv.slice(3)
-  if (args.length === 0) {
-    p.outro(c.red('no dependencies provided, aborting'))
-    process.exit(1)
-  }
+  if (args.length === 0)
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'no dependencies provided, aborting')
 
-  const { pkgJson, pkgPath } = await readPackageJSON()
-  const workspace = new Workspace(options)
-  await workspace.catalog.ensureWorkspace()
+  const workspace = new WorkspaceManager(options)
+  await ensureWorkspaceFile(workspace)
+  await workspace.loadPackages()
 
-  const { isDev = false, isPeer = false, isOptional = false, dependencies = [] } = await resolveAdd({
+  const workspaceCwd = workspace.getCwd()
+  const targetPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
+  const { pkgPath, pkgName, pkgJson } = await readWorkspacePackageJSON(workspace, targetPackagePath)
+  const {
+    isDev = false,
+    isPeer = false,
+    isOptional = false,
+    dependencies = [],
+  } = await resolveAdd({
     args,
     options,
     workspace,
   })
 
-  const depsSource = getDepSource(isDev, isOptional, isPeer)
-  const deps = pkgJson[depsSource] ||= {}
+  const depSource = getDepSource(isDev, isOptional, isPeer)
+  const deps = ensurePackageJsonDeps(pkgJson, depSource)
+
   for (const dep of dependencies) {
-    COMMON_DEPS_FIELDS.forEach((field) => {
-      // In this case, the package is usually installed as a dev dependency,
-      // but published as a peer or optional dependency.
-      if (depsSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
-        return
+    for (const field of COMMON_DEPS_FIELDS) {
+      if (depSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
+        continue
+
       if (pkgJson[field]?.[dep.name])
         delete pkgJson[field][dep.name]
-    })
-    deps[dep.name] = dep.catalogName ? normalizeCatalogName(dep.catalogName) : dep.specifier || '^0.0.0'
-  }
+    }
 
-  const updatedPackages: Record<string, PackageJsonMeta> = {
-    [pkgJson.name as string]: { filepath: pkgPath, raw: pkgJson } as PackageJsonMeta,
+    deps[dep.name] = dep.catalogName ? toCatalogSpecifier(dep.catalogName) : dep.specifier || '^0.0.0'
   }
 
   await confirmWorkspaceChanges(
     async () => {
-      for (const dep of dependencies) {
-        if (dep.catalogName)
-          await workspace.catalog.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
-      }
+      for (const dep of dependencies)
+        await workspace.catalog.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
     },
     {
       workspace,
-      updatedPackages,
+      updatedPackages: {
+        [pkgPath]: {
+          type: 'package.json',
+          name: pkgName,
+          private: !!pkgJson.private,
+          version: typeof pkgJson.version === 'string' ? pkgJson.version : '',
+          filepath: pkgPath,
+          relative: relative(workspaceCwd, pkgPath) || 'package.json',
+          raw: pkgJson,
+          deps: [],
+        },
+      },
       yes: options.yes,
       verbose: options.verbose,
       bailout: false,
@@ -73,79 +97,104 @@ export async function addCommand(options: CatalogOptions) {
 
 export async function resolveAdd(context: ResolverContext): Promise<ResolverResult> {
   const { args = [], options, workspace } = context
-
   await workspace.loadPackages()
 
   const { deps, isDev, isOptional, isPeer, isExact } = parseCommandOptions(args, options)
-  if (!deps.length) {
-    p.outro(c.red('no dependencies provided, aborting'))
-    process.exit(1)
+  if (deps.length === 0)
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'no dependencies provided, aborting')
+
+  const parsedDeps = deps
+    .map(dep => dep.trim())
+    .filter(Boolean)
+    .map(dep => parseSpec(dep))
+
+  const catalogIndex = await workspace.getCatalogIndex()
+  const workspacePackageNames = workspace.listProjectPackages().map(pkg => pkg.name)
+  const source = getDepSource(isDev, isOptional, isPeer)
+
+  for (const dep of parsedDeps) {
+    await resolveDependencySpec(dep, {
+      options,
+      source,
+      isExact,
+      workspacePackageNames,
+      catalogIndex,
+    })
   }
 
-  const parsed: ParsedSpec[] = deps.map(x => x.trim()).filter(Boolean).map(parseSpec)
-  const workspaceJson = await workspace.catalog.toJSON()
-  const workspacePackages: string[] = workspace.getWorkspacePackages()
+  return {
+    isDev,
+    isPeer,
+    isOptional,
+    dependencies: parsedDeps.map(dep => toRawDependency(dep, source, options)),
+  }
+}
 
-  const createDep = (dep: ParsedSpec): RawDep => {
-    return {
-      name: dep.name,
-      specifier: dep.specifier,
-      source: getDepSource(isDev, isOptional, isPeer),
-      catalog: false,
-      catalogable: true,
-      catalogName: dep.catalogName,
-    } as RawDep
+async function resolveDependencySpec(
+  dep: ParsedSpec,
+  context: {
+    options: CatalogOptions
+    source: ReturnType<typeof getDepSource>
+    isExact: boolean
+    workspacePackageNames: string[]
+    catalogIndex: CatalogIndex
+  },
+): Promise<void> {
+  const { options, source, isExact, workspacePackageNames, catalogIndex } = context
+
+  if (!dep.specifier && workspacePackageNames.includes(dep.name)) {
+    dep.specifier = 'workspace:*'
+    dep.specifierSource = 'workspace'
   }
 
-  for (const dep of parsed) {
-    // If the dependency is a workspace package, set the specifier to workspace:*
-    if (!dep.specifier && workspacePackages.includes(dep.name)) {
-      dep.specifier = 'workspace:*'
-      dep.specifierSource ||= 'workspace'
-      continue
+  if (options.catalog)
+    dep.catalogName ||= options.catalog
+
+  if (dep.specifier)
+    dep.specifierSource ||= 'user'
+
+  if (!dep.specifier) {
+    const catalogs = catalogIndex.get(dep.name) || []
+    if (catalogs[0]) {
+      dep.catalogName = dep.catalogName || catalogs[0].catalogName
+      dep.specifier = catalogs.find(item => item.catalogName === dep.catalogName)?.specifier || catalogs[0].specifier
+      dep.specifierSource = 'catalog'
     }
-
-    if (options.catalog)
-      dep.catalogName ||= options.catalog
-
-    if (dep.specifier)
-      dep.specifierSource ||= 'user'
-
-    if (!dep.specifier) {
-      const catalogs = await workspace.catalog.getPackageCatalogs(dep.name)
-      if (catalogs[0]) {
-        dep.catalogName = catalogs[0]
-        dep.specifierSource ||= 'catalog'
-      }
-    }
-
-    if (dep.catalogName && !dep.specifier) {
-      const spec = dep.catalogName === 'default'
-        ? workspaceJson?.catalog?.[dep.name]
-        : workspaceJson?.catalogs?.[dep.catalogName]?.[dep.name]
-      if (spec)
-        dep.specifier = spec
-    }
-
-    if (!dep.specifier) {
-      const spinner = p.spinner({ indicator: 'dots' })
-      spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
-      const version = await getLatestVersion(dep.name)
-      if (version) {
-        dep.specifier = isExact ? version : `^${version}`
-        dep.specifierSource ||= 'npm'
-        spinner.stop(`${c.dim('resolved')} ${c.cyan(dep.name)}${c.dim(`@${c.green(dep.specifier)}`)}`)
-      }
-      else {
-        spinner.stop(`failed to resolve ${c.cyan(dep.name)} from npm`)
-        p.outro(c.red('aborting'))
-        process.exit(1)
-      }
-    }
-
-    if (!dep.catalogName)
-      dep.catalogName = options.catalog || workspace.inferCatalogName(createDep(dep))
   }
 
-  return { isDev, isPeer, isOptional, dependencies: parsed.map(i => createDep(i)) }
+  if (!dep.specifier) {
+    const spinner = p.spinner({ indicator: 'dots' })
+    spinner.start(`resolving ${c.cyan(dep.name)} from npm...`)
+
+    const version = await getLatestVersion(dep.name)
+    if (!version) {
+      spinner.stop(`failed to resolve ${c.cyan(dep.name)} from npm`)
+      throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'aborting')
+    }
+
+    dep.specifier = isExact ? version : `^${version}`
+    dep.specifierSource = 'npm'
+    spinner.stop(`${c.dim('resolved')} ${c.cyan(dep.name)}${c.dim(`@${c.green(dep.specifier)}`)}`)
+  }
+
+  if (!dep.catalogName)
+    dep.catalogName = inferCatalogName(toRawDependency(dep, source, options), options)
+}
+
+function toRawDependency(
+  dep: ParsedSpec,
+  source: ReturnType<typeof getDepSource>,
+  options: CatalogOptions,
+): RawDep {
+  const specifier = dep.specifier || '^0.0.0'
+
+  return {
+    name: dep.name,
+    specifier,
+    source,
+    parents: [],
+    catalogable: true,
+    catalogName: dep.catalogName || options.catalog || 'default',
+    isCatalog: isCatalogSpecifier(specifier),
+  }
 }

@@ -1,29 +1,20 @@
-import type { CatalogOptions, ParsedSpec, SpecifierRule } from '../types'
+import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
 import { clean, coerce, gt, minVersion, subset, valid } from 'semver'
 
 export function parseSpec(spec: string): ParsedSpec {
-  let name: string | undefined
-  let specifier: string | undefined
-  const parts = spec.split(/@/g)
-  if (parts[0] === '') { // @scope/name
-    name = parts.slice(0, 2).join('@')
-    specifier = parts[2]
-  }
-  else {
-    name = parts[0]
-    specifier = parts[1]
-  }
+  const { name, specifier } = splitPackageSpec(spec.trim())
+
   return { name, specifier }
 }
 
 export function cleanSpec(spec: string, options?: CatalogOptions): string | null {
-  if (options?.allowedProtocols?.some(p => spec.startsWith(p)))
+  if (options?.allowedProtocols?.some(protocol => spec.startsWith(protocol)))
     return null
 
-  const cleanSpec = clean(spec)
-  const version = valid(cleanSpec)
-  if (version)
-    return version
+  const normalized = clean(spec)
+  const validVersion = valid(normalized)
+  if (validVersion)
+    return validVersion
 
   const coerced = coerce(spec)
   if (coerced)
@@ -32,36 +23,48 @@ export function cleanSpec(spec: string, options?: CatalogOptions): string | null
   return null
 }
 
-export function sortSpecs(specs: string[], options?: CatalogOptions) {
-  return specs.sort((a, b) => {
-    const ver1 = cleanSpec(a, options)
-    const ver2 = cleanSpec(b, options)
-    if (ver1 && ver2)
-      return gt(ver1, ver2) ? -1 : 1
-    return 0
+export function mostSpecificRule(rules: SpecifierRule[]): SpecifierRule {
+  if (rules.length === 0)
+    throw new Error('Requires at least one rule')
+
+  return rules.reduce((best, current) => {
+    if (subset(current.specifier, best.specifier))
+      return current
+
+    if (subset(best.specifier, current.specifier))
+      return best
+
+    const currentMin = minVersion(current.specifier)
+    const bestMin = minVersion(best.specifier)
+
+    if (currentMin && bestMin)
+      return gt(bestMin, currentMin) ? best : current
+
+    return best
   })
 }
 
-export function mostSpecificRule(matchingRules: SpecifierRule[]): SpecifierRule {
-  if (!matchingRules.length)
-    return matchingRules[0]
-
-  return matchingRules.reduce((mostSpecific, current) => {
-    if (subset(current.specifier, mostSpecific.specifier))
-      return current
-
-    if (subset(mostSpecific.specifier, current.specifier))
-      return mostSpecific
-
-    const minVer1 = minVersion(mostSpecific.specifier)
-    const minVer2 = minVersion(current.specifier)
-
-    if (minVer1 && minVer2) {
-      if (gt(minVer1, minVer2))
-        return mostSpecific
-      return current
+function splitPackageSpec(spec: string): { name: string, specifier?: string } {
+  if (!spec.startsWith('@')) {
+    const atIndex = spec.indexOf('@')
+    if (atIndex === -1)
+      return { name: spec }
+    return {
+      name: spec.slice(0, atIndex),
+      specifier: spec.slice(atIndex + 1),
     }
+  }
 
-    return mostSpecific
-  })
+  const slashIndex = spec.indexOf('/')
+  if (slashIndex === -1)
+    return { name: spec }
+
+  const atIndex = spec.indexOf('@', slashIndex + 1)
+  if (atIndex === -1)
+    return { name: spec }
+
+  return {
+    name: spec.slice(0, atIndex),
+    specifier: spec.slice(atIndex + 1),
+  }
 }

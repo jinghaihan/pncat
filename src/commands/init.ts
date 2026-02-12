@@ -1,218 +1,256 @@
-import type { PromptGroup } from '@clack/prompts'
-import type { Agent, CatalogOptions, CatalogRule, SpecifierRule } from '../types'
+import type { CatalogOptions, CatalogRule, PackageManager, SpecifierRule } from '@/types'
 import { existsSync } from 'node:fs'
 import { writeFile } from 'node:fs/promises'
-import process from 'node:process'
 import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
-import { DEFAULT_CATALOG_RULES } from '../rules'
-import { isDepMatched } from '../utils/catalog'
-import { containsESLint, containsVSCodeExtension } from '../utils/helper'
-import { Workspace } from '../workspace-manager'
+import { DEFAULT_CATALOG_RULES } from '@/rules'
+import { isDepMatched } from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
 
-interface PromptResults {
-  mode?: string | symbol
-  eslint?: boolean | symbol
-}
+const INIT_CONFIG_FILENAME = 'pncat.config.ts'
+type InitMode = 'extend' | 'minimal'
 
-const ESLINT_FIX_PATTERNS: Record<Agent, string> = {
+const ESLINT_FIX_PATTERNS: Record<PackageManager, string> = {
   pnpm: '"**/package.json" "**/pnpm-workspace.yaml"',
   yarn: '"**/package.json" "**/.yarnrc.yml"',
   bun: '"**/package.json"',
   vlt: '"**/package.json" "**/vlt.json"',
 }
 
-function generateConfigContent(lines: string[]): string {
-  return lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
+export async function initCommand(options: CatalogOptions): Promise<void> {
+  const workspace = new WorkspaceManager(options)
+  const cwd = workspace.getCwd()
+  const filepath = join(cwd, INIT_CONFIG_FILENAME)
+
+  if (existsSync(filepath)) {
+    const confirmed = await p.confirm({
+      message: `${c.yellow(INIT_CONFIG_FILENAME)} already exists, do you want to overwrite it?`,
+      initialValue: false,
+    })
+
+    if (p.isCancel(confirmed) || !confirmed) {
+      p.outro(c.red('aborting'))
+      return
+    }
+  }
+
+  await workspace.loadPackages()
+
+  const mode = await promptInitMode(options)
+  if (!mode)
+    return
+
+  const eslint = await promptEslintFix(options, workspace)
+  if (eslint === null)
+    return
+
+  const content = mode === 'extend'
+    ? generateExtendConfig(options, workspace, eslint)
+    : await generateMinimalConfig(options, workspace, eslint)
+
+  if (!content)
+    return
+
+  await writeFile(filepath, content, 'utf-8')
+
+  p.log.info(c.green('init complete'))
+  p.outro(`now you can update the dependencies by run ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''}\n`)
 }
 
-async function generateConfigLines(lines: string[], workspace: Workspace, results: PromptResults): Promise<string[]> {
-  const { eslint = false } = results
-  const options = workspace.getOptions()
-  const agent = options.agent || 'pnpm'
+async function promptInitMode(options: CatalogOptions): Promise<InitMode | null> {
+  if (options.yes)
+    return 'extend'
 
-  const packages = await workspace.loadPackages()
+  const mode = await p.select({
+    message: 'select configuration mode',
+    options: [
+      {
+        label: 'extend',
+        value: 'extend',
+        hint: 'extend default rules with workspace-specific rules',
+      },
+      {
+        label: 'minimal',
+        value: 'minimal',
+        hint: 'only include rules matching current workspace dependencies',
+      },
+    ],
+    initialValue: 'extend',
+  })
 
-  const start = lines.findIndex(line => line === `export default defineConfig({`)
-  const end = lines.findIndex(line => line === `})`)
+  if (p.isCancel(mode)) {
+    p.outro(c.red('aborting'))
+    return null
+  }
 
-  if (eslint)
-    lines.splice(end, 0, `  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[agent]}',`)
+  if (mode !== 'extend' && mode !== 'minimal') {
+    p.outro(c.red('aborting'))
+    return null
+  }
 
-  if (containsVSCodeExtension(packages))
-    lines.splice(start + 1, 0, `  exclude: ['@types/vscode'],`)
-
-  return lines
+  return mode
 }
 
-async function generateExtendConfig(workspace: Workspace, results: PromptResults): Promise<string> {
-  const lines = await generateConfigLines([
+async function promptEslintFix(options: CatalogOptions, workspace: WorkspaceManager): Promise<boolean | null> {
+  if (!workspace.hasEslint())
+    return false
+
+  if (options.yes)
+    return true
+
+  const enabled = await p.confirm({
+    message: `do you want to run ${c.yellow('eslint --fix')} after command complete?`,
+    initialValue: true,
+  })
+
+  if (p.isCancel(enabled)) {
+    p.outro(c.red('aborting'))
+    return null
+  }
+
+  return !!enabled
+}
+
+function generateExtendConfig(options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): string {
+  const lines = injectCommonConfigLines([
     `import { defineConfig, mergeCatalogRules } from 'pncat'`,
     ``,
     `export default defineConfig({`,
     `  catalogRules: mergeCatalogRules([]),`,
     `})`,
     ``,
-  ], workspace, results)
+  ], options, workspace, eslint)
 
   return generateConfigContent(lines)
 }
 
-async function genereateMinimalConfig(workspace: Workspace, results: PromptResults): Promise<string> {
-  const options = workspace.getOptions()
+async function generateMinimalConfig(options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): Promise<string | null> {
+  const depNames = workspace.getDepNames()
+  const catalogRules = collectMatchedRules(depNames, options)
 
-  const deps = workspace.getDepNames()
-
-  const rulesMap = new Map<string, CatalogRule>()
-  const rules = options.catalogRules?.length ? options.catalogRules : DEFAULT_CATALOG_RULES
-
-  for (const rule of rules) {
-    for (const dep of deps) {
-      const matches = toArray(rule.match)
-      matches.forEach((match) => {
-        if (isDepMatched(dep, match)) {
-          if (!rulesMap.has(rule.name)) {
-            rulesMap.set(rule.name, {
-              ...rule,
-              match: [],
-            })
-          }
-          const store = rulesMap.get(rule.name)!
-          const storeMatch = toArray(store.match ?? [])
-          rulesMap.set(rule.name, {
-            ...rule,
-            match: [...new Set([...storeMatch, match])],
-          })
-        }
-      })
+  p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `found ${c.yellow(catalogRules.length)} matching rules`)
+  if (!options.yes) {
+    const confirmed = await p.confirm({ message: 'continue?' })
+    if (p.isCancel(confirmed) || !confirmed) {
+      p.outro(c.red('aborting'))
+      return null
     }
   }
 
-  const catalogRules = Array.from(rulesMap.values())
-
-  const serializeMatch = (match: string | RegExp | (string | RegExp)[]): string => {
-    const matches = toArray(match)
-    return `[${matches.map((m) => {
-      if (m instanceof RegExp)
-        return m.toString()
-      return `'${m}'`
-    }).join(', ')}]`
-  }
-
-  const serializeSpecifierRules = (rules: SpecifierRule[]): string => {
-    return `[${rules.map((rule) => {
-      const parts = [`specifier: '${rule.specifier}'`]
-      if (rule.match)
-        parts.push(`match: ${serializeMatch(rule.match)}`)
-      if (rule.name)
-        parts.push(`name: '${rule.name}'`)
-      if (rule.suffix)
-        parts.push(`suffix: '${rule.suffix}'`)
-      return `{ ${parts.join(', ')} }`
-    }).join(', ')}]`
-  }
-
-  const formatRuleObject = (fields: string[]): string => {
-    return [
-      '    {',
-      ...fields.map((field, index) => `      ${field}${index < fields.length - 1 ? ',' : ''}`),
-      '    }',
-    ].join('\n')
-  }
-
-  const catalogRulesContent = catalogRules.map((rule) => {
-    const fields = [
-      `name: '${rule.name}'`,
-      `match: ${serializeMatch(rule.match)}`,
-      rule.depFields ? `depFields: ${JSON.stringify(rule.depFields)}` : '',
-      rule.priority ? `priority: ${rule.priority}` : '',
-      rule.specifierRules ? `specifierRules: ${serializeSpecifierRules(rule.specifierRules)}` : '',
-    ].filter(Boolean)
-
-    return formatRuleObject(fields)
-  }).join(',\n')
-
-  const lines = await generateConfigLines([
+  const lines = [
     `import { defineConfig } from 'pncat'`,
     ``,
     `export default defineConfig({`,
-    `  catalogRules: [`,
-    catalogRulesContent,
-    `  ],`,
-    `})`,
-    ``,
-  ], workspace, results)
+  ]
 
-  p.note(c.reset(catalogRules.map(rule => rule.name).join(', ')), `📋 Found ${c.yellow(catalogRules.length)} rules match current workspace`)
-  if (!options.yes) {
-    const result = await p.confirm({ message: `continue?` })
-    if (!result || p.isCancel(result)) {
-      p.outro(c.red('aborting'))
-      process.exit(1)
-    }
+  if (catalogRules.length === 0) {
+    lines.push(`  catalogRules: [],`)
+  }
+  else {
+    const catalogRulesContent = catalogRules.map((rule) => {
+      const fields = [
+        `name: '${rule.name}'`,
+        `match: ${serializeMatch(rule.match)}`,
+        rule.depFields ? `depFields: ${JSON.stringify(rule.depFields)}` : '',
+        rule.priority ? `priority: ${rule.priority}` : '',
+        rule.specifierRules ? `specifierRules: ${serializeSpecifierRules(rule.specifierRules)}` : '',
+      ].filter(Boolean)
+
+      return formatRuleObject(fields)
+    }).join(',\n')
+
+    lines.push(`  catalogRules: [`)
+    lines.push(catalogRulesContent)
+    lines.push(`  ],`)
   }
 
-  return generateConfigContent(lines)
+  lines.push(`})`)
+  lines.push(``)
+
+  return generateConfigContent(injectCommonConfigLines(lines, options, workspace, eslint))
 }
 
-export async function initCommand(options: CatalogOptions) {
-  const workspace = new Workspace(options)
-  const cwd = workspace.getCwd()
+function injectCommonConfigLines(lines: string[], options: CatalogOptions, workspace: WorkspaceManager, eslint: boolean): string[] {
+  const closeIndex = lines.lastIndexOf('})')
+  if (closeIndex < 0)
+    return lines
 
-  if (existsSync(join(cwd, 'pncat.config.ts'))) {
-    const result = await p.confirm({
-      message: `${c.yellow('pncat.config.ts')} already exists, do you want to overwrite it?`,
-      initialValue: false,
-    })
-    if (!result || p.isCancel(result)) {
-      p.outro(c.red('aborting'))
-      process.exit(1)
+  const inserts: string[] = []
+  if (workspace.hasVSCodeEngine())
+    inserts.push(`  exclude: ['@types/vscode'],`)
+
+  if (eslint) {
+    const agent = options.agent || 'pnpm'
+    inserts.push(`  postRun: 'eslint --fix ${ESLINT_FIX_PATTERNS[agent]}',`)
+  }
+
+  if (inserts.length > 0)
+    lines.splice(closeIndex, 0, ...inserts)
+
+  return lines
+}
+
+function generateConfigContent(lines: string[]): string {
+  return lines.filter((line, index) => (index === 1 || index === lines.length - 1) || Boolean(line)).join('\n')
+}
+
+function collectMatchedRules(depNames: string[], options: CatalogOptions): CatalogRule[] {
+  const rules = options.catalogRules?.length ? options.catalogRules : DEFAULT_CATALOG_RULES
+  const rulesMap = new Map<string, CatalogRule & { match: (string | RegExp)[] }>()
+
+  for (const rule of rules) {
+    for (const depName of depNames) {
+      for (const match of toArray(rule.match)) {
+        if (!isDepMatched(depName, match))
+          continue
+
+        if (!rulesMap.has(rule.name)) {
+          rulesMap.set(rule.name, {
+            ...rule,
+            match: [],
+          })
+        }
+
+        const storedRule = rulesMap.get(rule.name)!
+        const exists = storedRule.match.some(item => item.toString() === match.toString())
+        if (!exists)
+          storedRule.match.push(match)
+      }
     }
   }
 
-  const prompts: PromptGroup<PromptResults> = {
-    mode: () => p.select({
-      message: `select configuration mode`,
-      options: [
-        {
-          value: 'extend',
-          hint: 'extend default rules with workspace-specific rules',
-        },
-        {
-          value: 'minimal',
-          hint: 'only include rules that match current workspace dependencies',
-        },
-      ],
-      initialValue: 'extend',
-    }),
-    eslint: () => p.confirm({
-      message: 'do you want to run eslint --fix after command complete?',
-      initialValue: true,
-    }),
-  }
+  return Array.from(rulesMap.values())
+}
 
-  const packages = await workspace.loadPackages()
-  if (!containsESLint(packages))
-    delete prompts.eslint
+function serializeMatch(match: string | RegExp | (string | RegExp)[]): string {
+  const matches = toArray(match)
+  return `[${matches.map((item) => {
+    if (item instanceof RegExp)
+      return item.toString()
 
-  const results: PromptResults = await p.group(
-    prompts,
-    {
-      onCancel: () => {
-        p.outro(c.red('aborting'))
-        process.exit(1)
-      },
-    },
-  )
+    return `'${item.replaceAll('\'', '\\\'')}'`
+  }).join(', ')}]`
+}
 
-  const content = results.mode === 'extend'
-    ? await generateExtendConfig(workspace, results)
-    : await genereateMinimalConfig(workspace, results)
+function serializeSpecifierRules(rules: SpecifierRule[]): string {
+  return `[${rules.map((rule) => {
+    const parts = [`specifier: '${rule.specifier}'`]
+    if (rule.match)
+      parts.push(`match: ${serializeMatch(rule.match)}`)
+    if (rule.name)
+      parts.push(`name: '${rule.name}'`)
+    if (rule.suffix)
+      parts.push(`suffix: '${rule.suffix}'`)
+    return `{ ${parts.join(', ')} }`
+  }).join(', ')}]`
+}
 
-  await writeFile(join(cwd, 'pncat.config.ts'), content)
-
-  p.log.info(c.green(`init complete`))
-  p.outro(`now you can update the dependencies by run ${c.green('pncat migrate')}${options.force ? c.green(' -f') : ''}\n`)
+function formatRuleObject(fields: string[]): string {
+  return [
+    '    {',
+    ...fields.map((field, index) => `      ${field}${index < fields.length - 1 ? ',' : ''}`),
+    '    }',
+  ].join('\n')
 }

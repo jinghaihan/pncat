@@ -1,0 +1,18 @@
+{
+  "name": "fixture-bun",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "solid-js": "^1.9.0"
+    },
+    "catalogs": {
+      "test": {
+        "vitest": "^4.0.0"
+      }
+    }
+  }
+}

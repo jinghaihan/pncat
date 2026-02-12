@@ -1,0 +1,116 @@
+[
+  {
+    "name": "vlt-catalog:default",
+    "private": true,
+    "version": "",
+    "type": "vlt.json",
+    "relative": "vlt.json",
+    "filepath": "<fixtures>/vlt/vlt.json",
+    "raw": {
+      "catalog": {
+        "svelte": "^5.0.0"
+      },
+      "catalogs": {
+        "build": {
+          "vite": "^7.0.0"
+        }
+      }
+    },
+    "deps": [
+      {
+        "name": "svelte",
+        "specifier": "^5.0.0",
+        "parents": [],
+        "source": "vlt-workspace",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "name": "vlt-catalog:build",
+    "private": true,
+    "version": "",
+    "type": "vlt.json",
+    "relative": "vlt.json",
+    "filepath": "<fixtures>/vlt/vlt.json",
+    "raw": {
+      "catalog": {
+        "svelte": "^5.0.0"
+      },
+      "catalogs": {
+        "build": {
+          "vite": "^7.0.0"
+        }
+      }
+    },
+    "deps": [
+      {
+        "name": "vite",
+        "specifier": "^7.0.0",
+        "parents": [],
+        "source": "vlt-workspace",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "build"
+      }
+    ]
+  },
+  {
+    "name": "fixture-vlt",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
+    "relative": "package.json",
+    "filepath": "<fixtures>/vlt/package.json",
+    "raw": {
+      "name": "fixture-vlt",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": [
+        "packages/*"
+      ]
+    },
+    "deps": []
+  },
+  {
+    "name": "app-vlt",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
+    "relative": "packages/app/package.json",
+    "filepath": "<fixtures>/vlt/packages/app/package.json",
+    "raw": {
+      "name": "app-vlt",
+      "version": "0.0.0",
+      "private": true,
+      "dependencies": {
+        "svelte": "catalog:"
+      },
+      "devDependencies": {
+        "vite": "catalog:"
+      }
+    },
+    "deps": [
+      {
+        "name": "svelte",
+        "specifier": "catalog:",
+        "parents": [],
+        "source": "dependencies",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "prod"
+      },
+      {
+        "name": "vite",
+        "specifier": "catalog:",
+        "parents": [],
+        "source": "devDependencies",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

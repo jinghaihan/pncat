@@ -1,0 +1,10 @@
+{
+  "catalog": {
+    "svelte": "^5.0.0"
+  },
+  "catalogs": {
+    "build": {
+      "vite": "^7.0.0"
+    }
+  }
+}

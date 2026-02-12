@@ -1,7 +1,6 @@
 export * from './add'
 export * from './clean'
 export * from './detect'
-export * from './fix'
 export * from './init'
 export * from './migrate'
 export * from './remove'

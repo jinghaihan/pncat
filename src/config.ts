@@ -1,19 +1,21 @@
 import type { CatalogOptions } from './types'
-import process from 'node:process'
-import * as p from '@clack/prompts'
-import c from 'ansis'
 import deepmerge from 'deepmerge'
-import cloneDeep from 'lodash.clonedeep'
 import { createConfigLoader } from 'unconfig'
-import { AGENTS, DEFAULT_CATALOG_OPTIONS } from './constants'
-import { detectWorkspaceRoot } from './io/workspace'
-import { detectAgent } from './utils/package-manager'
+import { DEFAULT_CATALOG_OPTIONS } from './constants'
+import { detectWorkspaceRoot } from './io'
+import { cloneDeep, detectPackageManager, getCwd } from './utils'
 
 function normalizeConfig(options: Partial<CatalogOptions>) {
   // interop
   if ('default' in options)
     options = options.default as Partial<CatalogOptions>
 
+  return options
+}
+
+function sanitizeOptions(options: CatalogOptions): CatalogOptions {
+  if (typeof options.catalog === 'boolean')
+    delete options.catalog
   return options
 }
 
@@ -25,7 +27,7 @@ export async function readConfig(options: Partial<CatalogOptions>) {
         extensions: ['ts'],
       },
     ],
-    cwd: options.cwd || process.cwd(),
+    cwd: getCwd(options),
     merge: false,
   })
   const config = await loader.load()
@@ -42,21 +44,12 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
 
   const merged = deepmerge(deepmerge(defaults, configOptions), options)
 
-  // detect package manager
-  if (!merged.agent) {
-    const agent = await detectAgent(merged.cwd)
-    merged.agent = agent || 'pnpm'
-  }
-  if (!AGENTS.includes(merged.agent)) {
-    p.outro(c.red(`Unsupported package manager: ${merged.agent}`))
-    process.exit(1)
-  }
+  if (!merged.agent)
+    merged.agent = await detectPackageManager(merged.cwd)
 
   merged.cwd = merged.cwd || await detectWorkspaceRoot(merged.agent)
-  if (typeof merged.catalog === 'boolean')
-    delete merged.catalog
 
   merged.catalogRules = catalogRules
 
-  return merged
+  return sanitizeOptions(merged)
 }

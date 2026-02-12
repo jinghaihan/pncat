@@ -1,49 +1,42 @@
-import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '../types'
+import type { DepFilter, SpecifierOptions, SpecifierRangeType } from '@/types'
 import { toArray } from '@antfu/utils'
+import { COMPLEX_SPECIFIER_RANGE_TYPES } from '@/constants'
 
-// Matches versions with x wildcard like 1.x, 1.2.x, x.1, etc.
-const X_REGEXP = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d+)*)$/
-// Matches pure * wildcard
-const ASTERISK_REGEXP = /^\*(?:\.\*)*$/
-// Pre-release versions (must be checked before wildcards)
-const PRE_RELEASE_REGEXP = /^(?:\d+\.){1,2}\d+-[a-z0-9.-]+$/i
-// Matches any version containing x or * wildcard (but not pre-release)
-const WILDCARD_REGEXP = /(?:^|\.)(?:x|\*)(?:$|\.)/
+const RANGE_X_WILDCARD_RE = /^(?:(?:\d+\.)*x|\d+(?:\.\d+)*\.x(?:\.\d+)*|x(?:\.\d+)*)$/
+const RANGE_ASTERISK_WILDCARD_RE = /^\*(?:\.\*)*$/
+const RANGE_PRERELEASE_RE = /^(?:\d+\.){1,2}\d+-[a-z0-9.-]+$/i
+const RANGE_ANY_WILDCARD_TOKEN_RE = /(?:^|\.)(?:x|\*)(?:$|\.)/
+const NPM_ALIAS_RE = /^npm:(?:@[^/\s]+\/)?[^@\s]+@(.+)$/
 
-function escapeRegExp(str: string) {
-  return str.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
+function escapeRegExp(input: string) {
+  return input.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
 }
 
-export function filterToRegex(str: string) {
-  if (str.startsWith('/')) {
-    const endIndex = str.lastIndexOf('/')
-    const regexp = str.substring(1, endIndex)
-    const flags = str.substring(endIndex + 1, str.length)
-    return new RegExp(regexp, flags)
+function filterToRegex(value: string): RegExp {
+  if (value.startsWith('/')) {
+    const endIndex = value.lastIndexOf('/')
+    const pattern = value.substring(1, endIndex)
+    const flags = value.substring(endIndex + 1, value.length)
+    return new RegExp(pattern, flags)
   }
-  return new RegExp(`^${escapeRegExp(str).replace(/\*+/g, '.*?')}$`)
+
+  return new RegExp(`^${escapeRegExp(value).replace(/\*+/g, '.*?')}$`)
 }
 
-export function parseFilter(str?: string | string[], defaultValue = true): ((name: string) => boolean) {
-  if (!str || str.length === 0)
+function parseFilter(value?: string | string[], defaultValue = true): (name: string) => boolean {
+  if (!value || value.length === 0)
     return () => defaultValue
 
-  const regex = toArray(str).flatMap(i => i.split(',')).map(filterToRegex)
-
-  return (name) => {
-    for (const reg of regex) {
-      if (reg.test(name))
-        return true
-    }
-    return false
-  }
+  const regexes = toArray(value).flatMap(item => item.split(',')).map(filterToRegex)
+  return (name: string) => regexes.some(regex => regex.test(name))
 }
 
-export function specFilter(str: string, options?: SpecifierOptions): boolean {
-  if (!str.trim())
+export function specFilter(specifier: string, options?: SpecifierOptions): boolean {
+  if (!specifier.trim())
     return false
 
-  if (str.startsWith('catalog:'))
+  const normalizedSpecifier = normalizeSpecifier(specifier)
+  if (normalizedSpecifier.startsWith('catalog:'))
     return true
 
   const {
@@ -53,48 +46,48 @@ export function specFilter(str: string, options?: SpecifierOptions): boolean {
     allowWildcards = false,
   } = options ?? {}
 
-  // Define range type checks
-  const rangeTypeChecks: Record<SpecifierRangeType, (s: string) => boolean> = {
-    '||': s => s.includes('||'),
-    '-': s => s.includes(' - '),
-    '>=': s => s.startsWith('>='),
-    '<=': s => s.startsWith('<='),
-    '>': s => s.startsWith('>') && !s.startsWith('>='),
-    '<': s => s.startsWith('<') && !s.startsWith('<='),
-    'x': s => X_REGEXP.test(s),
-    '*': s => ASTERISK_REGEXP.test(s),
-    'pre-release': s => PRE_RELEASE_REGEXP.test(s),
+  const checks: Record<SpecifierRangeType, (input: string) => boolean> = {
+    '||': input => input.includes('||'),
+    '-': input => input.includes(' - '),
+    '>=': input => input.startsWith('>='),
+    '<=': input => input.startsWith('<='),
+    '>': input => input.startsWith('>') && !input.startsWith('>='),
+    '<': input => input.startsWith('<') && !input.startsWith('<='),
+    'x': input => RANGE_X_WILDCARD_RE.test(input),
+    '*': input => RANGE_ASTERISK_WILDCARD_RE.test(input),
+    'pre-release': input => RANGE_PRERELEASE_RE.test(input),
   }
 
-  // Check skipRangeTypes first (takes priority)
   if (skipRangeTypes.length > 0) {
     for (const type of skipRangeTypes) {
-      if (rangeTypeChecks[type](str))
+      if (checks[type](normalizedSpecifier))
         return false
     }
     return true
   }
 
-  // Check skipComplexRanges
   if (skipComplexRanges) {
-    for (const type of ['||', '-', '>=', '<=', '>', '<']) {
-      if (rangeTypeChecks[type as SpecifierRangeType](str))
+    for (const type of COMPLEX_SPECIFIER_RANGE_TYPES) {
+      if (checks[type](normalizedSpecifier))
         return false
     }
   }
 
-  // Check pre-releases
-  if (!allowPreReleases && PRE_RELEASE_REGEXP.test(str))
+  if (!allowPreReleases && RANGE_PRERELEASE_RE.test(normalizedSpecifier))
     return false
 
-  // Check wildcards
-  if (!allowWildcards && (X_REGEXP.test(str) || WILDCARD_REGEXP.test(str)))
+  if (!allowWildcards && (RANGE_X_WILDCARD_RE.test(normalizedSpecifier) || RANGE_ANY_WILDCARD_TOKEN_RE.test(normalizedSpecifier)))
     return false
 
   return true
 }
 
-export function packageNameFilter(name: string): boolean {
+function normalizeSpecifier(specifier: string): string {
+  const npmAliasMatch = specifier.match(NPM_ALIAS_RE)
+  return npmAliasMatch ? npmAliasMatch[1] : specifier
+}
+
+function packageNameFilter(name: string): boolean {
   if (name.startsWith('@')) {
     const secondAt = name.indexOf('@', 1)
     return secondAt === -1
@@ -102,18 +95,17 @@ export function packageNameFilter(name: string): boolean {
   return !name.includes('@')
 }
 
-export function protocolsFilter(str: string, protocols?: string[]) {
-  if (protocols) {
-    return !protocols.some(p => str.startsWith(p))
-  }
-  return true
+function protocolsFilter(specifier: string, protocols?: string[]): boolean {
+  if (!protocols)
+    return true
+  return !protocols.some(protocol => specifier.startsWith(protocol))
 }
 
 export function createDependenciesFilter(
   include?: string | string[],
   exclude?: string | string[],
   protocols?: string[],
-  specOptions?: SpecifierOptions,
+  specifierOptions?: SpecifierOptions,
 ): DepFilter {
   const includeFilter = parseFilter(include, true)
   const excludeFilter = parseFilter(exclude, false)
@@ -125,6 +117,6 @@ export function createDependenciesFilter(
       return false
     if (!packageNameFilter(name))
       return false
-    return specFilter(specifier, specOptions)
+    return specFilter(specifier, specifierOptions)
   }
 }

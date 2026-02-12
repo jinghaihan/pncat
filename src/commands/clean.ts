@@ -1,31 +1,37 @@
-import type { CatalogOptions, RawDep, ResolverContext, ResolverResult } from '../types'
-import process from 'node:process'
+import type {
+  CatalogOptions,
+  RawDep,
+  ResolverContext,
+  ResolverResult,
+} from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { confirmWorkspaceChanges } from '../utils/workspace'
-import { Workspace } from '../workspace-manager'
+import { WorkspaceManager } from '@/workspace-manager'
+import {
+  COMMAND_ERROR_CODES,
+  confirmWorkspaceChanges,
+  createCommandError,
+  ensureWorkspaceFile,
+} from './shared'
 
-export async function cleanCommand(options: CatalogOptions) {
-  const workspace = new Workspace(options)
-
+export async function cleanCommand(options: CatalogOptions): Promise<void> {
+  const workspace = new WorkspaceManager(options)
   const filepath = await workspace.catalog.findWorkspaceFile()
-  if (!filepath) {
-    p.outro(c.red('no workspace file found, aborting'))
-    process.exit(1)
-  }
+  if (!filepath)
+    throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no workspace file found, aborting')
 
+  await ensureWorkspaceFile(workspace)
   const { dependencies = [] } = await resolveClean({
     options,
     workspace,
   })
 
-  if (!dependencies.length) {
+  if (dependencies.length === 0) {
     p.outro(c.yellow('no dependencies to clean, aborting'))
-    process.exit(0)
+    return
   }
 
-  await workspace.catalog.ensureWorkspace()
-  p.log.info(`📦 Found ${c.yellow(dependencies.length)} dependencies not in package.json`)
+  p.log.info(`found ${c.yellow(dependencies.length)} dependencies not in package.json`)
 
   await confirmWorkspaceChanges(
     async () => {
@@ -43,48 +49,53 @@ export async function cleanCommand(options: CatalogOptions) {
 
 export async function resolveClean(context: ResolverContext): Promise<ResolverResult> {
   const { options, workspace } = context
-
-  const packages = await workspace.loadPackages()
+  await workspace.loadPackages()
+  const catalogTargetPackages = workspace.listCatalogTargetPackages()
+  const workspacePackages = workspace.listWorkspacePackages()
   const dependencies: RawDep[] = []
 
-  for (const pkg of packages) {
-    if (pkg.type === 'package.json')
-      continue
+  for (const pkg of workspacePackages) {
     for (const dep of pkg.deps) {
-      const resolvedDep = workspace.resolveDep(dep, false)
-      if (!workspace.isDepInPackage(resolvedDep) && !workspace.isDepInPnpmOverrides(resolvedDep))
-        dependencies.push(resolvedDep)
+      if (workspace.isCatalogDepReferenced(dep.name, dep.catalogName, catalogTargetPackages))
+        continue
+      dependencies.push(dep)
     }
   }
 
-  if (options.yes || !dependencies.length)
+  if (options.yes || dependencies.length === 0)
     return { dependencies }
 
-  const cache = new Set<string>()
-  const deps: RawDep[] = []
-  for (const dep of dependencies) {
-    const key = `${dep.name}.${dep.catalogName}.${dep.specifier}`
-    if (cache.has(key))
-      continue
-    cache.add(key)
-    deps.push(dep)
-  }
-
-  const choices = await p.multiselect({
-    message: 'please select the dependencies to clean',
-    options: deps.map((dep, index) => ({
+  const uniqueDeps = dedupeDependencies(dependencies)
+  const selected = await p.multiselect({
+    message: 'please select dependencies to clean',
+    options: uniqueDeps.map((dep, index) => ({
       label: `${dep.name} (${dep.catalogName})`,
       value: index,
       hint: dep.specifier,
     })),
-    initialValues: Array.from({ length: deps.length }, (_, index) => index),
+    initialValues: Array.from({ length: uniqueDeps.length }, (_, index) => index),
   })
-  if (p.isCancel(choices) || !choices) {
-    p.outro(c.red('aborting'))
-    process.exit(1)
-  }
+
+  if (p.isCancel(selected) || !selected)
+    throw createCommandError(COMMAND_ERROR_CODES.ABORT)
 
   return {
-    dependencies: deps.filter((_, index) => choices.includes(index)),
+    dependencies: uniqueDeps.filter((_, index) => selected.includes(index)),
   }
+}
+
+function dedupeDependencies(dependencies: RawDep[]): RawDep[] {
+  const seen = new Set<string>()
+  const unique: RawDep[] = []
+
+  for (const dep of dependencies) {
+    const key = `${dep.name}:${dep.catalogName}:${dep.specifier}`
+    if (seen.has(key))
+      continue
+
+    seen.add(key)
+    unique.push(dep)
+  }
+
+  return unique
 }

@@ -1,115 +1,93 @@
-import type {
-  CatalogOptions,
-  PackageJsonMeta,
-  RawDep,
-  ResolverContext,
-  ResolverResult,
-} from '../types'
-import type { ConfirmationOptions } from '../utils/workspace'
+import type { CatalogOptions, PackageJsonMeta, RawDep, ResolverContext, ResolverResult } from '@/types'
 import process from 'node:process'
-import * as p from '@clack/prompts'
-import c from 'ansis'
-import cloneDeep from 'lodash.clonedeep'
-import { isPnpmOverridesPackageName, updatePackageToSpecifier } from '../utils/helper'
-import { parseCommandOptions } from '../utils/process'
-import { confirmWorkspaceChanges } from '../utils/workspace'
-import { Workspace } from '../workspace-manager'
+import { isCatalogSpecifier } from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
+import {
+  COMMAND_ERROR_CODES,
+  confirmWorkspaceChanges,
+  createCommandError,
+  ensureWorkspaceFile,
+  parseCommandOptions,
+} from './shared'
 
-export async function revertCommand(options: CatalogOptions) {
-  const args: string[] = process.argv.slice(3)
+export async function revertCommand(options: CatalogOptions): Promise<void> {
+  const args = process.argv.slice(3)
+  const workspace = new WorkspaceManager(options)
 
-  const workspace = new Workspace(options)
   const filepath = await workspace.catalog.findWorkspaceFile()
-  if (!filepath) {
-    p.outro(c.red('no workspace file found, aborting'))
-    process.exit(1)
-  }
+  if (!filepath)
+    throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no workspace file found, aborting')
 
-  await workspace.catalog.ensureWorkspace()
-  const { isRevertAll, dependencies = [], updatedPackages = {} } = await resolveRevert({
+  await ensureWorkspaceFile(workspace)
+  const {
+    isRevertAll = false,
+    dependencies = [],
+    updatedPackages = {},
+  } = await resolveRevert({
     args,
     options,
     workspace,
   })
 
-  const confirmationOptions: ConfirmationOptions = {
+  const confirmationOptions = {
     workspace,
     updatedPackages,
     yes: options.yes,
     verbose: options.verbose,
     bailout: true,
     completeMessage: 'revert complete',
-  }
+  } as const
 
   if (isRevertAll) {
-    if (!options.yes) {
-      const result = await p.confirm({
-        message: c.green('all catalog dependencies will be reverted, are you sure?'),
-      })
-      if (!result || p.isCancel(result)) {
-        p.outro(c.red('aborting'))
-        process.exit(1)
-      }
-    }
-
     await confirmWorkspaceChanges(
       async () => {
         await workspace.catalog.clearCatalogs()
       },
-      { ...confirmationOptions, showDiff: false },
-    )
-  }
-  else {
-    await confirmWorkspaceChanges(
-      async () => {
-        await workspace.catalog.removePackages(dependencies)
+      {
+        ...confirmationOptions,
+        showDiff: false,
+        confirmMessage: 'all catalog dependencies will be reverted, are you sure?',
       },
-      confirmationOptions,
     )
+    return
   }
+
+  await confirmWorkspaceChanges(
+    async () => {
+      await workspace.catalog.removePackages(dependencies)
+    },
+    confirmationOptions,
+  )
 }
 
 export async function resolveRevert(context: ResolverContext): Promise<ResolverResult> {
   const { args = [], workspace } = context
+  await workspace.loadPackages()
 
   const { deps } = parseCommandOptions(args)
-  const depFilter = (depName: string) => {
-    if (!deps.length)
-      return true
-    return deps.includes(depName)
-  }
+  const depFilter = (depName: string) => deps.length === 0 || deps.includes(depName)
+  const catalogIndex = await workspace.getCatalogIndex()
 
-  const packages = await workspace.loadPackages()
   const dependencies: RawDep[] = []
-  const updatedPackages: Map<string, PackageJsonMeta> = new Map()
+  const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  const setPackage = async (dep: RawDep, pkg: PackageJsonMeta) => {
-    if (!updatedPackages.has(pkg.name))
-      updatedPackages.set(pkg.name, cloneDeep(pkg))
-
-    const data = updatedPackages.get(pkg.name)!
-    await updatePackageToSpecifier(dep, data)
-  }
-
-  for (const pkg of packages) {
-    if (isPnpmOverridesPackageName(pkg.name))
-      continue
-
-    if (workspace.isCatalogPackage(pkg))
-      continue
-
+  for (const pkg of workspace.listCatalogTargetPackages()) {
     for (const dep of pkg.deps) {
       if (!depFilter(dep.name))
         continue
+      if (!isCatalogSpecifier(dep.specifier))
+        continue
 
-      const resolvedDep = workspace.resolveDep(dep)
+      const resolvedDep = workspace.resolveCatalogDep(dep, catalogIndex, false)
       dependencies.push(resolvedDep)
-      await setPackage(resolvedDep, pkg)
+
+      if (pkg.type === 'package.json')
+        workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, resolvedDep.specifier)
     }
   }
 
   return {
-    isRevertAll: !deps.length,
+    isRevertAll: deps.length === 0,
     dependencies,
     updatedPackages: Object.fromEntries(updatedPackages.entries()),
   }

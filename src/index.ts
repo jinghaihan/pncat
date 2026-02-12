@@ -1,10 +1,11 @@
 import type { CatalogOptions } from './types'
 
 export * from './catalog-handler'
+export * from './constants'
+export * from './io'
 export { DEFAULT_CATALOG_RULES } from './rules'
 export * from './types'
-export * from './utils/catalog'
-export * from './utils/merge'
+export * from './utils'
 export * from './workspace-manager'
 
 export function defineConfig(config: Partial<CatalogOptions>) {

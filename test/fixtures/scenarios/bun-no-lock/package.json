@@ -1,0 +1,13 @@
+{
+  "name": "no-lock",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": {
+    "packages": [
+      "packages/*"
+    ],
+    "catalog": {
+      "react": "^18.0.0"
+    }
+  }
+}

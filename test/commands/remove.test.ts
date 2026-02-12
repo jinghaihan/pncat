@@ -1,0 +1,523 @@
+import type {
+  CatalogOptions,
+  PackageJsonMeta,
+  RawDep,
+  WorkspacePackageMeta,
+} from '@/types'
+import type { WorkspaceManager } from '@/workspace-manager'
+import process from 'node:process'
+import * as p from '@clack/prompts'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { resolveRemove } from '@/commands/remove'
+import { COMMAND_ERROR_CODES } from '@/commands/shared'
+import * as shared from '@/commands/shared'
+import { createFixtureOptions } from '../_shared'
+
+vi.mock('@/commands/shared', async () => {
+  const actual = await vi.importActual<typeof import('@/commands/shared')>('@/commands/shared')
+  return {
+    ...actual,
+    runAgentRemove: vi.fn(),
+  }
+})
+
+vi.mock('@clack/prompts', () => ({
+  multiselect: vi.fn(),
+  isCancel: vi.fn(),
+  log: {
+    info: vi.fn(),
+  },
+}))
+
+const multiselectMock = vi.mocked(p.multiselect)
+const isCancelMock = vi.mocked(p.isCancel)
+const runAgentRemoveMock = vi.mocked(shared.runAgentRemove)
+
+function createProjectPackage(
+  name: string,
+  filepath: string,
+  deps: RawDep[],
+): PackageJsonMeta {
+  return {
+    type: 'package.json',
+    name,
+    private: true,
+    version: '0.0.0',
+    filepath,
+    relative: filepath.replace('/repo/', ''),
+    raw: {
+      name,
+      dependencies: Object.fromEntries(
+        deps
+          .filter(dep => dep.source === 'dependencies')
+          .map(dep => [dep.name, dep.specifier]),
+      ),
+    },
+    deps,
+  }
+}
+
+function createWorkspacePackage(dep: RawDep): WorkspacePackageMeta {
+  return {
+    type: 'pnpm-workspace.yaml',
+    name: `pnpm-catalog:${dep.catalogName}`,
+    private: true,
+    version: '',
+    filepath: '/repo/pnpm-workspace.yaml',
+    relative: 'pnpm-workspace.yaml',
+    raw: {},
+    context: {},
+    deps: [dep],
+  }
+}
+
+function createWorkspace(
+  projectPackages: PackageJsonMeta[],
+  workspacePackages: WorkspacePackageMeta[],
+): WorkspaceManager {
+  return {
+    loadPackages: async () => [...projectPackages, ...workspacePackages],
+    listProjectPackages: () => projectPackages,
+    listWorkspacePackages: () => workspacePackages,
+    listCatalogTargetPackages: () => [
+      ...projectPackages,
+      ...workspacePackages.filter(pkg => pkg.name === 'pnpm-workspace:overrides'),
+    ],
+    getCwd: () => '/repo',
+    resolveTargetProjectPackagePath: (invocationCwd: string) => {
+      const invocationPath = `${invocationCwd}/package.json`
+      const invocationPackage = projectPackages.find(pkg => pkg.filepath === invocationPath)
+      if (invocationPackage)
+        return invocationPackage.filepath
+      return '/repo/package.json'
+    },
+    removeCatalogDepFromPackages: (
+      updatedPackages: Map<string, PackageJsonMeta>,
+      packages: PackageJsonMeta[],
+      depName: string,
+      catalogName: string,
+    ) => {
+      let removed = false
+
+      for (const pkg of packages) {
+        for (const dep of pkg.deps) {
+          if (dep.name !== depName)
+            continue
+          if (dep.specifier !== `catalog:${catalogName}` && dep.specifier !== (catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`))
+            continue
+
+          if (!updatedPackages.has(pkg.filepath))
+            updatedPackages.set(pkg.filepath, structuredClone(pkg))
+
+          const updated = updatedPackages.get(pkg.filepath)!
+          if (dep.source === 'pnpm.overrides') {
+            delete updated.raw.pnpm?.overrides?.[dep.name]
+            removed = true
+            continue
+          }
+
+          delete (updated.raw as Record<string, Record<string, string> | undefined>)[dep.source]?.[dep.name]
+          removed = true
+        }
+      }
+
+      return removed
+    },
+    isCatalogDepReferenced: (
+      depName: string,
+      catalogName: string,
+      packages: PackageJsonMeta[] = projectPackages,
+    ) => {
+      const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+      return packages.some(pkg =>
+        pkg.deps.some(dep => dep.name === depName && dep.specifier === expected),
+      )
+    },
+  } as unknown as WorkspaceManager
+}
+
+describe('resolveRemove', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    multiselectMock.mockResolvedValue(['prod'])
+    isCancelMock.mockReturnValue(false)
+    runAgentRemoveMock.mockResolvedValue(undefined)
+  })
+
+  it('removes catalog dependency from target package and marks workspace entry for deletion', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const depInWorkspace: RawDep = {
+      ...depInPackage,
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
+
+    const result = await resolveRemove({
+      args: ['react', '-r'],
+      options,
+      workspace,
+    })
+    const { updatedPackages = {} } = result
+
+    expect(result.dependencies).toEqual([depInWorkspace])
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
+  })
+
+  it('keeps workspace catalog entry when non-recursive remove has remaining references', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const depInWorkspace: RawDep = {
+      ...depInPackage,
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+    }
+
+    const workspace = createWorkspace(
+      [
+        createProjectPackage('app', '/repo/package.json', [depInPackage]),
+        createProjectPackage('docs', '/repo/packages/docs/package.json', [depInPackage]),
+      ],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
+
+    const result = await resolveRemove({
+      args: ['react'],
+      options,
+      workspace,
+    })
+    const { updatedPackages = {} } = result
+
+    expect(result.dependencies).toEqual([])
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
+    expect(updatedPackages['/repo/packages/docs/package.json']).toBeUndefined()
+  })
+
+  it('keeps workspace catalog entry when workspace overrides still references catalog specifier', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const depInWorkspace: RawDep = {
+      ...depInPackage,
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+    }
+    const depInWorkspaceOverrides: RawDep = {
+      ...depInPackage,
+      specifier: 'catalog:prod',
+      source: 'pnpm-workspace',
+      catalogName: 'override',
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage(depInWorkspace),
+        {
+          ...createWorkspacePackage(depInWorkspaceOverrides),
+          name: 'pnpm-workspace:overrides',
+        },
+      ],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
+
+    const result = await resolveRemove({
+      args: ['react'],
+      options,
+      workspace,
+    })
+    const { updatedPackages = {} } = result
+
+    expect(result.dependencies).toEqual([])
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
+  })
+
+  it('uses selected catalog when dependency exists in multiple catalogs', async () => {
+    multiselectMock.mockResolvedValue(['legacy'])
+
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:legacy',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'legacy',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^17.0.0',
+          catalogName: 'legacy',
+        }),
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^18.3.1',
+          catalogName: 'prod',
+        }),
+      ],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+
+    const result = await resolveRemove({
+      args: ['react', '-r'],
+      options,
+      workspace,
+    })
+
+    expect(multiselectMock).toHaveBeenCalledTimes(1)
+    expect(result.dependencies).toEqual([
+      expect.objectContaining({
+        catalogName: 'legacy',
+      }),
+    ])
+  })
+
+  it('throws when catalog selection is canceled', async () => {
+    multiselectMock.mockResolvedValue(['legacy'])
+    isCancelMock.mockReturnValue(true)
+
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:legacy',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'legacy',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^17.0.0',
+          catalogName: 'legacy',
+        }),
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^18.3.1',
+          catalogName: 'prod',
+        }),
+      ],
+    )
+
+    await expect(resolveRemove({
+      args: ['react'],
+      options: createFixtureOptions('pnpm', { yes: false }),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+  })
+
+  it('falls back to agent remove when dependency is not used in any catalog', async () => {
+    const depInPackage: RawDep = {
+      name: 'axios',
+      specifier: '^1.7.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [],
+    )
+
+    const result = await resolveRemove({
+      args: ['axios', '-r'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).toHaveBeenCalledWith(['axios'], {
+      cwd: '/repo',
+      agent: 'pnpm',
+      recursive: true,
+    })
+  })
+
+  it('uses current package cwd for non-recursive noncatalog remove', async () => {
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/repo/packages/bar')
+    const depInRootPackage: RawDep = {
+      name: 'shared',
+      specifier: '^1.0.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depInBarPackage: RawDep = {
+      name: 'lodash-es',
+      specifier: '^4.17.21',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+
+    const workspace = createWorkspace(
+      [
+        createProjectPackage('app', '/repo/package.json', [depInRootPackage]),
+        createProjectPackage('bar', '/repo/packages/bar/package.json', [depInBarPackage]),
+      ],
+      [],
+    )
+
+    const result = await resolveRemove({
+      args: ['lodash-es'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).toHaveBeenCalledWith(['lodash-es'], {
+      cwd: '/repo/packages/bar',
+      agent: 'pnpm',
+      recursive: false,
+    })
+    cwdSpy.mockRestore()
+  })
+
+  it('skips workspace removal when no matching catalog specifier is found in target package', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depInWorkspace: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+
+    const result = await resolveRemove({
+      args: ['react', '-r'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).not.toHaveBeenCalled()
+  })
+
+  it('throws when no catalog is selected from the prompt', async () => {
+    multiselectMock.mockResolvedValue([])
+
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:legacy',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'legacy',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^17.0.0',
+          catalogName: 'legacy',
+        }),
+        createWorkspacePackage({
+          ...depInPackage,
+          source: 'pnpm-workspace',
+          specifier: '^18.3.1',
+          catalogName: 'prod',
+        }),
+      ],
+    )
+
+    await expect(resolveRemove({
+      args: ['react'],
+      options: createFixtureOptions('pnpm', { yes: false }),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+
+  it('throws when dependency argument list is empty after parsing options', async () => {
+    const workspace = createWorkspace([], [])
+
+    await expect(resolveRemove({
+      args: ['-r'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+
+  it('throws when dependency is not used in any package', async () => {
+    const depInWorkspace: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [])],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+
+    await expect(resolveRemove({
+      args: ['react'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })).rejects.toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+})

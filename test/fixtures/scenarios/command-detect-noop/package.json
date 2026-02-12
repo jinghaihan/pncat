@@ -1,0 +1,11 @@
+{
+  "name": "fixture-command-detect-noop",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "catalog:prod"
+  },
+  "workspaces": [
+    "packages/*"
+  ]
+}

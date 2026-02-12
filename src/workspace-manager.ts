@@ -1,356 +1,259 @@
 import type {
   CatalogHandler,
+  CatalogIndex,
   CatalogOptions,
   PackageJsonMeta,
   PackageMeta,
   RawDep,
   WorkspacePackageMeta,
 } from './types'
-import process from 'node:process'
-import cloneDeep from 'lodash.clonedeep'
-import { join } from 'pathe'
+import { join, resolve } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
-import { readJSON } from './io/fs'
-import { loadPackages } from './io/packages'
+import { loadPackages } from './io'
 import {
-  extractCatalogName,
-  inferCatalogName,
-  isCatalogPackageName,
+  cloneDeep,
+  createDepCatalogIndex,
+  ensurePackageJsonDeps,
+  ensurePnpmOverrides,
+  getCwd,
+  getPackageJsonDeps,
+  hasEslint,
+  hasVSCodeEngine,
   isCatalogSpecifier,
-} from './utils/catalog'
-import { isPnpmOverridesPackageName } from './utils/helper'
+  isPackageJsonDepSource,
+  isPnpmOverridesPackageName,
+  parseCatalogSpecifier,
+  toCatalogSpecifier,
+} from './utils'
 
-export class Workspace {
-  public catalog: CatalogHandler
+export class WorkspaceManager {
+  public readonly catalog: CatalogHandler
+  private readonly options: CatalogOptions
 
-  private loaded: boolean = false
+  private loaded = false
   private loadTask: Promise<PackageMeta[]> | null = null
-
-  private options: CatalogOptions
   private packages: PackageMeta[] = []
-  private packageRegistry = new Map<string, PackageJsonMeta>()
-  private catalogRegistry = new Map<string, WorkspacePackageMeta>()
-
-  private packageDepIndex = new Map<string, Map<string, RawDep>>()
-  private catalogDepIndex = new Map<string, Map<string, RawDep>>()
-  private depUsageIndex = new Map<string, Set<string>>()
+  private depNames = new Set<string>()
 
   constructor(options: CatalogOptions) {
     this.options = options
-    this.catalog = createCatalogHandler(this)
+    this.catalog = createCatalogHandler(this.options)
   }
 
-  /**
-   * Reset the catalog manager, clear all indexes and loaded packages
-   */
-  reset() {
-    this.loaded = false
-    this.loadTask = null
-    this.packages = []
-    this.packageRegistry.clear()
-    this.catalogRegistry.clear()
-    this.packageDepIndex.clear()
-    this.catalogDepIndex.clear()
-    this.depUsageIndex.clear()
-  }
-
-  /**
-   * Get the catalog options
-   */
-  getOptions() {
+  getOptions(): CatalogOptions {
     return this.options
   }
 
-  /**
-   * Get the current working directory
-   */
-  getCwd() {
-    return this.options.cwd || process.cwd()
+  getCwd(): string {
+    return getCwd(this.options)
   }
 
-  /**
-   * Load packages from the current working directory
-   */
+  getPackages(): PackageMeta[] {
+    return this.packages
+  }
+
+  listProjectPackages(): PackageJsonMeta[] {
+    return this.packages.filter(pkg => pkg.type === 'package.json')
+  }
+
+  listWorkspacePackages(): WorkspacePackageMeta[] {
+    return this.packages.filter(pkg => pkg.type !== 'package.json')
+  }
+
+  listCatalogTargetPackages(): PackageMeta[] {
+    return [
+      ...this.listProjectPackages(),
+      ...this.listWorkspacePackages().filter(pkg => isPnpmOverridesPackageName(pkg.name)),
+    ]
+  }
+
+  getDepNames(): string[] {
+    return Array.from(this.depNames)
+  }
+
+  resolveTargetProjectPackagePath(invocationCwd: string): string {
+    const workspacePackagePath = join(this.getCwd(), 'package.json')
+    const invocationPackagePath = join(resolve(invocationCwd), 'package.json')
+
+    if (this.listProjectPackages().some(pkg => pkg.filepath === invocationPackagePath))
+      return invocationPackagePath
+
+    return workspacePackagePath
+  }
+
   async loadPackages(): Promise<PackageMeta[]> {
     if (this.loaded)
       return this.packages
+
     if (!this.loadTask) {
       this.loadTask = loadPackages(this.options).then((packages) => {
         this.packages = packages
-
-        this.createIndexes()
-
+        this.buildIndexes()
         this.loaded = true
         this.loadTask = null
         return packages
       })
     }
+
     return await this.loadTask
   }
 
-  /**
-   * Get the names of monorepo packages
-   */
-  getWorkspacePackages(): string[] {
-    return Array.from(this.packageRegistry.keys())
+  async getCatalogIndex(): Promise<CatalogIndex> {
+    return createDepCatalogIndex(await this.catalog.toJSON())
   }
 
-  /**
-   * Get the dependencies of a package
-   */
-  getPackageDeps(pkgName: string): RawDep[] {
-    return Array.from(this.packageDepIndex.get(pkgName)?.values() ?? [])
+  resolveCatalogDep(
+    dep: RawDep,
+    catalogIndex: CatalogIndex,
+    force: boolean = !!this.options.force,
+  ): RawDep {
+    let catalogName = dep.catalogName
+    let specifier = dep.specifier
+    const existingCatalogDeps = catalogIndex.get(dep.name) || []
+
+    if (isCatalogSpecifier(dep.specifier)) {
+      if (existingCatalogDeps.length === 0)
+        throw new Error(`Unable to resolve catalog specifier for ${dep.name}`)
+
+      const specifierCatalogName = parseCatalogSpecifier(dep.specifier)
+      const matched = existingCatalogDeps.find(item => item.catalogName === specifierCatalogName) || existingCatalogDeps[0]
+
+      specifier = matched.specifier
+      if (!force)
+        catalogName = matched.catalogName
+    }
+    else if (!force && existingCatalogDeps.length > 0) {
+      const matched = existingCatalogDeps.find(item => item.catalogName === catalogName) || existingCatalogDeps[0]
+      catalogName = matched.catalogName
+      specifier = matched.specifier
+    }
+
+    return {
+      ...dep,
+      catalogName,
+      specifier,
+      update: dep.specifier !== toCatalogSpecifier(catalogName),
+    }
   }
 
-  /**
-   * Get a dependency of a package
-   */
-  getPackageDep(depName: string, pkgName: string): RawDep | null {
-    return this.packageDepIndex.get(pkgName)?.get(depName) ?? null
-  }
-
-  /**
-   * Remove a dependency from a package
-   */
-  async removePackageDep(
+  isCatalogDepReferenced(
     depName: string,
     catalogName: string,
-    isRecursive: boolean = true,
-    updatedPackages?: Map<string, PackageJsonMeta>,
-  ): Promise<{
-    updatedPackages: Map<string, PackageJsonMeta>
-    catalogDeletable: boolean
-  }> {
-    let catalogDeletable = true
-    updatedPackages ??= new Map()
+    packages: PackageMeta[] = this.listProjectPackages(),
+  ): boolean {
+    const expectedSpecifier = toCatalogSpecifier(catalogName)
 
-    const packages = this.getDepPackages(depName).filter(i => !isCatalogPackageName(i) && !isPnpmOverridesPackageName(i))
-    if (packages.length === 0)
-      return { updatedPackages, catalogDeletable }
+    for (const pkg of packages) {
+      for (const dep of pkg.deps) {
+        if (dep.name !== depName)
+          continue
 
-    const removeDep = (pkgName: string) => {
-      const pkg = this.packageRegistry.get(pkgName)
-      if (!pkg)
-        return
-
-      const dep = pkg.deps.find(i => i.name === depName && this.extractCatalogName(i.specifier) === catalogName)
-      if (!dep)
-        return
-
-      if (!updatedPackages.has(pkgName))
-        updatedPackages.set(pkgName, cloneDeep(pkg))
-      const updatedPkg = updatedPackages.get(pkgName)!
-
-      delete updatedPkg.raw[dep.source][dep.name]
-    }
-
-    if (isRecursive || packages.length === 1) {
-      for (const pkgName of packages) {
-        removeDep(pkgName)
-      }
-    }
-    else {
-      const pkgPath = join(process.cwd(), 'package.json')
-      const { name } = await readJSON(pkgPath)
-      if (!name)
-        return { updatedPackages, catalogDeletable }
-
-      // if the package is not the only one, the catalog is not deletable
-      const filtered = packages.filter(i => i !== name)
-      if (filtered.length)
-        catalogDeletable = false
-
-      removeDep(name)
-    }
-
-    return { updatedPackages, catalogDeletable }
-  }
-
-  /**
-   * Get a dependency of a catalog
-   */
-  getCatalogDep(depName: string, catalogName: string): RawDep | null {
-    return this.catalogDepIndex.get(depName)?.get(catalogName) ?? null
-  }
-
-  /**
-   * Get the dependencies of a catalog
-   */
-  getCatalogDeps(catalogName: string): RawDep[] {
-    return Array.from(this.catalogDepIndex.get(catalogName)?.values() ?? [])
-  }
-
-  /**
-   * Get the packages that use a dependency
-   */
-  getDepPackages(depName: string): string[] {
-    return Array.from(this.depUsageIndex.get(depName) ?? [])
-  }
-
-  /**
-   * Infer the catalog name for a dependency
-   */
-  inferCatalogName(dep: Omit<RawDep, 'catalogName'>): string {
-    return inferCatalogName(dep, this.options)
-  }
-
-  /**
-   * Check if a package is a catalog package
-   */
-  isCatalogPackage(pkg: PackageMeta): pkg is WorkspacePackageMeta {
-    return isCatalogPackageName(pkg.name) && !isPnpmOverridesPackageName(pkg.name)
-  }
-
-  /**
-   * Extract the catalog name from a specifier
-   */
-  extractCatalogName(specifier: string): string {
-    if (isCatalogSpecifier(specifier))
-      return specifier.replace('catalog:', '')
-    return ''
-  }
-
-  /**
-   * Extract the catalog name from a package name
-   */
-  extractCatalogNameFromPkgName(pkgName: string): string {
-    if (isCatalogPackageName(pkgName))
-      return extractCatalogName(pkgName)
-    return ''
-  }
-
-  /**
-   * Normalize a dependency, update the catalog name if needed
-   */
-  resolveDep(dep: RawDep, force?: boolean): RawDep {
-    if (!dep.catalog)
-      return { ...dep, update: true }
-
-    const catalogDep = this.resolveCatalogSpecifier(dep)
-    if (!catalogDep)
-      return { ...dep, update: true }
-
-    if (dep.catalogName === catalogDep.catalogName)
-      return catalogDep
-
-    const update = force ?? this.options.force
-    return {
-      ...catalogDep,
-      catalogName: update ? dep.catalogName : catalogDep.catalogName,
-      update,
-    }
-  }
-
-  /**
-   * Get the specifier from the workspace catalog
-   */
-  resolveCatalogSpecifier(dep: RawDep): RawDep | null {
-    const pkgs = this.catalogDepIndex.get(dep.name)
-    if (!pkgs)
-      return null
-
-    const pkgName = `${this.options.agent}-catalog:${dep.catalogName}`
-    if (pkgs.has(pkgName)) {
-      const catalogDep = pkgs.get(pkgName)!
-      return { ...dep, specifier: catalogDep.specifier }
-    }
-
-    const catalogDep = Array.from(pkgs.values())[0]
-    const catalogName = this.extractCatalogNameFromPkgName(Array.from(pkgs.keys())[0])
-
-    return { ...dep, specifier: catalogDep.specifier, catalogName }
-  }
-
-  /**
-   * Check if a catalog dependency is in a package
-   */
-  isDepInPackage(catalogDep: RawDep): boolean {
-    if (!this.packageDepIndex.has(catalogDep.name))
-      return false
-
-    const deps = Array.from(this.packageDepIndex.get(catalogDep.name)?.values() ?? [])
-    return !!deps.find(i =>
-      i.specifier === `catalog:${catalogDep.catalogName}` && isCatalogSpecifier(i.specifier),
-    )
-  }
-
-  /**
-   * Check if a package dependency is in a catalog
-   */
-  isDepInCatalog(pkgDep: RawDep): boolean {
-    if (!pkgDep.catalog)
-      return false
-    if (!this.catalogDepIndex.has(pkgDep.name))
-      return false
-
-    const catalogName = this.extractCatalogName(pkgDep.specifier)
-    const deps = Array.from(this.catalogDepIndex.get(pkgDep.name)?.values() ?? [])
-    return !!deps.find(i => i.catalogName === catalogName)
-  }
-
-  /**
-   * Check if a catalog dependency is in pnpm overrides
-   */
-  isDepInPnpmOverrides(catalogDep: RawDep): boolean {
-    const pkg = this.packages.find(i => isPnpmOverridesPackageName(i.name))
-    if (!pkg || !pkg.raw.overrides)
-      return false
-    const specifier = pkg.raw.overrides[catalogDep.name]
-    return !!specifier && isCatalogSpecifier(specifier) && specifier === `catalog:${catalogDep.catalogName}`
-  }
-
-  /**
-   * Get the names of dependencies
-   */
-  getDepNames(): string[] {
-    return Array.from(this.depUsageIndex.keys())
-  }
-
-  /**
-   * Create indexes for the loaded packages
-   */
-  private createIndexes() {
-    for (const pkg of this.packages) {
-      for (const pkgDep of pkg.deps) {
-        if (pkg.type === 'package.json') {
-          this.packageRegistry.set(pkg.name, pkg)
-          this.setPackageDepIndex(pkg, pkgDep)
+        if (dep.source === 'pnpm.overrides') {
+          if (dep.specifier === expectedSpecifier)
+            return true
+          continue
         }
 
-        if (this.isCatalogPackage(pkg)) {
-          this.catalogRegistry.set(pkg.name, pkg)
-          this.setCatalogDepIndex(pkg, pkgDep)
-        }
+        if (!isCatalogSpecifier(dep.specifier))
+          continue
 
-        this.setDepUsageIndex(pkg, pkgDep)
+        if (parseCatalogSpecifier(dep.specifier) === catalogName)
+          return true
       }
     }
+
+    return false
   }
 
-  /**
-   * Set the package dependency index
-   */
-  private setPackageDepIndex(pkg: PackageJsonMeta, dep: RawDep) {
-    if (!this.packageDepIndex.has(dep.name))
-      this.packageDepIndex.set(dep.name, new Map())
-    this.packageDepIndex.get(dep.name)!.set(pkg.name, dep)
+  setDepSpecifier(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    pkg: PackageJsonMeta,
+    dep: RawDep,
+    specifier: string,
+  ): void {
+    const updatedPackage = this.ensureUpdatedPackage(updatedPackages, pkg)
+
+    if (dep.source === 'pnpm.overrides') {
+      ensurePnpmOverrides(updatedPackage.raw)[dep.name] = specifier
+      return
+    }
+
+    if (!isPackageJsonDepSource(dep.source))
+      return
+
+    ensurePackageJsonDeps(updatedPackage.raw, dep.source)[dep.name] = specifier
   }
 
-  /**
-   * Set the workspace dependency index
-   */
-  private setCatalogDepIndex(pkg: WorkspacePackageMeta, dep: RawDep) {
-    if (!this.catalogDepIndex.has(dep.name))
-      this.catalogDepIndex.set(dep.name, new Map())
-    this.catalogDepIndex.get(dep.name)!.set(pkg.name, dep)
+  removeCatalogDepFromPackages(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    packages: PackageJsonMeta[],
+    depName: string,
+    catalogName: string,
+  ): boolean {
+    let removed = false
+
+    for (const pkg of packages) {
+      for (const dep of pkg.deps) {
+        if (dep.name !== depName)
+          continue
+        if (!isCatalogSpecifier(dep.specifier))
+          continue
+        if (parseCatalogSpecifier(dep.specifier) !== catalogName)
+          continue
+
+        const updatedPackage = this.ensureUpdatedPackage(updatedPackages, pkg)
+        if (dep.source === 'pnpm.overrides') {
+          delete ensurePnpmOverrides(updatedPackage.raw)[dep.name]
+          removed = true
+          continue
+        }
+
+        if (isPnpmOverridesPackageName(pkg.name))
+          continue
+
+        if (!isPackageJsonDepSource(dep.source))
+          continue
+
+        delete getPackageJsonDeps(updatedPackage.raw, dep.source)?.[dep.name]
+        removed = true
+      }
+    }
+
+    return removed
   }
 
-  /**
-   * Set the dependency usage index
-   */
-  private setDepUsageIndex(pkg: PackageMeta, pkgDep: RawDep) {
-    if (!this.depUsageIndex.has(pkgDep.name))
-      this.depUsageIndex.set(pkgDep.name, new Set())
-    this.depUsageIndex.get(pkgDep.name)!.add(pkg.name)
+  hasEslint(): boolean {
+    return hasEslint(this.packages)
+  }
+
+  hasVSCodeEngine(): boolean {
+    return hasVSCodeEngine(this.packages)
+  }
+
+  reset(): void {
+    this.loaded = false
+    this.loadTask = null
+    this.packages = []
+    this.depNames.clear()
+  }
+
+  private ensureUpdatedPackage(
+    updatedPackages: Map<string, PackageJsonMeta>,
+    pkg: PackageJsonMeta,
+  ): PackageJsonMeta {
+    const packageKey = pkg.filepath
+    if (!updatedPackages.has(packageKey))
+      updatedPackages.set(packageKey, cloneDeep(pkg))
+
+    return updatedPackages.get(packageKey)!
+  }
+
+  private buildIndexes(): void {
+    this.depNames.clear()
+
+    for (const pkg of this.listProjectPackages()) {
+      for (const dep of pkg.deps)
+        this.depNames.add(dep.name)
+    }
   }
 }

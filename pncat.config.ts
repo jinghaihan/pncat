@@ -1,22 +1,22 @@
-import { defineConfig, mergeCatalogRules } from './src'
+import { defineConfig, mergeCatalogRules } from 'pncat'
 
 export default defineConfig({
   catalogRules: mergeCatalogRules([
     {
-      name: 'npm',
+      name: 'inlined',
       match: [
+        '@antfu/utils',
         '@npmcli/config',
+        'deepmerge',
+        'detect-indent',
+        'diff',
+        'fast-npm-meta',
         'npm-package-arg',
         'npm-registry-fetch',
-        'fast-npm-meta',
-      ],
-      priority: 0,
-    },
-    {
-      name: 'node',
-      match: [
-        'pnpm-workspace-yaml',
-        'package-manager-detector',
+        'p-retry',
+        'semver',
+        'tildify',
+        'ufo',
       ],
     },
   ]),

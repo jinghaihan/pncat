@@ -1,0 +1,11 @@
+{
+  "name": "app-bun",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "solid-js": "catalog:"
+  },
+  "devDependencies": {
+    "vitest": "catalog:test"
+  }
+}

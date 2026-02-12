@@ -1,0 +1,11 @@
+{
+  "name": "app-vlt",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "svelte": "catalog:"
+  },
+  "devDependencies": {
+    "vite": "catalog:"
+  }
+}

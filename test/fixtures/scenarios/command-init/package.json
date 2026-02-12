@@ -1,0 +1,14 @@
+{
+  "name": "fixture-command-init",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ],
+  "engines": {
+    "vscode": "^1.95.0"
+  },
+  "devDependencies": {
+    "eslint": "^9.0.0"
+  }
+}

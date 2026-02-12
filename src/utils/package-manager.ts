@@ -1,22 +1,23 @@
-import type { Agent } from '../types'
-import process from 'node:process'
-import { toArray } from '@antfu/utils'
-import { findUp } from 'find-up-simple'
-import { detect } from 'package-manager-detector/detect'
-import { AGENT_CONFIG, AGENTS } from '../constants'
+import type { PackageManager } from '@/types'
+import { findUp } from 'find-up'
+import { detect } from 'package-manager-detector'
+import { PACKAGE_MANAGER_CONFIG, PACKAGE_MANAGERS } from '@/constants'
+import { getCwd } from './helper'
 
-export async function detectAgent(cwd: string = process.cwd()): Promise<Agent | undefined> {
-  const agent = await detect({ cwd })
-  if (!agent) {
-    for (const file of toArray(AGENT_CONFIG.vlt.locks).concat(AGENT_CONFIG.vlt.filename)) {
-      const filepath = await findUp(file, { cwd })
-      if (filepath)
-        return 'vlt'
-    }
-    return
-  }
+export async function detectPackageManager(dir?: string): Promise<PackageManager> {
+  const cwd = getCwd({ cwd: dir })
 
-  const agentName = agent.name as Agent
-  if (AGENTS.includes(agentName))
-    return agentName
+  const agent = (await detect({ cwd }))?.name as PackageManager | undefined
+  if (agent && PACKAGE_MANAGERS.includes(agent))
+    return agent
+
+  if (await isVltWorkspace(cwd))
+    return 'vlt'
+
+  return 'pnpm'
+}
+
+async function isVltWorkspace(cwd?: string): Promise<boolean> {
+  const path = await findUp([PACKAGE_MANAGER_CONFIG.vlt.filename, ...PACKAGE_MANAGER_CONFIG.vlt.locks], { cwd: getCwd({ cwd }) })
+  return !!path
 }

@@ -1,24 +1,22 @@
 import type {
+  CatalogIndex,
   CatalogOptions,
   PackageJsonMeta,
   RawDep,
   ResolverContext,
   ResolverResult,
-} from '../types'
-import process from 'node:process'
+} from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import cloneDeep from 'lodash.clonedeep'
-import { AGENT_CONFIG } from '../constants'
-import { createDepCatalogIndex, inferCatalogName } from '../utils/catalog'
-import { updatePackageToCatalog } from '../utils/helper'
-import { sortSpecs } from '../utils/specifier'
-import { confirmWorkspaceChanges } from '../utils/workspace'
-import { Workspace } from '../workspace-manager'
+import { gt } from 'semver'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
+import { cleanSpec, inferCatalogName, toCatalogSpecifier } from '@/utils'
+import { WorkspaceManager } from '@/workspace-manager'
+import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, createCommandError, ensureWorkspaceFile } from './shared'
 
-export async function migrateCommand(options: CatalogOptions) {
-  const workspace = new Workspace(options)
-  await workspace.catalog.ensureWorkspace()
+export async function migrateCommand(options: CatalogOptions): Promise<void> {
+  const workspace = new WorkspaceManager(options)
+  await ensureWorkspaceFile(workspace)
 
   const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
     options,
@@ -42,127 +40,157 @@ export async function migrateCommand(options: CatalogOptions) {
 
 export async function resolveMigrate(context: ResolverContext): Promise<ResolverResult> {
   const { options, workspace } = context
+  await workspace.loadPackages()
+  const workspaceCatalogIndex = await workspace.getCatalogIndex()
 
-  const packages = await workspace.loadPackages()
+  const groupedDeps = new Map<string, Map<string, RawDep[]>>()
+  const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  const dependencies: Map<string, Map<string, RawDep[]>> = new Map()
-  const updatedPackages: Map<string, PackageJsonMeta> = new Map()
-
-  const setDep = (dep: RawDep) => {
-    if (!dependencies.has(dep.name))
-      dependencies.set(dep.name, new Map())
-    const catalogDeps = dependencies.get(dep.name)!
-
-    if (!catalogDeps.has(dep.catalogName))
-      catalogDeps.set(dep.catalogName, [])
-    catalogDeps.get(dep.catalogName)!.push(dep)
-  }
-
-  const setPackage = async (dep: RawDep, pkg: PackageJsonMeta) => {
-    if (!updatedPackages.has(pkg.name))
-      updatedPackages.set(pkg.name, cloneDeep(pkg))
-
-    const data = updatedPackages.get(pkg.name)!
-    await updatePackageToCatalog(dep, data, workspace)
-  }
-
-  for (const pkg of packages) {
-    if (workspace.isCatalogPackage(pkg))
-      continue
+  for (const pkg of workspace.listCatalogTargetPackages()) {
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue
 
-      const resolvedDep = workspace.resolveDep(dep)
-      setDep(resolvedDep)
+      const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
+      addDependency(groupedDeps, resolvedDep)
 
-      if (resolvedDep.update)
-        await setPackage(resolvedDep, pkg)
+      if (resolvedDep.update && pkg.type === 'package.json')
+        workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
     }
   }
 
-  await resolveConflict(dependencies, options)
+  const dependencies = await resolveConflicts(groupedDeps, options)
 
-  const deps = Array.from(dependencies.values()).flatMap(i => Array.from(i.values()).flat())
-  const exists = new Set(deps.map(i => i.name))
-
-  const workspaceJson = await workspace.catalog.toJSON()
-  const catalogIndex = createDepCatalogIndex(workspaceJson)
-  const preserved: RawDep[] = []
-
-  for (const [depName, catalogs] of catalogIndex.entries()) {
-    if (exists.has(depName))
-      continue
-
-    for (const catalog of catalogs) {
-      const rawDep = {
-        name: depName,
-        specifier: catalog.specifier,
-        catalog: true,
-        catalogable: true,
-        catalogName: catalog.catalogName,
-        source: AGENT_CONFIG[options.agent || 'pnpm'].depType,
-      }
-      if (options.force)
-        rawDep.catalogName = inferCatalogName(rawDep, options)
-      preserved.push(rawDep)
-    }
-  }
+  preserveWorkspaceDeps(dependencies, workspaceCatalogIndex, options)
 
   return {
-    dependencies: [...deps, ...preserved],
+    dependencies,
     updatedPackages: Object.fromEntries(updatedPackages.entries()),
   }
 }
 
-export async function resolveConflict(dependencies: Map<string, Map<string, RawDep[]>>, options: CatalogOptions) {
-  const conflicts: { depName: string, catalogName: string, specifiers: string[], resolvedSpecifier?: string }[] = []
+function addDependency(groupedDeps: Map<string, Map<string, RawDep[]>>, dep: RawDep): void {
+  if (!groupedDeps.has(dep.name))
+    groupedDeps.set(dep.name, new Map())
 
-  for (const [depName, catalogDeps] of dependencies) {
+  const catalogDeps = groupedDeps.get(dep.name)!
+  if (!catalogDeps.has(dep.catalogName))
+    catalogDeps.set(dep.catalogName, [])
+
+  catalogDeps.get(dep.catalogName)!.push(dep)
+}
+
+async function resolveConflicts(
+  groupedDeps: Map<string, Map<string, RawDep[]>>,
+  options: CatalogOptions,
+): Promise<RawDep[]> {
+  const dependencies: RawDep[] = []
+  const conflictCount = countConflicts(groupedDeps)
+
+  if (conflictCount > 0)
+    p.log.warn(`found ${c.yellow(conflictCount)} dependencies with multiple specifiers, manual selection required`)
+
+  for (const [, catalogDeps] of groupedDeps) {
     for (const [catalogName, deps] of catalogDeps) {
-      const specs = [...new Set(deps.map(i => i.specifier))]
-      if (specs.length > 1) {
-        const specifiers = sortSpecs(specs)
-        conflicts.push({
-          depName,
-          catalogName,
-          specifiers,
-          resolvedSpecifier: specifiers[0],
-        })
+      const specifiers = [...new Set(deps.map(dep => dep.specifier))]
+      if (specifiers.length <= 1) {
+        dependencies.push(deps[0])
+        continue
       }
-      else {
-        const dep = deps[0]
-        dependencies.get(dep.name)!.set(dep.catalogName, [dep])
-      }
+
+      const selectedSpecifier = await selectSpecifier(specifiers, deps[0].name, catalogName, options)
+
+      const selectedDep = deps.find(dep => dep.specifier === selectedSpecifier)!
+      dependencies.push(selectedDep)
     }
   }
 
-  if (conflicts.length === 0)
-    return
+  return dependencies
+}
 
-  p.log.warn(`📦 Found ${c.yellow(conflicts.length)} dependencies that need manual version selection`)
-  for (const item of conflicts) {
-    if (options.yes)
+function countConflicts(groupedDeps: Map<string, Map<string, RawDep[]>>): number {
+  let total = 0
+  for (const [, catalogDeps] of groupedDeps) {
+    for (const [, deps] of catalogDeps) {
+      const specifiers = new Set(deps.map(dep => dep.specifier))
+      if (specifiers.size > 1)
+        total += 1
+    }
+  }
+  return total
+}
+
+async function selectSpecifier(
+  specifiers: string[],
+  depName: string,
+  catalogName: string,
+  options: CatalogOptions,
+): Promise<string> {
+  const sorted = specifiers.slice().sort((a, b) => {
+    const versionA = cleanSpec(a, options)
+    const versionB = cleanSpec(b, options)
+
+    if (versionA && versionB) {
+      if (versionA === versionB)
+        return 0
+      return gt(versionA, versionB) ? -1 : 1
+    }
+
+    return a.localeCompare(b)
+  })
+
+  const selected = await p.select({
+    message: `select specifier for ${depName} (${catalogName})`,
+    options: sorted.map(specifier => ({
+      label: specifier,
+      value: specifier,
+    })),
+    initialValue: sorted[0],
+  })
+
+  if (p.isCancel(selected))
+    throw createCommandError(COMMAND_ERROR_CODES.ABORT)
+
+  return selected
+}
+
+function preserveWorkspaceDeps(
+  dependencies: RawDep[],
+  catalogIndex: CatalogIndex,
+  options: CatalogOptions,
+): void {
+  const usedDeps = new Set(dependencies.map(dep => dep.name))
+  const agent = options.agent || 'pnpm'
+
+  for (const [depName, catalogs] of catalogIndex.entries()) {
+    if (usedDeps.has(depName))
       continue
 
-    const result = await p.select({
-      message: c.yellow(`${item.depName} (${item.catalogName}):`),
-      options: item.specifiers.map(i => ({
-        label: i,
-        value: i,
-      })),
-      initialValue: item.resolvedSpecifier,
-    })
-    if (!result || p.isCancel(result)) {
-      p.outro(c.red('aborting'))
-      process.exit(1)
-    }
-    item.resolvedSpecifier = result
-  }
+    for (const catalog of catalogs) {
+      const source = PACKAGE_MANAGER_CONFIG[agent].depType
+      const catalogName = options.force
+        ? inferCatalogName(
+            {
+              name: depName,
+              specifier: catalog.specifier,
+              source,
+              parents: [],
+              catalogable: true,
+              isCatalog: true,
+            },
+            options,
+          )
+        : catalog.catalogName
 
-  for (const conflict of conflicts) {
-    const deps = dependencies.get(conflict.depName)!.get(conflict.catalogName)!
-    const dep = deps.find(dep => dep.specifier === conflict.resolvedSpecifier)!
-    dependencies.get(conflict.depName)!.set(conflict.catalogName, [dep])
+      dependencies.push({
+        name: depName,
+        specifier: catalog.specifier,
+        source,
+        parents: [],
+        catalogable: true,
+        catalogName,
+        isCatalog: true,
+      })
+    }
   }
 }

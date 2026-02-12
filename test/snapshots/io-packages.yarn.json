@@ -1,0 +1,140 @@
+[
+  {
+    "name": "yarn-catalog:default",
+    "private": true,
+    "version": "",
+    "type": ".yarnrc.yml",
+    "relative": ".yarnrc.yml",
+    "filepath": "<fixtures>/yarn/.yarnrc.yml",
+    "raw": {
+      "defaultProtocol": "npm:",
+      "catalog": {
+        "vue": "^3.5.0"
+      },
+      "catalogs": {
+        "lint": {
+          "eslint": "^9.0.0"
+        }
+      }
+    },
+    "context": {
+      "defaultProtocol": "npm:",
+      "catalog": {
+        "vue": "^3.5.0"
+      },
+      "catalogs": {
+        "lint": {
+          "eslint": "^9.0.0"
+        }
+      }
+    },
+    "deps": [
+      {
+        "name": "vue",
+        "specifier": "^3.5.0",
+        "parents": [],
+        "source": "yarn-workspace",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "default"
+      }
+    ]
+  },
+  {
+    "name": "yarn-catalog:lint",
+    "private": true,
+    "version": "",
+    "type": ".yarnrc.yml",
+    "relative": ".yarnrc.yml",
+    "filepath": "<fixtures>/yarn/.yarnrc.yml",
+    "raw": {
+      "defaultProtocol": "npm:",
+      "catalog": {
+        "vue": "^3.5.0"
+      },
+      "catalogs": {
+        "lint": {
+          "eslint": "^9.0.0"
+        }
+      }
+    },
+    "context": {
+      "defaultProtocol": "npm:",
+      "catalog": {
+        "vue": "^3.5.0"
+      },
+      "catalogs": {
+        "lint": {
+          "eslint": "^9.0.0"
+        }
+      }
+    },
+    "deps": [
+      {
+        "name": "eslint",
+        "specifier": "^9.0.0",
+        "parents": [],
+        "source": "yarn-workspace",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "lint"
+      }
+    ]
+  },
+  {
+    "name": "fixture-yarn",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
+    "relative": "package.json",
+    "filepath": "<fixtures>/yarn/package.json",
+    "raw": {
+      "name": "fixture-yarn",
+      "version": "0.0.0",
+      "private": true,
+      "workspaces": [
+        "packages/*"
+      ]
+    },
+    "deps": []
+  },
+  {
+    "name": "app-yarn",
+    "private": true,
+    "version": "0.0.0",
+    "type": "package.json",
+    "relative": "packages/app/package.json",
+    "filepath": "<fixtures>/yarn/packages/app/package.json",
+    "raw": {
+      "name": "app-yarn",
+      "version": "0.0.0",
+      "private": true,
+      "dependencies": {
+        "vue": "catalog:"
+      },
+      "devDependencies": {
+        "eslint": "catalog:lint"
+      }
+    },
+    "deps": [
+      {
+        "name": "vue",
+        "specifier": "catalog:",
+        "parents": [],
+        "source": "dependencies",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "prod"
+      },
+      {
+        "name": "eslint",
+        "specifier": "catalog:lint",
+        "parents": [],
+        "source": "devDependencies",
+        "catalogable": true,
+        "isCatalog": true,
+        "catalogName": "dev"
+      }
+    ]
+  }
+]

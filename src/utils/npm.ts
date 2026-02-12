@@ -5,6 +5,13 @@ import process from 'node:process'
 import pRetry from 'p-retry'
 import { dirname, join } from 'pathe'
 import { joinURL } from 'ufo'
+import { isObject } from './helper'
+
+interface DistTagResponse {
+  'dist-tags'?: {
+    latest?: string
+  } & Record<string, string>
+}
 
 async function _getNpmConfig() {
   const { default: NpmCliConfig } = await import('@npmcli/config')
@@ -24,8 +31,11 @@ async function _getNpmConfig() {
 
     const setCliOption = (key: string, value: string) => {
       const cli = npmcliConfig.data.get('cli')
-      if (cli)
-        cli.data[key] = value
+      if (!isObject(cli))
+        return
+
+      const cliData = ensureObjectRecord(cli, 'data')
+      cliData[key] = value
     }
     setCliOption('userconfig', join(npmcliConfig.home, '.npmrc'))
     setCliOption('globalconfig', join(npmcliConfig.globalPrefix, 'etc', 'npmrc'))
@@ -66,18 +76,21 @@ async function _getLatestVersion(spec: string) {
 
   const npmRegistryFetch = await import('npm-registry-fetch')
   const url = joinURL(npmRegistryFetch.pickRegistry(spec, npmConfigs), name)
+  const headers = getStringRecord(npmConfigs.headers)
 
-  const { 'dist-tags': { latest } } = await npmRegistryFetch.json(url, {
+  const metadata = await npmRegistryFetch.json(url, {
     ...npmConfigs,
     headers: {
-      headers: {
-        'user-agent': `pncat@npm node/${process.version}`,
-        'accept': 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
-        ...npmConfigs.headers,
-      },
+      'user-agent': `pncat@npm node/${process.version}`,
+      'accept': 'application/vnd.npm.install-v1+json; q=1.0, application/json; q=0.8, */*',
+      ...headers,
     },
     spec,
-  }) as unknown as { 'dist-tags': { latest: string } & Record<string, string> }
+  }) as DistTagResponse
+
+  const latest = metadata['dist-tags']?.latest
+  if (!latest)
+    throw new Error(`Failed to resolve ${spec} from npm`)
 
   return latest
 }
@@ -88,8 +101,27 @@ export async function getLatestVersion(spec: string) {
       const version = await _getLatestVersion(spec)
       if (version)
         return version
-      throw new Error(`failed to resolve ${spec} from npm`)
+      throw new Error(`Failed to resolve ${spec} from npm`)
     },
     { retries: 3 },
+  )
+}
+
+function ensureObjectRecord(input: Record<string, unknown>, key: string): Record<string, unknown> {
+  const value = input[key]
+  if (isObject(value))
+    return value
+
+  const nextValue: Record<string, unknown> = {}
+  input[key] = nextValue
+  return nextValue
+}
+
+function getStringRecord(value: unknown): Record<string, string> {
+  if (!isObject(value))
+    return {}
+
+  return Object.fromEntries(
+    Object.entries(value).filter((entry): entry is [string, string] => typeof entry[1] === 'string'),
   )
 }
