@@ -30,6 +30,34 @@ function createUpdatedPackages(deps: RawDep[]): Record<string, PackageJsonMeta> 
   }
 }
 
+function createUpdatedPackagesForMonorepo(
+  appDeps: RawDep[],
+  libDeps: RawDep[],
+): Record<string, PackageJsonMeta> {
+  return {
+    app: {
+      type: 'package.json',
+      name: 'app',
+      private: true,
+      version: '0.0.0',
+      filepath: '/repo/packages/app/package.json',
+      relative: 'packages/app/package.json',
+      raw: { name: 'app' },
+      deps: appDeps,
+    },
+    lib: {
+      type: 'package.json',
+      name: 'lib',
+      private: true,
+      version: '0.0.0',
+      filepath: '/repo/packages/lib/package.json',
+      relative: 'packages/lib/package.json',
+      raw: { name: 'lib' },
+      deps: libDeps,
+    },
+  }
+}
+
 describe('renderChanges', () => {
   it('returns empty string when no dependencies are provided', () => {
     expect(renderChanges([], {})).toBe('')
@@ -46,5 +74,17 @@ describe('renderChanges', () => {
     expect(output).toContain('react')
     expect(output).toContain('vitest')
     expect(output).toContain('1 package 2 dependencies')
+  })
+
+  it('renders a dependency for every matched updated package', () => {
+    const lodash = createDep('lodash-es', 'dependencies', '^4.17.23', 'prod')
+    const output = c.strip(renderChanges(
+      [lodash],
+      createUpdatedPackagesForMonorepo([lodash], [lodash]),
+    ))
+
+    expect(output).toContain('app packages/app/package.json')
+    expect(output).toContain('lib packages/lib/package.json')
+    expect(output).toContain('2 packages 1 dependency')
   })
 })

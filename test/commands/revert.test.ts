@@ -1,4 +1,10 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep } from '@/types'
+import type {
+  CatalogOptions,
+  PackageJsonMeta,
+  PackageMeta,
+  RawDep,
+  WorkspaceSchema,
+} from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
 import { describe, expect, it } from 'vitest'
 import { resolveRevert } from '@/commands/revert'
@@ -35,12 +41,13 @@ function createPackage(
 }
 
 function createWorkspace(
-  packages: PackageJsonMeta[],
+  packages: PackageMeta[],
   catalogIndex: Map<string, { catalogName: string, specifier: string }[]>,
 ): WorkspaceManager {
   return {
     loadPackages: async () => packages,
-    listProjectPackages: () => packages,
+    listCatalogTargetPackages: () => packages,
+    listProjectPackages: () => packages.filter((pkg): pkg is PackageJsonMeta => pkg.type === 'package.json'),
     getCatalogIndex: async () => catalogIndex,
     setDepSpecifier: (
       updatedPackages: Map<string, PackageJsonMeta>,
@@ -74,6 +81,26 @@ function createWorkspace(
       }
     },
   } as unknown as WorkspaceManager
+}
+
+function createWorkspaceOverridesPackage(
+  deps: RawDep[],
+): PackageMeta {
+  return {
+    type: 'pnpm-workspace.yaml',
+    name: 'pnpm-workspace:overrides',
+    private: true,
+    version: '',
+    filepath: '/repo/pnpm-workspace.yaml',
+    relative: 'pnpm-workspace.yaml',
+    raw: {
+      overrides: Object.fromEntries(
+        deps.map(dep => [dep.name, dep.specifier]),
+      ),
+    } as WorkspaceSchema,
+    context: {},
+    deps,
+  }
 }
 
 describe('resolveRevert', () => {
@@ -206,11 +233,11 @@ describe('resolveRevert', () => {
     expect(result.updatedPackages).toEqual({})
   })
 
-  it('skips pnpm overrides pseudo package when collecting revert targets', async () => {
+  it('collects pnpm overrides pseudo package when reverting workspace override dependencies', async () => {
     const dep: RawDep = {
       name: 'react',
       specifier: 'catalog:prod',
-      source: 'dependencies',
+      source: 'pnpm-workspace',
       parents: [],
       catalogable: true,
       catalogName: 'prod',
@@ -218,17 +245,22 @@ describe('resolveRevert', () => {
     }
 
     const workspace = createWorkspace(
-      [createPackage('pnpm-workspace:overrides', [dep])],
+      [createWorkspaceOverridesPackage([dep])],
       new Map([['react', [{ catalogName: 'prod', specifier: '^18.3.1' }]]]),
     )
 
     const result = await resolveRevert({
-      args: [],
+      args: ['react'],
       options: createFixtureOptions('pnpm'),
       workspace,
     })
 
-    expect(result.dependencies).toEqual([])
+    expect(result.dependencies).toEqual([
+      {
+        ...dep,
+        specifier: '^18.3.1',
+      },
+    ])
     expect(result.updatedPackages).toEqual({})
   })
 })

@@ -1,4 +1,9 @@
-import type { CatalogOptions, PackageJsonMeta, RawDep, WorkspaceSchema } from '@/types'
+import type {
+  CatalogOptions,
+  PackageJsonMeta,
+  RawDep,
+  WorkspaceSchema,
+} from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
@@ -66,6 +71,7 @@ function createWorkspace(
 
   return {
     loadPackages: async () => packages,
+    listCatalogTargetPackages: () => packages,
     listProjectPackages: () => packages,
     getCatalogIndex: async () => index,
     setDepSpecifier: (

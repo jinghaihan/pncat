@@ -46,7 +46,7 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
   const groupedDeps = new Map<string, Map<string, RawDep[]>>()
   const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  for (const pkg of workspace.listProjectPackages()) {
+  for (const pkg of workspace.listCatalogTargetPackages()) {
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue
@@ -54,7 +54,7 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
       const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
       addDependency(groupedDeps, resolvedDep)
 
-      if (resolvedDep.update)
+      if (resolvedDep.update && pkg.type === 'package.json')
         workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
     }
   }

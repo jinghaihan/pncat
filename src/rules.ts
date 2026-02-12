@@ -23,7 +23,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'build',
-    match: [/(^|[@/.-])(vite|webpack|rollup|rolldown|rspack|esbuild|tsup|tsdown|unplugin)($|[@/.-])/],
+    match: [/(^|[@/.-])(vite|webpack|rollup|rolldown|rspack|esbuild|tsup|tsdown|unbuild|unplugin)($|[@/.-])/],
     priority: 20,
   },
   {

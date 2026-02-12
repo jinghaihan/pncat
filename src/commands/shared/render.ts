@@ -1,4 +1,4 @@
-import type { PackageJsonMeta, RawDep } from '@/types'
+import type { PackageMeta, RawDep } from '@/types'
 import c from 'ansis'
 import { DEPS_TYPE_SHORT_MAP } from '@/constants'
 
@@ -7,7 +7,7 @@ const MIN_DEP_TYPE_WIDTH = 6
 const MIN_SPECIFIER_WIDTH = 10
 const MIN_CATALOG_WIDTH = 10
 
-export function renderChanges(deps: RawDep[], updatedPackages: Record<string, PackageJsonMeta>): string {
+export function renderChanges(deps: RawDep[], updatedPackages: Record<string, PackageMeta>): string {
   if (deps.length === 0)
     return ''
 
@@ -30,7 +30,6 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
         continue
 
       packageDepsMap.set(pkgName, [...(packageDepsMap.get(pkgName) || []), dep])
-      break
     }
   }
 

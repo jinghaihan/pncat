@@ -38,6 +38,10 @@ const FIXTURE_SCENARIOS = {
     agent: 'pnpm',
     path: ['scenarios', 'command-init'],
   },
+  'command-migrate-overrides-only': {
+    agent: 'pnpm',
+    path: ['scenarios', 'command-migrate-overrides-only'],
+  },
   'command-migrate': {
     agent: 'pnpm',
     path: ['scenarios', 'command-migrate'],

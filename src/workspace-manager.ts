@@ -60,6 +60,13 @@ export class WorkspaceManager {
     return this.packages.filter(pkg => pkg.type !== 'package.json')
   }
 
+  listCatalogTargetPackages(): PackageMeta[] {
+    return [
+      ...this.listProjectPackages(),
+      ...this.listWorkspacePackages().filter(pkg => isPnpmOverridesPackageName(pkg.name)),
+    ]
+  }
+
   getDepNames(): string[] {
     return Array.from(this.depNames)
   }

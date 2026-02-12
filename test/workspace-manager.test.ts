@@ -63,6 +63,17 @@ describe('listWorkspacePackages', () => {
   })
 })
 
+describe('listCatalogTargetPackages', () => {
+  it('returns project packages and pnpm overrides pseudo package', async () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    await manager.loadPackages()
+
+    const targets = manager.listCatalogTargetPackages()
+    expect(targets.some(pkg => pkg.type === 'package.json')).toBe(true)
+    expect(targets.some(pkg => pkg.name === 'pnpm-workspace:overrides')).toBe(true)
+  })
+})
+
 describe('getDepNames', () => {
   it('collects unique dependency names from project packages', async () => {
     const manager = new WorkspaceManager(createFixtureOptions('pnpm'))

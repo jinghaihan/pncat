@@ -1,0 +1,8 @@
+{
+  "name": "fixture-command-migrate-overrides-only",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": [
+    "packages/*"
+  ]
+}

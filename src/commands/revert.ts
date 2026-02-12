@@ -1,6 +1,6 @@
 import type { CatalogOptions, PackageJsonMeta, RawDep, ResolverContext, ResolverResult } from '@/types'
 import process from 'node:process'
-import { isCatalogSpecifier, isPnpmOverridesPackageName } from '@/utils'
+import { isCatalogSpecifier } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
@@ -71,10 +71,7 @@ export async function resolveRevert(context: ResolverContext): Promise<ResolverR
   const dependencies: RawDep[] = []
   const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  for (const pkg of workspace.listProjectPackages()) {
-    if (isPnpmOverridesPackageName(pkg.name))
-      continue
-
+  for (const pkg of workspace.listCatalogTargetPackages()) {
     for (const dep of pkg.deps) {
       if (!depFilter(dep.name))
         continue
@@ -83,7 +80,9 @@ export async function resolveRevert(context: ResolverContext): Promise<ResolverR
 
       const resolvedDep = workspace.resolveCatalogDep(dep, catalogIndex, false)
       dependencies.push(resolvedDep)
-      workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, resolvedDep.specifier)
+
+      if (pkg.type === 'package.json')
+        workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, resolvedDep.specifier)
     }
   }
 
