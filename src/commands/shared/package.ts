@@ -25,7 +25,8 @@ export async function selectTargetProjectPackages(
 
   const defaultTargetPackage = findDefaultTargetPackage(targetPackages, currentPackagePath)
   const isMonorepo = projectPackages.length > 1
-  if (!isMonorepo || yes)
+  const isOnlyAndCurrent = targetPackages.length === 1 && defaultTargetPackage.filepath === currentPackagePath
+  if (!isMonorepo || yes || isOnlyAndCurrent)
     return [defaultTargetPackage]
 
   const selected = await p.multiselect({

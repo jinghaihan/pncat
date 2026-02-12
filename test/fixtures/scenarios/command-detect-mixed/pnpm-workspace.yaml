@@ -1,0 +1,5 @@
+packages:
+  - packages/*
+catalogs:
+  frontend:
+    vue: ^3.5.18

@@ -63,8 +63,15 @@ function createDisplayPackages(
     if (addedFilepaths.has(pkg.filepath))
       continue
 
+    if (pkg.type === 'package.json')
+      continue
+
+    const isWorkspaceOverridesPackage = pkg.name.endsWith('-workspace:overrides')
     const hasChangedDep = pkg.deps.some(dep =>
-      changedDeps.some(changed => changed.name === dep.name && changed.source === dep.source),
+      changedDeps.some(changed =>
+        changed.name === dep.name
+        && (changed.source === dep.source || isWorkspaceOverridesPackage),
+      ),
     )
     if (!hasChangedDep)
       continue

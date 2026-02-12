@@ -1,0 +1,8 @@
+{
+  "name": "fixture-command-detect-force-overrides",
+  "version": "0.0.0",
+  "private": true,
+  "dependencies": {
+    "react": "^18.2.0"
+  }
+}

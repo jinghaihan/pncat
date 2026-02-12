@@ -30,18 +30,30 @@ export function mergeCatalogRules(...args: (MergeOptions | CatalogRule[])[]): Ca
 }
 
 function mergeByName(target: CatalogRule[], source: CatalogRule[]): CatalogRule[] {
-  return source.reduce((result, item) => {
-    const existing = result.find((entry: CatalogRule) => entry.name === item.name)
+  const result = target.map(rule => cloneDeep(rule))
+
+  for (const sourceRuleRaw of source) {
+    const sourceRule = cloneDeep(sourceRuleRaw)
+    const existing = result.find((entry: CatalogRule) => entry.name === sourceRule.name)
     if (!existing) {
-      result.push(item)
-      return result
+      result.push(sourceRule)
+      continue
     }
 
-    existing.match = toArray(existing.match)
-    item.match = toArray(item.match)
-    Object.assign(existing, deepmerge(existing, item))
-    return result
-  }, [...target])
+    const merged = deepmerge<CatalogRule>(
+      {
+        ...existing,
+        match: toArray(existing.match),
+      },
+      {
+        ...sourceRule,
+        match: toArray(sourceRule.match),
+      },
+    )
+    Object.assign(existing, merged)
+  }
+
+  return result
 }
 
 function sortCatalogRules(rules: CatalogRule[]): CatalogRule[] {

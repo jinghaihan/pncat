@@ -39,6 +39,8 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
   options = normalizeConfig(options)
 
   const configOptions = await readConfig(options)
+
+  // catalog rules can only be defined in the config file
   const catalogRules = configOptions.catalogRules || []
   delete configOptions.catalogRules
 

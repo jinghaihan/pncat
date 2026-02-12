@@ -94,18 +94,25 @@ async function resolveConflicts(
     for (const [catalogName, deps] of catalogDeps) {
       const specifiers = [...new Set(deps.map(dep => dep.specifier))]
       if (specifiers.length <= 1) {
-        dependencies.push(deps[0])
+        dependencies.push(selectPreferredDependency(deps))
         continue
       }
 
       const selectedSpecifier = await selectSpecifier(specifiers, deps[0].name, catalogName, options)
-
-      const selectedDep = deps.find(dep => dep.specifier === selectedSpecifier)!
+      const selectedDep = selectPreferredDependency(deps, dep => dep.specifier === selectedSpecifier)
       dependencies.push(selectedDep)
     }
   }
 
   return dependencies
+}
+
+function selectPreferredDependency(deps: RawDep[], matcher?: (dep: RawDep) => boolean): RawDep {
+  const matched = matcher ? deps.filter(matcher) : deps
+  if (matched.length === 0)
+    return deps[0]
+
+  return matched.find(dep => dep.update) || matched[0]
 }
 
 function countConflicts(groupedDeps: Map<string, Map<string, RawDep[]>>): number {

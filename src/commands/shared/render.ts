@@ -27,7 +27,12 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
   const packageDepsMap = new Map<string, RawDep[]>()
   for (const dep of deps) {
     for (const pkgMeta of packageMetas) {
-      if (!pkgMeta.deps.some(entry => entry.name === dep.name && entry.source === dep.source))
+      const isWorkspaceOverridesPackage = pkgMeta.name.endsWith('-workspace:overrides')
+      const matched = pkgMeta.deps.some(entry =>
+        entry.name === dep.name
+        && (entry.source === dep.source || isWorkspaceOverridesPackage),
+      )
+      if (!matched)
         continue
 
       packageDepsMap.set(pkgMeta.filepath, [...(packageDepsMap.get(pkgMeta.filepath) || []), dep])

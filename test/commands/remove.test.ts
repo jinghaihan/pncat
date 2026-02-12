@@ -144,7 +144,7 @@ describe('resolveRemove', () => {
     runAgentRemoveMock.mockResolvedValue(undefined)
   })
 
-  it('prompts target package options with only packages that contain the dependency', async () => {
+  it('does not prompt when only one target package contains the dependency', async () => {
     const depInPackage: RawDep = {
       name: 'react',
       specifier: 'catalog:prod',
@@ -177,18 +177,13 @@ describe('resolveRemove', () => {
       [createWorkspacePackage(depInWorkspace)],
     )
     const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
-    multiselectMock.mockResolvedValue(['/repo/package.json'])
-
     await resolveRemove({
       args: ['react'],
       options,
       workspace,
     })
 
-    expect(multiselectMock).toHaveBeenCalledTimes(1)
-    expect(multiselectMock).toHaveBeenCalledWith(expect.objectContaining({
-      options: [expect.objectContaining({ value: '/repo/package.json' })],
-    }))
+    expect(multiselectMock).not.toHaveBeenCalled()
   })
 
   it('runs noncatalog remove for each selected package in monorepo', async () => {

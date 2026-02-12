@@ -89,6 +89,41 @@ describe('detectCommand', () => {
     expect(p.note).not.toHaveBeenCalled()
   })
 
+  it('only renders package.json files that actually require migration', async () => {
+    await detectCommand(createFixtureScenarioOptions('command-detect-mixed', {
+      install: false,
+      verbose: false,
+    }))
+
+    const noteMock = vi.mocked(p.note)
+    expect(noteMock).toHaveBeenCalledTimes(1)
+    const noteMessage = noteMock.mock.calls[0]?.[0]
+    expect(typeof noteMessage).toBe('string')
+
+    const stripped = c.strip(noteMessage as string)
+    expect(stripped).toContain('app-command-detect-mixed-bar')
+    expect(stripped).not.toContain('app-command-detect-mixed-foo')
+    expect(stripped).toContain('1 package 1 dependency')
+  })
+
+  it('renders pnpm-workspace overrides when dependency also exists in package.json under force mode', async () => {
+    await detectCommand(createFixtureScenarioOptions('command-detect-force-overrides', {
+      force: true,
+      install: false,
+      verbose: false,
+    }))
+
+    const noteMock = vi.mocked(p.note)
+    expect(noteMock).toHaveBeenCalledTimes(1)
+    const noteMessage = noteMock.mock.calls[0]?.[0]
+    expect(typeof noteMessage).toBe('string')
+
+    const stripped = c.strip(noteMessage as string)
+    expect(stripped).toContain('fixture-command-detect-force-overrides')
+    expect(stripped).toContain('pnpm-workspace:overrides')
+    expect(stripped).toContain('react')
+  })
+
   it('renders pnpm-workspace overrides package when workspace overrides need migration', async () => {
     await detectCommand(createFixtureScenarioOptions('command-migrate-overrides-only', {
       install: false,

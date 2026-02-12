@@ -391,6 +391,39 @@ describe('selectTargetProjectPackages', () => {
     expect(selected).toEqual([rootPackage, appPackage])
   })
 
+  it('prompts when the only target package is not current package', async () => {
+    const rootPackage = createProjectPackage('fixture-command-shared', PACKAGE_JSON_PATH)
+    const appPackage = createProjectPackage('app-command-shared', APP_PACKAGE_JSON_PATH)
+    multiselectMock.mockResolvedValue([PACKAGE_JSON_PATH])
+
+    const selected = await selectTargetProjectPackages({
+      projectPackages: [rootPackage, appPackage],
+      targetPackages: [rootPackage],
+      currentPackagePath: APP_PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: false,
+    })
+
+    expect(selected).toEqual([rootPackage])
+    expect(multiselectMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('returns the only target package without prompting when it is current package', async () => {
+    const rootPackage = createProjectPackage('fixture-command-shared', PACKAGE_JSON_PATH)
+    const appPackage = createProjectPackage('app-command-shared', APP_PACKAGE_JSON_PATH)
+
+    const selected = await selectTargetProjectPackages({
+      projectPackages: [rootPackage, appPackage],
+      targetPackages: [appPackage],
+      currentPackagePath: APP_PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: false,
+    })
+
+    expect(selected).toEqual([appPackage])
+    expect(multiselectMock).not.toHaveBeenCalled()
+  })
+
   it('throws when target package list is empty', async () => {
     await expect(selectTargetProjectPackages({
       projectPackages: [],

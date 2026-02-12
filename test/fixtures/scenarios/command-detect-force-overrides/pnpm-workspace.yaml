@@ -1,0 +1,3 @@
+packages: []
+overrides:
+  react: ^18.2.0

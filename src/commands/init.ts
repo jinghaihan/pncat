@@ -5,7 +5,6 @@ import { toArray } from '@antfu/utils'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
-import { DEFAULT_CATALOG_RULES } from '@/rules'
 import { isDepMatched } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
 
@@ -197,7 +196,7 @@ function generateConfigContent(lines: string[]): string {
 }
 
 function collectMatchedRules(depNames: string[], options: CatalogOptions): CatalogRule[] {
-  const rules = options.catalogRules?.length ? options.catalogRules : DEFAULT_CATALOG_RULES
+  const rules = options.catalogRules?.length ? options.catalogRules : []
   const rulesMap = new Map<string, CatalogRule & { match: (string | RegExp)[] }>()
 
   for (const rule of rules) {

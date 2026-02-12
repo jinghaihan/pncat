@@ -65,4 +65,38 @@ describe('mergeCatalogRules', () => {
     expect((lint.match as (string | RegExp)[]).map(item => item.toString())).toContain('/eslint/')
     expect(merged[0].name).toBe('lint')
   })
+
+  it('does not mutate input rule objects', () => {
+    const base: CatalogRule[] = [
+      {
+        name: 'lint',
+        match: /eslint/,
+      },
+    ]
+    const override: CatalogRule[] = [
+      {
+        name: 'lint',
+        match: 'prettier',
+      },
+    ]
+
+    mergeCatalogRules(
+      { mergeDefaults: false },
+      base,
+      override,
+    )
+
+    expect(base).toEqual([
+      {
+        name: 'lint',
+        match: /eslint/,
+      },
+    ])
+    expect(override).toEqual([
+      {
+        name: 'lint',
+        match: 'prettier',
+      },
+    ])
+  })
 })

@@ -26,6 +26,14 @@ const FIXTURE_SCENARIOS = {
     agent: 'pnpm',
     path: ['scenarios', 'command-clean'],
   },
+  'command-detect-force-overrides': {
+    agent: 'pnpm',
+    path: ['scenarios', 'command-detect-force-overrides'],
+  },
+  'command-detect-mixed': {
+    agent: 'pnpm',
+    path: ['scenarios', 'command-detect-mixed'],
+  },
   'command-detect-noop': {
     agent: 'pnpm',
     path: ['scenarios', 'command-detect-noop'],

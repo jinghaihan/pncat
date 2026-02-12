@@ -173,6 +173,47 @@ describe('resolveMigrate', () => {
     expect(result.updatedPackages?.['/repo/packages/app/package.json'].raw.dependencies?.react).toBe('catalog:prod')
   })
 
+  it('keeps update flag when grouped dependencies share the same resolved specifier', async () => {
+    const fromCatalog: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const fromPackage: RawDep = {
+      ...fromCatalog,
+      specifier: '^18.3.1',
+      isCatalog: false,
+    }
+
+    const workspace = createWorkspace([
+      createPackage(fromCatalog, 'app-a'),
+      createPackage(fromPackage, 'app-b'),
+    ], {
+      catalogs: {
+        prod: {
+          react: '^18.3.1',
+        },
+      },
+    })
+
+    const result = await resolveMigrate({
+      options: createFixtureOptions('pnpm'),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        ...fromPackage,
+        update: true,
+      },
+    ])
+    expect(result.updatedPackages?.['/repo/packages/app-b/package.json'].raw.dependencies?.react).toBe('catalog:prod')
+  })
+
   it('resolves catalog specifier from existing workspace catalog', async () => {
     const dep: RawDep = {
       name: 'react',
