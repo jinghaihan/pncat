@@ -6,6 +6,9 @@ export default defineConfig({
     'src/cli',
     'src/rules',
   ],
-  clean: true,
+  dts: true,
+  platform: 'node',
   inlineOnly: false,
+  exports: true,
+  clean: true,
 })

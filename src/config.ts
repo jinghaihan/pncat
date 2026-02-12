@@ -1,7 +1,7 @@
-import type { CatalogOptions } from './types'
+import type { CatalogOptions, CommandOptions } from './types'
 import deepmerge from 'deepmerge'
 import { createConfigLoader } from 'unconfig'
-import { DEFAULT_CATALOG_OPTIONS } from './constants'
+import { DEFAULT_CATALOG_OPTIONS, PACKAGE_MANAGERS } from './constants'
 import { detectWorkspaceRoot } from './io'
 import { cloneDeep, detectPackageManager, getCwd } from './utils'
 
@@ -34,7 +34,7 @@ export async function readConfig(options: Partial<CatalogOptions>) {
   return config.sources.length ? normalizeConfig(config.config) : {}
 }
 
-export async function resolveConfig(options: Partial<CatalogOptions>): Promise<CatalogOptions> {
+export async function resolveConfig(options: Partial<CommandOptions>): Promise<CatalogOptions> {
   const defaults = cloneDeep(DEFAULT_CATALOG_OPTIONS)
   options = normalizeConfig(options)
 
@@ -44,13 +44,11 @@ export async function resolveConfig(options: Partial<CatalogOptions>): Promise<C
   const catalogRules = configOptions.catalogRules || []
   delete configOptions.catalogRules
 
-  const merged = deepmerge(deepmerge(defaults, configOptions), options)
+  const merged = deepmerge<CatalogOptions>(deepmerge(defaults, configOptions), options)
 
-  if (!merged.agent)
+  if (!merged.agent || !PACKAGE_MANAGERS.includes(merged.agent))
     merged.agent = await detectPackageManager(merged.cwd)
-
   merged.cwd = merged.cwd || await detectWorkspaceRoot(merged.agent)
-
   merged.catalogRules = catalogRules
 
   return sanitizeOptions(merged)

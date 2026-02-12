@@ -1,5 +1,5 @@
 import type { CAC } from 'cac'
-import type { CatalogOptions, RangeMode } from './types'
+import type { CommandOptions, RangeMode } from './types'
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
@@ -33,12 +33,12 @@ cli
   .option('--verbose', 'Show complete catalogs instead of only the diff')
   .option('--post-run <hooks>', 'Hook to run after command completion')
   .allowUnknownOptions()
-  .action((mode: RangeMode, options: Partial<CatalogOptions>) => runCliAction(mode, options).catch(handleCliError))
+  .action((mode: RangeMode, options: Partial<CommandOptions>) => runCliAction(mode, options).catch(handleCliError))
 
 cli.help()
 cli.version(VERSION)
 
-async function runCliAction(mode: RangeMode, options: Partial<CatalogOptions>): Promise<void> {
+async function runCliAction(mode: RangeMode, options: Partial<CommandOptions>): Promise<void> {
   if (mode) {
     Object.entries(MODE_ALIASES).forEach(([key, value]: [string, string[]]) => {
       if (value.includes(mode))

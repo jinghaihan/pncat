@@ -36,13 +36,12 @@ describe('resolveConfig', () => {
     expect(resolve(config.cwd || '')).toBe(resolve(nested))
   })
 
-  it('respects explicitly provided agent without re-detecting', async () => {
+  it('uses agent from config file', async () => {
     const config = await resolveConfig({
-      cwd: getFixturePath('bun', 'packages', 'app'),
-      agent: 'pnpm',
+      cwd: getFixtureScenarioPath('config-file'),
     })
 
-    expect(config.agent).toBe('pnpm')
+    expect(config.agent).toBe('yarn')
   })
 
   it('resolves workspace root from process cwd when cwd is not provided', async () => {

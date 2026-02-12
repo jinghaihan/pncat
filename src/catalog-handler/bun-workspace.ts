@@ -5,6 +5,7 @@ import type {
   PackageJson,
   PackageMeta,
   RawDep,
+  WorkspaceSchema,
 } from '@/types'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'pathe'
@@ -54,10 +55,7 @@ export class BunCatalog extends JsonCatalog {
     }
 
     if (BunCatalog.hasWorkspaceCatalog(raw)) {
-      const workspaces = raw.workspaces as {
-        catalog?: Record<string, string>
-        catalogs?: Record<string, Record<string, string>>
-      }
+      const workspaces = raw.workspaces as WorkspaceSchema
 
       if (workspaces.catalog)
         catalogs.push(createBunWorkspaceEntry('bun-catalog:default', workspaces.catalog))
