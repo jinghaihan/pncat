@@ -144,6 +144,99 @@ describe('resolveRemove', () => {
     runAgentRemoveMock.mockResolvedValue(undefined)
   })
 
+  it('prompts target package options with only packages that contain the dependency', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const depInWorkspace: RawDep = {
+      ...depInPackage,
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      isCatalog: true,
+    }
+    const vueDep: RawDep = {
+      name: 'vue',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const workspace = createWorkspace(
+      [
+        createProjectPackage('app', '/repo/package.json', [depInPackage]),
+        createProjectPackage('docs', '/repo/packages/docs/package.json', [vueDep]),
+      ],
+      [createWorkspacePackage(depInWorkspace)],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+    multiselectMock.mockResolvedValue(['/repo/package.json'])
+
+    await resolveRemove({
+      args: ['react'],
+      options,
+      workspace,
+    })
+
+    expect(multiselectMock).toHaveBeenCalledTimes(1)
+    expect(multiselectMock).toHaveBeenCalledWith(expect.objectContaining({
+      options: [expect.objectContaining({ value: '/repo/package.json' })],
+    }))
+  })
+
+  it('runs noncatalog remove for each selected package in monorepo', async () => {
+    const reactRootDep: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const reactDocsDep: RawDep = {
+      ...reactRootDep,
+      specifier: '^18.2.0',
+    }
+    const workspace = createWorkspace(
+      [
+        createProjectPackage('app', '/repo/package.json', [reactRootDep]),
+        createProjectPackage('docs', '/repo/packages/docs/package.json', [reactDocsDep]),
+      ],
+      [],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+    multiselectMock.mockResolvedValue([
+      '/repo/package.json',
+      '/repo/packages/docs/package.json',
+    ])
+
+    await resolveRemove({
+      args: ['react'],
+      options,
+      workspace,
+    })
+
+    expect(runAgentRemoveMock).toHaveBeenCalledTimes(2)
+    expect(runAgentRemoveMock).toHaveBeenNthCalledWith(1, ['react'], {
+      cwd: '/repo',
+      agent: 'pnpm',
+      recursive: false,
+    })
+    expect(runAgentRemoveMock).toHaveBeenNthCalledWith(2, ['react'], {
+      cwd: '/repo/packages/docs',
+      agent: 'pnpm',
+      recursive: false,
+    })
+  })
+
   it('removes catalog dependency from target package and marks workspace entry for deletion', async () => {
     const depInPackage: RawDep = {
       name: 'react',

@@ -1,6 +1,7 @@
 import type {
   CatalogIndex,
   CatalogOptions,
+  PackageJsonMeta,
   ParsedSpec,
   RawDep,
   ResolverContext,
@@ -27,7 +28,7 @@ import {
   createCommandError,
   ensureWorkspaceFile,
   parseCommandOptions,
-  readWorkspacePackageJSON,
+  selectTargetProjectPackages,
 } from './shared'
 
 export async function addCommand(options: CatalogOptions): Promise<void> {
@@ -37,11 +38,6 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
 
   const workspace = new WorkspaceManager(options)
   await ensureWorkspaceFile(workspace)
-  await workspace.loadPackages()
-
-  const workspaceCwd = workspace.getCwd()
-  const targetPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
-  const { pkgPath, pkgName, pkgJson } = await readWorkspacePackageJSON(workspace, targetPackagePath)
   const {
     isDev = false,
     isPeer = false,
@@ -52,20 +48,36 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
     options,
     workspace,
   })
+  const workspaceCwd = workspace.getCwd()
+  const projectPackages = workspace.listProjectPackages()
+
+  const currentPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
+  const targetPackages = await selectTargetProjectPackages({
+    projectPackages,
+    currentPackagePath,
+    promptMessage: `please select ${c.yellow('package.json')} files where dependencies will be added`,
+    yes: options.yes,
+  })
 
   const depSource = getDepSource(isDev, isOptional, isPeer)
-  const deps = ensurePackageJsonDeps(pkgJson, depSource)
+  const updatedPackages: Record<string, PackageJsonMeta> = {}
+  for (const targetPackage of targetPackages) {
+    const updatedPackage = structuredClone(targetPackage)
+    const deps = ensurePackageJsonDeps(updatedPackage.raw, depSource)
 
-  for (const dep of dependencies) {
-    for (const field of COMMON_DEPS_FIELDS) {
-      if (depSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
-        continue
+    for (const dep of dependencies) {
+      for (const field of COMMON_DEPS_FIELDS) {
+        if (depSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
+          continue
 
-      if (pkgJson[field]?.[dep.name])
-        delete pkgJson[field][dep.name]
+        if (updatedPackage.raw[field]?.[dep.name])
+          delete updatedPackage.raw[field][dep.name]
+      }
+
+      deps[dep.name] = dep.catalogName ? toCatalogSpecifier(dep.catalogName) : dep.specifier || '^0.0.0'
     }
 
-    deps[dep.name] = dep.catalogName ? toCatalogSpecifier(dep.catalogName) : dep.specifier || '^0.0.0'
+    updatedPackages[updatedPackage.filepath] = updatedPackage
   }
 
   await confirmWorkspaceChanges(
@@ -75,18 +87,15 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
     },
     {
       workspace,
-      updatedPackages: {
-        [pkgPath]: {
-          type: 'package.json',
-          name: pkgName,
-          private: !!pkgJson.private,
-          version: typeof pkgJson.version === 'string' ? pkgJson.version : '',
-          filepath: pkgPath,
-          relative: relative(workspaceCwd, pkgPath) || 'package.json',
-          raw: pkgJson,
-          deps: [],
-        },
-      },
+      updatedPackages: Object.fromEntries(
+        Object.values(updatedPackages).map(pkg => [
+          pkg.filepath,
+          {
+            ...pkg,
+            relative: relative(workspaceCwd, pkg.filepath) || 'package.json',
+          },
+        ]),
+      ),
       yes: options.yes,
       verbose: options.verbose,
       bailout: false,
