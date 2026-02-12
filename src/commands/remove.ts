@@ -8,7 +8,7 @@ import type {
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { join } from 'pathe'
+import { dirname } from 'pathe'
 import { WorkspaceManager } from '@/workspace-manager'
 import {
   COMMAND_ERROR_CODES,
@@ -76,7 +76,8 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
 
   const projectPackages = workspace.listProjectPackages()
   const workspacePackages = workspace.listWorkspacePackages()
-  const currentPackagePath = join(workspace.getCwd(), 'package.json')
+  const workspaceCwd = workspace.getCwd()
+  const currentPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
   const targetPackages = isRecursive
     ? projectPackages
     : projectPackages.filter(pkg => pkg.filepath === currentPackagePath)
@@ -119,9 +120,9 @@ export async function resolveRemove(context: ResolverContext): Promise<ResolverR
   }
 
   if (noncatalogDeps.length > 0) {
-    p.log.info(c.yellow(`${noncatalogDeps.join(', ')} is not used in any catalog`))
+    p.log.info(`${c.yellow(noncatalogDeps.join(', '))} is not used in any catalog`)
     await runAgentRemove(noncatalogDeps, {
-      cwd: workspace.getCwd(),
+      cwd: isRecursive ? workspaceCwd : dirname(currentPackagePath),
       agent: options.agent,
       recursive: isRecursive,
     })

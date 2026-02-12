@@ -1,7 +1,7 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
 import { join } from 'pathe'
-import { beforeEach, describe, expect, it } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { addCommand } from '@/commands/add'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import { readJsonFile } from '@/io'
@@ -10,15 +10,13 @@ import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared
 const SCENARIO = 'command-add'
 const ROOT = getFixtureScenarioPath(SCENARIO)
 const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
+const APP_PACKAGE_JSON_PATH = join(ROOT, 'packages/app/package.json')
 const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
 
 const PACKAGE_JSON_BASELINE = `{
   "name": "fixture-command-add",
   "version": "0.0.0",
   "private": true,
-  "dependencies": {
-    "react": "^17.0.0"
-  },
   "peerDependencies": {
     "react": "^17.0.0"
   },
@@ -27,7 +25,10 @@ const PACKAGE_JSON_BASELINE = `{
   },
   "workspaces": [
     "packages/*"
-  ]
+  ],
+  "devDependencies": {
+    "react": "catalog:dev"
+  }
 }
 `
 
@@ -35,11 +36,30 @@ const WORKSPACE_BASELINE = `packages:
   - packages/*
 catalog:
   react: ^17.0.0
+catalogs:
+  dev:
+    react: ^18.3.1
 `
 
-beforeEach(async () => {
+const APP_PACKAGE_JSON_BASELINE = `{
+  "name": "app-command-add",
+  "version": "0.0.0",
+  "private": true
+}
+`
+
+async function restoreScenarioFiles(): Promise<void> {
   await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
+  await writeFile(APP_PACKAGE_JSON_PATH, APP_PACKAGE_JSON_BASELINE, 'utf-8')
   await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
+}
+
+beforeEach(async () => {
+  await restoreScenarioFiles()
+})
+
+afterEach(async () => {
+  await restoreScenarioFiles()
 })
 
 describe('addCommand', () => {
@@ -72,5 +92,23 @@ describe('addCommand', () => {
     expect(workspaceYaml).toContain('catalogs:')
     expect(workspaceYaml).toContain('dev:')
     expect(workspaceYaml).toContain('react: ^18.3.1')
+  })
+
+  it('writes dependency to current package when invoked in workspace subpackage', async () => {
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue(join(ROOT, 'packages/app'))
+    process.argv = ['node', 'pncat', 'add', 'lodash-es@^4.17.21']
+
+    await addCommand(createFixtureScenarioOptions(SCENARIO, {
+      yes: true,
+      install: false,
+      verbose: false,
+    }))
+
+    const rootPkg = await readJsonFile<Record<string, any>>(PACKAGE_JSON_PATH)
+    const appPkg = await readJsonFile<Record<string, any>>(APP_PACKAGE_JSON_PATH)
+
+    expect(rootPkg.dependencies?.['lodash-es']).toBeUndefined()
+    expect(appPkg.dependencies?.['lodash-es']).toBe('catalog:prod')
+    cwdSpy.mockRestore()
   })
 })

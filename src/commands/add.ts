@@ -9,6 +9,7 @@ import type {
 import process from 'node:process'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { relative } from 'pathe'
 import { COMMON_DEPS_FIELDS } from '@/constants'
 import {
   ensurePackageJsonDeps,
@@ -38,7 +39,9 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
   await ensureWorkspaceFile(workspace)
   await workspace.loadPackages()
 
-  const { pkgPath, pkgName, pkgJson } = await readWorkspacePackageJSON(workspace)
+  const workspaceCwd = workspace.getCwd()
+  const targetPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
+  const { pkgPath, pkgName, pkgJson } = await readWorkspacePackageJSON(workspace, targetPackagePath)
   const {
     isDev = false,
     isPeer = false,
@@ -79,7 +82,7 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
           private: !!pkgJson.private,
           version: typeof pkgJson.version === 'string' ? pkgJson.version : '',
           filepath: pkgPath,
-          relative: 'package.json',
+          relative: relative(workspaceCwd, pkgPath) || 'package.json',
           raw: pkgJson,
           deps: [],
         },

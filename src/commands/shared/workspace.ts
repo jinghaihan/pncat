@@ -1,13 +1,13 @@
 import type { CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
 import { existsSync } from 'node:fs'
-import { writeFile } from 'node:fs/promises'
+import { readFile, writeFile } from 'node:fs/promises'
 import * as p from '@clack/prompts'
 import c from 'ansis'
 import { join } from 'pathe'
 import tildify from 'tildify'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
-import { detectWorkspaceRoot, readJsonFile, writeJsonFile } from '@/io'
+import { detectIndent, detectWorkspaceRoot, readJsonFile, writeJsonFile } from '@/io'
 import { cleanupPackageJSON } from '@/utils'
 import { diffHighlight } from './diff'
 import { COMMAND_ERROR_CODES, createCommandError } from './error'
@@ -62,6 +62,9 @@ export async function confirmWorkspaceChanges(
   const diff = hasWorkspaceChanges
     ? diffHighlight(rawContent, nextContent, { verbose })
     : ''
+  const packageDiffs = !hasWorkspaceChanges && hasUpdatedPackages && showDiff
+    ? await renderPackageJSONDiffs(updatedPackages!, verbose)
+    : []
 
   if (hasWorkspaceChanges && showDiff && diff) {
     const workspacePath = await workspace.catalog.getWorkspacePath()
@@ -70,8 +73,12 @@ export async function confirmWorkspaceChanges(
     if (!yes)
       await confirmOrAbort(confirmMessage)
   }
-  else if (hasUpdatedPackages && !yes) {
-    await confirmOrAbort(confirmMessage)
+  else {
+    for (const packageDiff of packageDiffs)
+      p.note(c.reset(packageDiff.diff), c.dim(tildify(packageDiff.filepath)))
+
+    if (hasUpdatedPackages && !yes)
+      await confirmOrAbort(confirmMessage)
   }
 
   if (updatedPackages)
@@ -135,12 +142,15 @@ export async function ensureWorkspaceFile(workspace: WorkspaceManager): Promise<
   await workspace.catalog.ensureWorkspace()
 }
 
-export async function readWorkspacePackageJSON(workspace: WorkspaceManager): Promise<{
+export async function readWorkspacePackageJSON(
+  workspace: WorkspaceManager,
+  packageJsonPath: string = join(workspace.getCwd(), 'package.json'),
+): Promise<{
   pkgPath: string
   pkgName: string
   pkgJson: PackageJson
 }> {
-  const pkgPath = join(workspace.getCwd(), 'package.json')
+  const pkgPath = packageJsonPath
   if (!existsSync(pkgPath))
     throw createCommandError(COMMAND_ERROR_CODES.NOT_FOUND, 'no package.json found, aborting')
 
@@ -165,6 +175,35 @@ function hasPackageJSONChanges(updatedPackages?: Record<string, PackageJsonMeta>
   if (!updatedPackages)
     return false
   return Object.keys(updatedPackages).length > 0
+}
+
+async function renderPackageJSONDiffs(
+  updatedPackages: Record<string, PackageJsonMeta>,
+  verbose: boolean,
+): Promise<Array<{ filepath: string, diff: string }>> {
+  const result: Array<{ filepath: string, diff: string }> = []
+
+  for (const pkg of Object.values(updatedPackages)) {
+    const rawPackageJSON = await readFile(pkg.filepath, 'utf-8')
+    const nextPackageJSON = await stringifyPackageJSON(pkg.raw, pkg.filepath)
+    const diff = diffHighlight(rawPackageJSON, nextPackageJSON, { verbose })
+
+    if (!diff)
+      continue
+
+    result.push({
+      filepath: pkg.filepath,
+      diff,
+    })
+  }
+
+  return result
+}
+
+async function stringifyPackageJSON(pkgJson: PackageJson, filepath: string): Promise<string> {
+  const indent = await detectIndent(filepath)
+  const cleaned = cleanupPackageJSON(structuredClone(pkgJson))
+  return `${JSON.stringify(cleaned, null, indent)}\n`
 }
 
 async function confirmOrAbort(message: string): Promise<void> {

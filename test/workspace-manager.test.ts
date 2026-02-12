@@ -1,7 +1,7 @@
 import type { PackageJsonMeta, RawDep } from '@/types'
 import { describe, expect, it } from 'vitest'
 import { WorkspaceManager } from '@/workspace-manager'
-import { createFixtureOptions, getFixtureCwd } from './_shared'
+import { createFixtureOptions, getFixtureCwd, getFixturePath } from './_shared'
 
 describe('constructor', () => {
   it('creates catalog handler for the selected package manager', () => {
@@ -69,6 +69,27 @@ describe('getDepNames', () => {
     await manager.loadPackages()
 
     expect(manager.getDepNames()).toEqual(['react', 'vitest'])
+  })
+})
+
+describe('resolveTargetProjectPackagePath', () => {
+  it('returns invocation package path when it belongs to project packages', async () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    await manager.loadPackages()
+
+    const invocationCwd = getFixturePath('pnpm', 'packages', 'app')
+    const targetPath = manager.resolveTargetProjectPackagePath(invocationCwd)
+
+    expect(targetPath).toBe(getFixturePath('pnpm', 'packages', 'app', 'package.json'))
+  })
+
+  it('falls back to workspace root package path when invocation package is outside workspace packages', async () => {
+    const manager = new WorkspaceManager(createFixtureOptions('pnpm'))
+    await manager.loadPackages()
+
+    const targetPath = manager.resolveTargetProjectPackagePath('/tmp')
+
+    expect(targetPath).toBe(getFixturePath('pnpm', 'package.json'))
   })
 })
 

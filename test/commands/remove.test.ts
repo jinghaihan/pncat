@@ -5,6 +5,7 @@ import type {
   WorkspacePackageMeta,
 } from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
+import process from 'node:process'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveRemove } from '@/commands/remove'
@@ -79,6 +80,13 @@ function createWorkspace(
     listProjectPackages: () => projectPackages,
     listWorkspacePackages: () => workspacePackages,
     getCwd: () => '/repo',
+    resolveTargetProjectPackagePath: (invocationCwd: string) => {
+      const invocationPath = `${invocationCwd}/package.json`
+      const invocationPackage = projectPackages.find(pkg => pkg.filepath === invocationPath)
+      if (invocationPackage)
+        return invocationPackage.filepath
+      return '/repo/package.json'
+    },
     removeCatalogDepFromPackages: (
       updatedPackages: Map<string, PackageJsonMeta>,
       packages: PackageJsonMeta[],
@@ -313,6 +321,51 @@ describe('resolveRemove', () => {
       agent: 'pnpm',
       recursive: true,
     })
+  })
+
+  it('uses current package cwd for non-recursive noncatalog remove', async () => {
+    const cwdSpy = vi.spyOn(process, 'cwd').mockReturnValue('/repo/packages/bar')
+    const depInRootPackage: RawDep = {
+      name: 'shared',
+      specifier: '^1.0.0',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const depInBarPackage: RawDep = {
+      name: 'lodash-es',
+      specifier: '^4.17.21',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+
+    const workspace = createWorkspace(
+      [
+        createProjectPackage('app', '/repo/package.json', [depInRootPackage]),
+        createProjectPackage('bar', '/repo/packages/bar/package.json', [depInBarPackage]),
+      ],
+      [],
+    )
+
+    const result = await resolveRemove({
+      args: ['lodash-es'],
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+    expect(result.updatedPackages).toEqual({})
+    expect(runAgentRemoveMock).toHaveBeenCalledWith(['lodash-es'], {
+      cwd: '/repo/packages/bar',
+      agent: 'pnpm',
+      recursive: false,
+    })
+    cwdSpy.mockRestore()
   })
 
   it('skips workspace removal when no matching catalog specifier is found in target package', async () => {

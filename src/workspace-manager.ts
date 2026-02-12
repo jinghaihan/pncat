@@ -7,6 +7,7 @@ import type {
   RawDep,
   WorkspacePackageMeta,
 } from './types'
+import { join, resolve } from 'pathe'
 import { createCatalogHandler } from './catalog-handler'
 import { loadPackages } from './io'
 import {
@@ -61,6 +62,16 @@ export class WorkspaceManager {
 
   getDepNames(): string[] {
     return Array.from(this.depNames)
+  }
+
+  resolveTargetProjectPackagePath(invocationCwd: string): string {
+    const workspacePackagePath = join(this.getCwd(), 'package.json')
+    const invocationPackagePath = join(resolve(invocationCwd), 'package.json')
+
+    if (this.listProjectPackages().some(pkg => pkg.filepath === invocationPackagePath))
+      return invocationPackagePath
+
+    return workspacePackagePath
   }
 
   async loadPackages(): Promise<PackageMeta[]> {

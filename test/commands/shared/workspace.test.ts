@@ -31,12 +31,14 @@ vi.mock('@clack/prompts', async () => {
 
 const confirmMock = vi.mocked(p.confirm)
 const isCancelMock = vi.mocked(p.isCancel)
+const noteMock = vi.mocked(p.note)
 const logInfoMock = vi.mocked(p.log.info)
 const xMock = vi.mocked(x)
 
 const SCENARIO = 'command-shared'
 const ROOT = getFixtureScenarioPath(SCENARIO)
 const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
+const APP_PACKAGE_JSON_PATH = join(ROOT, 'packages/app/package.json')
 const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
 
 const PACKAGE_JSON_BASELINE = `{
@@ -132,6 +134,7 @@ describe('confirmWorkspaceChanges', () => {
     })
 
     expect(result).toBe('applied')
+    expect(noteMock).toHaveBeenCalledWith(expect.any(String), expect.stringContaining('package.json'))
 
     const pkg = JSON.parse(await readFile(PACKAGE_JSON_PATH, 'utf-8')) as Record<string, any>
     expect(pkg.dependencies?.react).toBe('catalog:prod')
@@ -392,6 +395,16 @@ describe('readWorkspacePackageJSON', () => {
     await expect(readWorkspacePackageJSON(toWorkspace(workspace))).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.INVALID_INPUT,
     })
+  })
+
+  it('reads package.json from explicit path', async () => {
+    const workspace = {
+      getCwd: () => ROOT,
+    }
+
+    const result = await readWorkspacePackageJSON(toWorkspace(workspace), APP_PACKAGE_JSON_PATH)
+    expect(result.pkgPath).toBe(APP_PACKAGE_JSON_PATH)
+    expect(result.pkgName).toBe('app-command-shared')
   })
 
   it('throws when package.json does not exist', async () => {

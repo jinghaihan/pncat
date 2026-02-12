@@ -1,6 +1,6 @@
 <h1 align="center">pncat</h1>
 
-<p align="center">A unified CLI tool for package manager <code>catalog:</code> workflows</p>
+<p align="center">A unified cli tool that enhances package managers <code>catalog:</code> feature</p>
 
 [![npm version][npm-version-src]][npm-version-href]
 [![npm downloads][npm-downloads-src]][npm-downloads-href]
