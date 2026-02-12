@@ -5,7 +5,13 @@ import * as p from '@clack/prompts'
 import { join } from 'pathe'
 import { x } from 'tinyexec'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, ensureWorkspaceFile, readWorkspacePackageJSON } from '@/commands/shared'
+import {
+  COMMAND_ERROR_CODES,
+  confirmWorkspaceChanges,
+  ensureWorkspaceFile,
+  readWorkspacePackageJSON,
+  selectTargetProjectPackages,
+} from '@/commands/shared'
 import * as io from '@/io'
 import { createFixtureOptions, createFixtureScenarioOptions, getFixtureScenarioPath } from '../../_shared'
 
@@ -19,6 +25,7 @@ vi.mock('@clack/prompts', async () => {
     ...actual,
     confirm: vi.fn(),
     isCancel: vi.fn(),
+    multiselect: vi.fn(),
     note: vi.fn(),
     outro: vi.fn(),
     log: {
@@ -31,6 +38,7 @@ vi.mock('@clack/prompts', async () => {
 
 const confirmMock = vi.mocked(p.confirm)
 const isCancelMock = vi.mocked(p.isCancel)
+const multiselectMock = vi.mocked(p.multiselect)
 const noteMock = vi.mocked(p.note)
 const logInfoMock = vi.mocked(p.log.info)
 const xMock = vi.mocked(x)
@@ -61,6 +69,7 @@ beforeEach(async () => {
   vi.clearAllMocks()
   confirmMock.mockResolvedValue(true)
   isCancelMock.mockReturnValue(false)
+  multiselectMock.mockResolvedValue([])
   xMock.mockResolvedValue({} as never)
 
   await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
@@ -70,6 +79,26 @@ beforeEach(async () => {
 
 function toWorkspace(value: unknown): WorkspaceManager {
   return value as WorkspaceManager
+}
+
+function createProjectPackage(
+  name: string,
+  filepath: string,
+): PackageJsonMeta {
+  return {
+    type: 'package.json',
+    name,
+    private: true,
+    version: '0.0.0',
+    filepath,
+    relative: filepath.replace(`${ROOT}/`, ''),
+    raw: {
+      name,
+      version: '0.0.0',
+      private: true,
+    },
+    deps: [],
+  }
 }
 
 describe('confirmWorkspaceChanges', () => {
@@ -321,6 +350,71 @@ describe('confirmWorkspaceChanges', () => {
     expect(result).toBe('applied')
     expect(logInfoMock).toHaveBeenCalledWith(expect.stringContaining('done'))
     expect(xMock).toHaveBeenCalled()
+  })
+})
+
+describe('selectTargetProjectPackages', () => {
+  it('returns the current package when yes is enabled', async () => {
+    const rootPackage = createProjectPackage('fixture-command-shared', PACKAGE_JSON_PATH)
+    const appPackage = createProjectPackage('app-command-shared', APP_PACKAGE_JSON_PATH)
+
+    const selected = await selectTargetProjectPackages({
+      projectPackages: [rootPackage, appPackage],
+      currentPackagePath: APP_PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: true,
+    })
+
+    expect(selected).toEqual([appPackage])
+    expect(multiselectMock).not.toHaveBeenCalled()
+  })
+
+  it('prompts in monorepo and returns selected packages', async () => {
+    const rootPackage = createProjectPackage('fixture-command-shared', PACKAGE_JSON_PATH)
+    const appPackage = createProjectPackage('app-command-shared', APP_PACKAGE_JSON_PATH)
+    multiselectMock.mockResolvedValue([PACKAGE_JSON_PATH, APP_PACKAGE_JSON_PATH])
+
+    const selected = await selectTargetProjectPackages({
+      projectPackages: [rootPackage, appPackage],
+      currentPackagePath: APP_PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: false,
+    })
+
+    expect(multiselectMock).toHaveBeenCalledTimes(1)
+    expect(multiselectMock).toHaveBeenCalledWith(expect.objectContaining({
+      options: expect.arrayContaining([
+        expect.objectContaining({ value: PACKAGE_JSON_PATH }),
+        expect.objectContaining({ value: APP_PACKAGE_JSON_PATH }),
+      ]),
+    }))
+    expect(selected).toEqual([rootPackage, appPackage])
+  })
+
+  it('throws when target package list is empty', async () => {
+    await expect(selectTargetProjectPackages({
+      projectPackages: [],
+      currentPackagePath: PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: false,
+    })).rejects.toMatchObject({
+      code: COMMAND_ERROR_CODES.INVALID_INPUT,
+    })
+  })
+
+  it('throws when prompt selection is empty', async () => {
+    const rootPackage = createProjectPackage('fixture-command-shared', PACKAGE_JSON_PATH)
+    const appPackage = createProjectPackage('app-command-shared', APP_PACKAGE_JSON_PATH)
+    multiselectMock.mockResolvedValue([])
+
+    await expect(selectTargetProjectPackages({
+      projectPackages: [rootPackage, appPackage],
+      currentPackagePath: PACKAGE_JSON_PATH,
+      promptMessage: 'please select package.json files',
+      yes: false,
+    })).rejects.toMatchObject({
+      code: COMMAND_ERROR_CODES.INVALID_INPUT,
+    })
   })
 })
 
