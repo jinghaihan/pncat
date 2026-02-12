@@ -79,6 +79,10 @@ function createWorkspace(
     loadPackages: async () => [...projectPackages, ...workspacePackages],
     listProjectPackages: () => projectPackages,
     listWorkspacePackages: () => workspacePackages,
+    listCatalogTargetPackages: () => [
+      ...projectPackages,
+      ...workspacePackages.filter(pkg => pkg.name === 'pnpm-workspace:overrides'),
+    ],
     getCwd: () => '/repo',
     resolveTargetProjectPackagePath: (invocationCwd: string) => {
       const invocationPath = `${invocationCwd}/package.json`
@@ -208,6 +212,50 @@ describe('resolveRemove', () => {
     expect(result.dependencies).toEqual([])
     expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
     expect(updatedPackages['/repo/packages/docs/package.json']).toBeUndefined()
+  })
+
+  it('keeps workspace catalog entry when workspace overrides still references catalog specifier', async () => {
+    const depInPackage: RawDep = {
+      name: 'react',
+      specifier: 'catalog:prod',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: true,
+    }
+    const depInWorkspace: RawDep = {
+      ...depInPackage,
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+    }
+    const depInWorkspaceOverrides: RawDep = {
+      ...depInPackage,
+      specifier: 'catalog:prod',
+      source: 'pnpm-workspace',
+      catalogName: 'override',
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage('app', '/repo/package.json', [depInPackage])],
+      [
+        createWorkspacePackage(depInWorkspace),
+        {
+          ...createWorkspacePackage(depInWorkspaceOverrides),
+          name: 'pnpm-workspace:overrides',
+        },
+      ],
+    )
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: true })
+
+    const result = await resolveRemove({
+      args: ['react'],
+      options,
+      workspace,
+    })
+    const { updatedPackages = {} } = result
+
+    expect(result.dependencies).toEqual([])
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
   })
 
   it('uses selected catalog when dependency exists in multiple catalogs', async () => {
