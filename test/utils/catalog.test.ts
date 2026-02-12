@@ -1,5 +1,6 @@
 import type { CatalogOptions, RawDep, WorkspaceSchema } from '@/types'
 import { describe, expect, it } from 'vitest'
+import { DEFAULT_CATALOG_RULES } from '@/rules'
 import { createDepCatalogIndex, inferCatalogName, parseCatalogSpecifier, toCatalogSpecifier } from '@/utils'
 import { createFixtureOptions } from '../_shared'
 
@@ -198,6 +199,16 @@ describe('inferCatalogName', () => {
     })
 
     expect(inferCatalogName(dep, options)).toBe('prod')
+  })
+
+  it('maps common modern backend dependencies to backend catalog', () => {
+    const options: CatalogOptions = createFixtureOptions('pnpm', { catalogRules: DEFAULT_CATALOG_RULES })
+
+    expect(inferCatalogName(createDep({ name: 'typeorm' }), options)).toBe('backend')
+    expect(inferCatalogName(createDep({ name: 'pg' }), options)).toBe('backend')
+    expect(inferCatalogName(createDep({ name: 'ioredis' }), options)).toBe('backend')
+    expect(inferCatalogName(createDep({ name: '@prisma/client' }), options)).toBe('backend')
+    expect(inferCatalogName(createDep({ name: 'better-sqlite3' }), options)).toBe('backend')
   })
 })
 

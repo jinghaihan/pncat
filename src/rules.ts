@@ -38,7 +38,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'backend',
-    match: [/(^|[@/.-])(nestjs|hono|fastify|express|koa)($|[@/.-])/],
+    match: [/(^|[@/.-])(express|koa|nestjs|fastify|hono|prisma|drizzle|typeorm|kysely|postgres|pg|mysql2|sqlite|sqlite3|mongodb|redis|ioredis)($|[@/.-])/],
     priority: 30,
   },
 ]
