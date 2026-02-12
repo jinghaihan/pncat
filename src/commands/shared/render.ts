@@ -11,6 +11,7 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
   if (deps.length === 0)
     return ''
 
+  const packageMetas = Object.values(updatedPackages)
   let depNameWidth = MIN_DEP_NAME_WIDTH
   let depTypeWidth = MIN_DEP_TYPE_WIDTH
   let specifierWidth = MIN_SPECIFIER_WIDTH
@@ -25,21 +26,21 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
 
   const packageDepsMap = new Map<string, RawDep[]>()
   for (const dep of deps) {
-    for (const [pkgName, pkgMeta] of Object.entries(updatedPackages)) {
+    for (const pkgMeta of packageMetas) {
       if (!pkgMeta.deps.some(entry => entry.name === dep.name && entry.source === dep.source))
         continue
 
-      packageDepsMap.set(pkgName, [...(packageDepsMap.get(pkgName) || []), dep])
+      packageDepsMap.set(pkgMeta.filepath, [...(packageDepsMap.get(pkgMeta.filepath) || []), dep])
     }
   }
 
   const lines: string[] = []
-  for (const [pkgName, pkgMeta] of Object.entries(updatedPackages)) {
-    const packageDeps = packageDepsMap.get(pkgName) || []
+  for (const pkgMeta of packageMetas) {
+    const packageDeps = packageDepsMap.get(pkgMeta.filepath) || []
     if (packageDeps.length === 0)
       continue
 
-    lines.push(`${c.cyan(pkgName)} ${c.dim(pkgMeta.relative)}`)
+    lines.push(`${c.cyan(pkgMeta.name)} ${c.dim(pkgMeta.relative)}`)
     lines.push('')
 
     for (const dep of packageDeps) {
@@ -53,7 +54,7 @@ export function renderChanges(deps: RawDep[], updatedPackages: Record<string, Pa
     lines.push('')
   }
 
-  const packageCount = Object.keys(updatedPackages).length
+  const packageCount = packageMetas.length
   const packageLabel = packageCount === 1 ? 'package' : 'packages'
   const depLabel = deps.length === 1 ? 'dependency' : 'dependencies'
   lines.push(`${c.yellow(packageCount)} ${packageLabel} ${c.yellow(deps.length)} ${depLabel}`)

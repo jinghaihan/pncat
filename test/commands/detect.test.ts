@@ -104,4 +104,15 @@ describe('detectCommand', () => {
     expect(stripped).toContain('react')
     expect(stripped).toContain('catalog:')
   })
+
+  it('aborts when workspace file is missing', async () => {
+    await detectCommand(createFixtureScenarioOptions('no-dependencies', {
+      agent: 'vlt',
+      install: false,
+      verbose: false,
+    }))
+
+    expect(p.outro).toHaveBeenCalledWith(expect.stringContaining('no vlt.json found, aborting'))
+    expect(p.note).not.toHaveBeenCalled()
+  })
 })

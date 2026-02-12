@@ -241,10 +241,11 @@ export class WorkspaceManager {
     updatedPackages: Map<string, PackageJsonMeta>,
     pkg: PackageJsonMeta,
   ): PackageJsonMeta {
-    if (!updatedPackages.has(pkg.name))
-      updatedPackages.set(pkg.name, cloneDeep(pkg))
+    const packageKey = pkg.filepath
+    if (!updatedPackages.has(packageKey))
+      updatedPackages.set(packageKey, cloneDeep(pkg))
 
-    return updatedPackages.get(pkg.name)!
+    return updatedPackages.get(packageKey)!
   }
 
   private buildIndexes(): void {

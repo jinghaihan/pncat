@@ -102,10 +102,10 @@ function createWorkspace(
           if (dep.specifier !== `catalog:${catalogName}` && dep.specifier !== (catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`))
             continue
 
-          if (!updatedPackages.has(pkg.name))
-            updatedPackages.set(pkg.name, structuredClone(pkg))
+          if (!updatedPackages.has(pkg.filepath))
+            updatedPackages.set(pkg.filepath, structuredClone(pkg))
 
-          const updated = updatedPackages.get(pkg.name)!
+          const updated = updatedPackages.get(pkg.filepath)!
           if (dep.source === 'pnpm.overrides') {
             delete updated.raw.pnpm?.overrides?.[dep.name]
             removed = true
@@ -170,7 +170,7 @@ describe('resolveRemove', () => {
     const { updatedPackages = {} } = result
 
     expect(result.dependencies).toEqual([depInWorkspace])
-    expect(updatedPackages.app.raw.dependencies).toEqual({})
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
   })
 
   it('keeps workspace catalog entry when non-recursive remove has remaining references', async () => {
@@ -206,8 +206,8 @@ describe('resolveRemove', () => {
     const { updatedPackages = {} } = result
 
     expect(result.dependencies).toEqual([])
-    expect(updatedPackages.app.raw.dependencies).toEqual({})
-    expect(updatedPackages.docs).toBeUndefined()
+    expect(updatedPackages['/repo/package.json'].raw.dependencies).toEqual({})
+    expect(updatedPackages['/repo/packages/docs/package.json']).toBeUndefined()
   })
 
   it('uses selected catalog when dependency exists in multiple catalogs', async () => {

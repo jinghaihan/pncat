@@ -1,14 +1,23 @@
 import type { CatalogOptions, PackageJsonMeta, PackageMeta, RawDep } from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
+import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { WorkspaceManager } from '@/workspace-manager'
 import { resolveMigrate } from './migrate'
-import { ensureWorkspaceFile, renderChanges } from './shared'
+import { renderChanges } from './shared'
 
 export async function detectCommand(options: CatalogOptions): Promise<void> {
   const workspace = new WorkspaceManager(options)
+  const workspaceFilepath = await workspace.catalog.findWorkspaceFile()
+  if (!workspaceFilepath) {
+    const agent = options.agent || 'pnpm'
+    const filename = PACKAGE_MANAGER_CONFIG[agent].filename
+    p.outro(c.yellow(`no ${filename} found, aborting`))
+    return
+  }
+
   await workspace.loadPackages()
-  await ensureWorkspaceFile(workspace)
+  await workspace.catalog.ensureWorkspace()
 
   const { dependencies, updatedPackages } = await resolveMigrate({
     options,
@@ -46,11 +55,12 @@ function createDisplayPackages(
   packages: PackageMeta[],
 ): Record<string, PackageMeta> {
   const result: Record<string, PackageMeta> = { ...updatedPackages }
+  const addedFilepaths = new Set(Object.values(result).map(pkg => pkg.filepath))
   if (changedDeps.length === 0)
     return result
 
   for (const pkg of packages) {
-    if (result[pkg.name])
+    if (addedFilepaths.has(pkg.filepath))
       continue
 
     const hasChangedDep = pkg.deps.some(dep =>
@@ -59,7 +69,8 @@ function createDisplayPackages(
     if (!hasChangedDep)
       continue
 
-    result[pkg.name] = pkg
+    result[pkg.filepath] = pkg
+    addedFilepaths.add(pkg.filepath)
   }
 
   return result

@@ -76,7 +76,7 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
     {
       workspace,
       updatedPackages: {
-        [pkgName]: {
+        [pkgPath]: {
           type: 'package.json',
           name: pkgName,
           private: !!pkgJson.private,

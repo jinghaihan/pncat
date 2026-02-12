@@ -329,7 +329,7 @@ describe('setDepSpecifier', () => {
       'catalog:test',
     )
 
-    const updated = updatedPackages.get('app')
+    const updated = updatedPackages.get(pkg.filepath)
     expect(updated?.raw.pnpm?.overrides?.react).toBe('catalog:test')
   })
 
@@ -351,7 +351,7 @@ describe('setDepSpecifier', () => {
       'catalog:test',
     )
 
-    const updated = updatedPackages.get('app')
+    const updated = updatedPackages.get(pkg.filepath)
     expect(updated).toBeDefined()
     expect(updated?.raw.dependencies).toBeUndefined()
     expect(updated?.raw.devDependencies).toBeUndefined()
@@ -384,7 +384,7 @@ describe('removeCatalogDepFromPackages', () => {
     )
 
     expect(removed).toBe(true)
-    expect(updatedPackages.get('app')?.raw.pnpm?.overrides?.react).toBeUndefined()
+    expect(updatedPackages.get(pkg.filepath)?.raw.pnpm?.overrides?.react).toBeUndefined()
   })
 
   it('removes dependency from package.json dependency fields', () => {
@@ -410,7 +410,7 @@ describe('removeCatalogDepFromPackages', () => {
     )
 
     expect(removed).toBe(true)
-    expect(updatedPackages.get('app')?.raw.dependencies?.react).toBeUndefined()
+    expect(updatedPackages.get(pkg.filepath)?.raw.dependencies?.react).toBeUndefined()
   })
 
   it('skips package deps under pnpm overrides pseudo package', () => {
@@ -436,7 +436,7 @@ describe('removeCatalogDepFromPackages', () => {
     )
 
     expect(removed).toBe(false)
-    expect(updatedPackages.get('pnpm-workspace:overrides')?.raw.dependencies?.react).toBe('catalog:prod')
+    expect(updatedPackages.get(pkg.filepath)?.raw.dependencies?.react).toBe('catalog:prod')
   })
 
   it('skips non package.json dependency sources', () => {

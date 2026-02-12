@@ -55,10 +55,10 @@ function createWorkspace(
       dep: RawDep,
       specifier: string,
     ) => {
-      if (!updatedPackages.has(pkg.name))
-        updatedPackages.set(pkg.name, structuredClone(pkg))
+      if (!updatedPackages.has(pkg.filepath))
+        updatedPackages.set(pkg.filepath, structuredClone(pkg))
 
-      const updated = updatedPackages.get(pkg.name)!
+      const updated = updatedPackages.get(pkg.filepath)!
       if (dep.source === 'pnpm.overrides') {
         updated.raw.pnpm ??= {}
         updated.raw.pnpm.overrides ??= {}
@@ -134,7 +134,7 @@ describe('resolveRevert', () => {
         specifier: '^18.3.1',
       },
     ])
-    expect(updatedPackages.app.raw.dependencies?.react).toBe('^18.3.1')
+    expect(updatedPackages['/repo/package.json'].raw.dependencies?.react).toBe('^18.3.1')
   })
 
   it('reverts only selected dependency names when args are provided', async () => {
@@ -178,8 +178,8 @@ describe('resolveRevert', () => {
         name: 'react',
       }),
     ])
-    expect(updatedPackages.app.raw.dependencies?.react).toBe('^18.3.1')
-    expect(updatedPackages.app.raw.dependencies?.vite).toBe('catalog:dev')
+    expect(updatedPackages['/repo/package.json'].raw.dependencies?.react).toBe('^18.3.1')
+    expect(updatedPackages['/repo/package.json'].raw.dependencies?.vite).toBe('catalog:dev')
   })
 
   it('updates pnpm overrides when reverting catalog override dependencies', async () => {
@@ -205,7 +205,7 @@ describe('resolveRevert', () => {
     })
     const { updatedPackages = {} } = result
 
-    expect(updatedPackages.app.raw.pnpm?.overrides?.react).toBe('^18.3.1')
+    expect(updatedPackages['/repo/package.json'].raw.pnpm?.overrides?.react).toBe('^18.3.1')
   })
 
   it('ignores non-catalog dependency specifiers', async () => {

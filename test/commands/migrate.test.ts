@@ -80,10 +80,10 @@ function createWorkspace(
       dep: RawDep,
       specifier: string,
     ) => {
-      if (!updatedPackages.has(pkg.name))
-        updatedPackages.set(pkg.name, structuredClone(pkg))
+      if (!updatedPackages.has(pkg.filepath))
+        updatedPackages.set(pkg.filepath, structuredClone(pkg))
 
-      const updated = updatedPackages.get(pkg.name)!
+      const updated = updatedPackages.get(pkg.filepath)!
       if (dep.source === 'pnpm.overrides') {
         updated.raw.pnpm ??= {}
         updated.raw.pnpm.overrides ??= {}
@@ -170,7 +170,7 @@ describe('resolveMigrate', () => {
         update: true,
       },
     ])
-    expect(result.updatedPackages?.app.raw.dependencies?.react).toBe('catalog:prod')
+    expect(result.updatedPackages?.['/repo/packages/app/package.json'].raw.dependencies?.react).toBe('catalog:prod')
   })
 
   it('resolves catalog specifier from existing workspace catalog', async () => {
