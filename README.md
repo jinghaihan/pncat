@@ -184,7 +184,8 @@ export default defineConfig({
   specifierOptions: {
     skipComplexRanges: true,
     allowPreReleases: true,
-    allowWildcards: false
+    allowWildcards: false,
+    allowNpmAliases: true
   },
   // Save exact versions instead of semver operators
   saveExact: true,
@@ -214,6 +215,7 @@ export default defineConfig({
   - `'pre-release'`: Beta/alpha/rc versions
 - `allowPreReleases`: Allow beta/alpha/rc versions (default: `true`)
 - `allowWildcards`: Allow wildcard versions like `3.x`, `*` (default: `false`)
+- `allowNpmAliases`: Allow npm alias specifiers like `npm:@foo/bar@^1` (default: `true`)
 
 ## Why pncat?
 

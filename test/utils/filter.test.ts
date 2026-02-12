@@ -51,6 +51,12 @@ describe('specFilter', () => {
   it('accepts npm alias with normal semver range', () => {
     expect(specFilter('npm:react@^18.3.1')).toBe(true)
     expect(specFilter('npm:@types/node@^22.0.0')).toBe(true)
+    expect(specFilter('npm:@nolyfill/object.groupby@^1')).toBe(true)
+  })
+
+  it('rejects npm alias when allowNpmAliases is false', () => {
+    expect(specFilter('npm:react@^18.3.1', { allowNpmAliases: false })).toBe(false)
+    expect(specFilter('npm:@nolyfill/object.groupby@^1', { allowNpmAliases: false })).toBe(false)
   })
 
   it('rejects npm alias wildcard ranges when allowWildcards is false', () => {
@@ -129,5 +135,17 @@ describe('createDependenciesFilter', () => {
     expect(strict('react', 'catalog:test')).toBe(true)
     expect(filter('react', '>=18.0.0')).toBe(true)
     expect(filter('react', '1.x')).toBe(true)
+  })
+
+  it('respects allowNpmAliases option', () => {
+    const filter = createDependenciesFilter(
+      [],
+      [],
+      DEFAULT_CATALOG_OPTIONS.allowedProtocols,
+      { allowNpmAliases: false },
+    )
+
+    expect(filter('object.groupby', 'npm:@nolyfill/object.groupby@^1')).toBe(false)
+    expect(filter('react', '^18.3.1')).toBe(true)
   })
 })
