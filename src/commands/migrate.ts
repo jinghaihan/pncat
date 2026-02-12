@@ -40,16 +40,13 @@ export async function migrateCommand(options: CatalogOptions): Promise<void> {
 
 export async function resolveMigrate(context: ResolverContext): Promise<ResolverResult> {
   const { options, workspace } = context
-  const packages = await workspace.loadPackages()
+  await workspace.loadPackages()
   const workspaceCatalogIndex = await workspace.getCatalogIndex()
 
   const groupedDeps = new Map<string, Map<string, RawDep[]>>()
   const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  for (const pkg of packages) {
-    if (pkg.type !== 'package.json')
-      continue
-
+  for (const pkg of workspace.listProjectPackages()) {
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue

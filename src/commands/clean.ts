@@ -49,9 +49,9 @@ export async function cleanCommand(options: CatalogOptions): Promise<void> {
 
 export async function resolveClean(context: ResolverContext): Promise<ResolverResult> {
   const { options, workspace } = context
-  const packages = await workspace.loadPackages()
-  const projectPackages = packages.filter(pkg => pkg.type === 'package.json')
-  const workspacePackages = packages.filter(pkg => pkg.type !== 'package.json')
+  await workspace.loadPackages()
+  const projectPackages = workspace.listProjectPackages()
+  const workspacePackages = workspace.listWorkspacePackages()
   const dependencies: RawDep[] = []
 
   for (const pkg of workspacePackages) {

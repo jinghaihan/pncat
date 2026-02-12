@@ -66,6 +66,7 @@ function createWorkspace(
 
   return {
     loadPackages: async () => packages,
+    listProjectPackages: () => packages,
     getCatalogIndex: async () => index,
     setDepSpecifier: (
       updatedPackages: Map<string, PackageJsonMeta>,

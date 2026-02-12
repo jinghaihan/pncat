@@ -37,7 +37,7 @@ export class YamlCatalog implements CatalogHandler {
     const filepath = resolve(getCwd(options), relative)
     const rawText = await readFile(filepath, 'utf-8')
     const context = parsePnpmWorkspaceYaml(rawText)
-    const raw = context.getDocument().toJSON() as WorkspaceSchema
+    const raw = context.getDocument().toJSON()
 
     const catalogs: WorkspacePackageMeta[] = []
     function createWorkspaceEntry(name: string, map: Record<string, string>): WorkspacePackageMeta {
@@ -95,7 +95,7 @@ export class YamlCatalog implements CatalogHandler {
 
   async toJSON(): Promise<WorkspaceSchema> {
     const workspaceYaml = await this.getWorkspaceYaml()
-    return cloneDeep(workspaceYaml.toJSON() as WorkspaceSchema)
+    return cloneDeep(workspaceYaml.toJSON()) as WorkspaceSchema
   }
 
   async toString(): Promise<string> {
@@ -153,7 +153,7 @@ export class YamlCatalog implements CatalogHandler {
   async cleanupCatalogs() {
     const workspaceYaml = await this.getWorkspaceYaml()
     const document = workspaceYaml.getDocument()
-    const workspaceJson = workspaceYaml.toJSON() as WorkspaceSchema
+    const workspaceJson = workspaceYaml.toJSON()
 
     if (workspaceJson.catalog && Object.keys(workspaceJson.catalog).length === 0)
       document.deleteIn(['catalog'])
@@ -165,7 +165,7 @@ export class YamlCatalog implements CatalogHandler {
       }
     }
 
-    const nextJson = workspaceYaml.toJSON() as WorkspaceSchema
+    const nextJson = workspaceYaml.toJSON()
     if (!nextJson.catalogs || Object.keys(nextJson.catalogs).length === 0)
       document.deleteIn(['catalogs'])
   }

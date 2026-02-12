@@ -4,7 +4,11 @@ import { normalize } from 'pathe'
 import { parsePnpmWorkspaceYaml } from 'pnpm-workspace-yaml'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { YamlCatalog } from '@/catalog-handler/base'
-import { createFixtureOptions, createFixtureScenarioOptions, getFixturePath } from '../../_shared'
+import {
+  createFixtureOptions,
+  createFixtureScenarioOptions,
+  getFixturePath,
+} from '../../_shared'
 
 vi.mock('node:fs/promises', async (importOriginal) => {
   const actual = await importOriginal<typeof import('node:fs/promises')>()

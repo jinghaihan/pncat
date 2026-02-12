@@ -1,4 +1,4 @@
-import type { CatalogHandler, CatalogOptions, RawDep, WorkspaceSchema } from '@/types'
+import type { CatalogHandler, CatalogOptions, PackageJson, RawDep, WorkspaceSchema } from '@/types'
 import { findUp } from 'find-up'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { detectIndent, readJsonFile, writeJsonFile } from '@/io'
@@ -26,7 +26,7 @@ export class JsonCatalog implements CatalogHandler {
     if (!filepath)
       throw new Error(`No ${PACKAGE_MANAGER_CONFIG[this.agent].filename} found from ${getCwd(this.options)}`)
 
-    const raw = await readJsonFile<WorkspaceSchema>(filepath)
+    const raw = await readJsonFile<PackageJson>(filepath)
     this.workspaceJson = {
       catalog: raw.catalog,
       catalogs: raw.catalogs,

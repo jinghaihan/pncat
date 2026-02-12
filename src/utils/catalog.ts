@@ -3,37 +3,6 @@ import { satisfies } from 'semver'
 import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '@/constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 
-export function createDepCatalogIndex(workspaceJson?: WorkspaceSchema) {
-  const catalogIndex: CatalogIndex = new Map()
-  if (!workspaceJson)
-    return catalogIndex
-
-  if (workspaceJson.catalog) {
-    for (const [depName, specifier] of Object.entries(workspaceJson.catalog)) {
-      catalogIndex.set(depName, [
-        ...(catalogIndex.get(depName) || []),
-        { catalogName: 'default', specifier },
-      ])
-    }
-  }
-
-  if (workspaceJson.catalogs) {
-    for (const [catalogName, catalog] of Object.entries(workspaceJson.catalogs)) {
-      if (!catalog)
-        continue
-
-      for (const [depName, specifier] of Object.entries(catalog)) {
-        catalogIndex.set(depName, [
-          ...(catalogIndex.get(depName) || []),
-          { catalogName, specifier },
-        ])
-      }
-    }
-  }
-
-  return catalogIndex
-}
-
 export function inferCatalogName(dep: Omit<RawDep, 'catalogName'>, options: CatalogOptions): string {
   for (const rule of options.catalogRules ?? []) {
     const { name, match, specifierRules } = rule
@@ -68,15 +37,6 @@ export function inferCatalogName(dep: Omit<RawDep, 'catalogName'>, options: Cata
   }
 
   return DEPS_TYPE_CATALOG_MAP[dep.source] || 'default'
-}
-
-export function toCatalogSpecifier(catalogName: string): string {
-  return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
-}
-
-export function parseCatalogSpecifier(specifier: string): string {
-  const name = specifier.slice('catalog:'.length)
-  return name || 'default'
 }
 
 export function isDepMatched(depName: string, match: string | RegExp | (string | RegExp)[]): boolean {
@@ -120,4 +80,44 @@ export function extractCatalogName(name: string): string {
     content = content.replace(`${agent}-catalog:`, '')
   }
   return content
+}
+
+export function toCatalogSpecifier(catalogName: string): string {
+  return catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
+}
+
+export function parseCatalogSpecifier(specifier: string): string {
+  const name = specifier.slice('catalog:'.length)
+  return name || 'default'
+}
+
+export function createDepCatalogIndex(workspaceJson?: WorkspaceSchema) {
+  const catalogIndex: CatalogIndex = new Map()
+  if (!workspaceJson)
+    return catalogIndex
+
+  if (workspaceJson.catalog) {
+    for (const [depName, specifier] of Object.entries(workspaceJson.catalog)) {
+      catalogIndex.set(depName, [
+        ...(catalogIndex.get(depName) || []),
+        { catalogName: 'default', specifier },
+      ])
+    }
+  }
+
+  if (workspaceJson.catalogs) {
+    for (const [catalogName, catalog] of Object.entries(workspaceJson.catalogs)) {
+      if (!catalog)
+        continue
+
+      for (const [depName, specifier] of Object.entries(catalog)) {
+        catalogIndex.set(depName, [
+          ...(catalogIndex.get(depName) || []),
+          { catalogName, specifier },
+        ])
+      }
+    }
+  }
+
+  return catalogIndex
 }

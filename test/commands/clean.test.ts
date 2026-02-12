@@ -66,6 +66,8 @@ function createWorkspace(
 ): WorkspaceManager {
   return {
     loadPackages: async () => [...projectPackages, ...workspacePackages],
+    listProjectPackages: () => projectPackages,
+    listWorkspacePackages: () => workspacePackages,
     isCatalogDepReferenced: (
       depName: string,
       catalogName: string,

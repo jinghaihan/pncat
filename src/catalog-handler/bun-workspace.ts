@@ -5,14 +5,13 @@ import type {
   PackageJson,
   PackageMeta,
   RawDep,
-  WorkspaceSchema,
 } from '@/types'
 import { existsSync } from 'node:fs'
 import { join, resolve } from 'pathe'
-import { JsonCatalog } from '@/catalog-handler/base/json-workspace'
+import { JsonCatalog } from '@/catalog-handler/base'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { detectWorkspaceRoot, loadPackageJSON, loadPackages, readJsonFile } from '@/io'
-import { getCwd, parseDependency } from '@/utils'
+import { getCwd, isObject, parseDependency } from '@/utils'
 
 export class BunCatalog extends JsonCatalog {
   static async loadWorkspace(
@@ -78,11 +77,10 @@ export class BunCatalog extends JsonCatalog {
 
   static hasWorkspaceCatalog(raw: { workspaces?: unknown }): boolean {
     const workspaces = raw.workspaces
-    if (!workspaces || typeof workspaces !== 'object' || Array.isArray(workspaces))
+    if (!isObject(workspaces))
       return false
 
-    const workspaceObject = workspaces as Record<string, unknown>
-    return !!(workspaceObject.catalog || workspaceObject.catalogs)
+    return !!(workspaces.catalog || workspaces.catalogs)
   }
 
   constructor(options: CatalogOptions) {
@@ -107,8 +105,8 @@ export class BunCatalog extends JsonCatalog {
     const raw = await readJsonFile<PackageJson>(filepath)
     const workspaces = raw.workspaces
 
-    if (workspaces && !Array.isArray(workspaces))
-      this.workspaceJson = (workspaces as WorkspaceSchema) || {}
+    if (isObject(workspaces))
+      this.workspaceJson = workspaces || {}
     else
       this.workspaceJson = {}
 

@@ -1,6 +1,6 @@
 import type { CatalogOptions, DepFilter, PackageJson, RawDep, VltWorkspaceMeta } from '@/types'
 import { resolve } from 'pathe'
-import { JsonCatalog } from '@/catalog-handler/base/json-workspace'
+import { JsonCatalog } from '@/catalog-handler/base'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { readJsonFile } from '@/io'
 import { getCwd, parseDependency } from '@/utils'
