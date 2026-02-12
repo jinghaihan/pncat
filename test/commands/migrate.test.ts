@@ -227,6 +227,42 @@ describe('resolveMigrate', () => {
     ])
   })
 
+  it('re-infers preserved workspace dependency catalog name when force is enabled', async () => {
+    const workspace = createWorkspace([], {
+      catalogs: {
+        legacy: {
+          react: '^18.3.1',
+        },
+      },
+    })
+    const options = createFixtureOptions('pnpm', {
+      force: true,
+      catalogRules: [
+        {
+          name: 'frontend',
+          match: ['react'],
+        },
+      ],
+    })
+
+    const result = await resolveMigrate({
+      options,
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([
+      {
+        name: 'react',
+        specifier: '^18.3.1',
+        source: 'pnpm-workspace',
+        parents: [],
+        catalogable: true,
+        catalogName: 'frontend',
+        isCatalog: true,
+      },
+    ])
+  })
+
   it('throws when workspace has unresolved catalog specifier', async () => {
     const options = createFixtureOptions('pnpm')
     const dep: RawDep = {

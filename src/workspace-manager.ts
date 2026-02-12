@@ -139,7 +139,7 @@ export class WorkspaceManager {
   isCatalogDepReferenced(
     depName: string,
     catalogName: string,
-    packages: PackageJsonMeta[] = this.listProjectPackages(),
+    packages: PackageMeta[] = this.listProjectPackages(),
   ): boolean {
     const expectedSpecifier = toCatalogSpecifier(catalogName)
 

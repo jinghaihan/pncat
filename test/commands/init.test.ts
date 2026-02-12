@@ -84,7 +84,7 @@ describe('initCommand', () => {
     expect(content).toContain(`postRun: 'eslint --fix "**/package.json" "**/pnpm-workspace.yaml"'`)
   })
 
-  it('overwrites existing config without prompts when yes is enabled', async () => {
+  it('prompts before overwrite even when yes is enabled', async () => {
     await writeFile(CONFIG_PATH, 'export default {}\n', 'utf-8')
 
     await initCommand(createFixtureScenarioOptions(SCENARIO, {
@@ -95,6 +95,7 @@ describe('initCommand', () => {
     const content = await readFile(CONFIG_PATH, 'utf-8')
     expect(content).toContain('mergeCatalogRules')
     expect(content).not.toContain('export default {}')
+    expect(confirmMock).toHaveBeenCalledTimes(1)
   })
 
   it('aborts when existing config overwrite is declined', async () => {

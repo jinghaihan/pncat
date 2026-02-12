@@ -50,13 +50,13 @@ export async function cleanCommand(options: CatalogOptions): Promise<void> {
 export async function resolveClean(context: ResolverContext): Promise<ResolverResult> {
   const { options, workspace } = context
   await workspace.loadPackages()
-  const projectPackages = workspace.listProjectPackages()
+  const catalogTargetPackages = workspace.listCatalogTargetPackages()
   const workspacePackages = workspace.listWorkspacePackages()
   const dependencies: RawDep[] = []
 
   for (const pkg of workspacePackages) {
     for (const dep of pkg.deps) {
-      if (workspace.isCatalogDepReferenced(dep.name, dep.catalogName, projectPackages))
+      if (workspace.isCatalogDepReferenced(dep.name, dep.catalogName, catalogTargetPackages))
         continue
       dependencies.push(dep)
     }

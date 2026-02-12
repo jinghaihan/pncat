@@ -10,7 +10,7 @@ import * as p from '@clack/prompts'
 import c from 'ansis'
 import { gt } from 'semver'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
-import { cleanSpec, toCatalogSpecifier } from '@/utils'
+import { cleanSpec, inferCatalogName, toCatalogSpecifier } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
 import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, createCommandError, ensureWorkspaceFile } from './shared'
 
@@ -167,13 +167,28 @@ function preserveWorkspaceDeps(
       continue
 
     for (const catalog of catalogs) {
+      const source = PACKAGE_MANAGER_CONFIG[agent].depType
+      const catalogName = options.force
+        ? inferCatalogName(
+            {
+              name: depName,
+              specifier: catalog.specifier,
+              source,
+              parents: [],
+              catalogable: true,
+              isCatalog: true,
+            },
+            options,
+          )
+        : catalog.catalogName
+
       dependencies.push({
         name: depName,
         specifier: catalog.specifier,
-        source: PACKAGE_MANAGER_CONFIG[agent].depType,
+        source,
         parents: [],
         catalogable: true,
-        catalogName: catalog.catalogName,
+        catalogName,
         isCatalog: true,
       })
     }

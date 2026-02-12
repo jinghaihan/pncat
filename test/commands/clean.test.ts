@@ -68,10 +68,11 @@ function createWorkspace(
     loadPackages: async () => [...projectPackages, ...workspacePackages],
     listProjectPackages: () => projectPackages,
     listWorkspacePackages: () => workspacePackages,
+    listCatalogTargetPackages: () => [...projectPackages, ...workspacePackages],
     isCatalogDepReferenced: (
       depName: string,
       catalogName: string,
-      packages: PackageJsonMeta[] = projectPackages,
+      packages: Array<{ deps: RawDep[] }> = projectPackages,
     ): boolean => {
       const expected = catalogName === 'default' ? 'catalog:' : `catalog:${catalogName}`
 
@@ -141,6 +142,42 @@ describe('resolveClean', () => {
     const workspace = createWorkspace(
       [createProjectPackage([pkgDep])],
       [createWorkspacePackage([workspaceDep])],
+    )
+
+    const result = await resolveClean({
+      options: createFixtureOptions('pnpm', { yes: true }),
+      workspace,
+    })
+
+    expect(result.dependencies).toEqual([])
+  })
+
+  it('ignores workspace dependency when referenced by workspace overrides entry', async () => {
+    const workspaceDep: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'pnpm-workspace',
+      parents: [],
+      catalogable: true,
+      catalogName: 'frontend',
+      isCatalog: true,
+    }
+    const overrideDep: RawDep = {
+      name: 'react',
+      specifier: 'catalog:frontend',
+      source: 'pnpm.overrides',
+      parents: [],
+      catalogable: true,
+      catalogName: 'frontend',
+      isCatalog: true,
+    }
+    const overridesWorkspacePackage: WorkspacePackageMeta = {
+      ...createWorkspacePackage([overrideDep]),
+      name: 'pnpm-workspace:overrides',
+    }
+    const workspace = createWorkspace(
+      [createProjectPackage([])],
+      [createWorkspacePackage([workspaceDep]), overridesWorkspacePackage],
     )
 
     const result = await resolveClean({

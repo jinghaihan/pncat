@@ -24,7 +24,7 @@ export async function initCommand(options: CatalogOptions): Promise<void> {
   const cwd = workspace.getCwd()
   const filepath = join(cwd, INIT_CONFIG_FILENAME)
 
-  if (existsSync(filepath) && !options.yes) {
+  if (existsSync(filepath)) {
     const confirmed = await p.confirm({
       message: `${c.yellow(INIT_CONFIG_FILENAME)} already exists, do you want to overwrite it?`,
       initialValue: false,
