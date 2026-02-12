@@ -1,6 +1,13 @@
 import type { CatalogOptions } from './core'
 import type { RawDep, WorkspaceSchema } from './meta'
 
+export interface CatalogEntry {
+  catalogName: string
+  specifier: string
+}
+
+export type CatalogIndex = Map<string, CatalogEntry[]>
+
 export interface CatalogHandler {
   readonly options: CatalogOptions
   findWorkspaceFile: () => Promise<string | undefined>

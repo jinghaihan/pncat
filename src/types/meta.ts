@@ -60,10 +60,3 @@ export type WorkspacePackageMeta
     | VltWorkspaceMeta
 
 export type PackageMeta = PackageJsonMeta | WorkspacePackageMeta
-
-export interface CatalogEntry {
-  catalogName: string
-  specifier: string
-}
-
-export type CatalogIndex = Map<string, CatalogEntry[]>

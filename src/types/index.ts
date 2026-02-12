@@ -1,4 +1,4 @@
-export * from './catalog-handler'
+export * from './catalog'
 export * from './core'
 export * from './fn'
 export * from './meta'
