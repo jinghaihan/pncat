@@ -7,13 +7,13 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
     priority: 10,
   },
   {
-    name: 'lint',
-    match: [/(^|[@/.-])(eslint|prettier|stylelint|biome|knip|cspell|lint-staged)($|[@/.-])/],
+    name: 'test',
+    match: [/(^|[@/.-])(vitest|jest|cypress|playwright|test|testing)($|[@/.-])/],
     priority: 20,
   },
   {
-    name: 'test',
-    match: [/(^|[@/.-])(vitest|jest|cypress|playwright|test|testing)($|[@/.-])/],
+    name: 'lint',
+    match: [/(^|[@/.-])(eslint|prettier|stylelint|biome|knip|cspell|lint-staged)($|[@/.-])/],
     priority: 20,
   },
   {
