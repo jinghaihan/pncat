@@ -13,7 +13,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'lint',
-    match: [/(^|[@/.-])(eslint|prettier|stylelint|biome|knip|cspell|lint-staged)($|[@/.-])/],
+    match: [/(^|[@/.-])(eslint|prettier|stylelint|biome|knip|cspell|typecheck|tsc|lint-staged)($|[@/.-])/],
     priority: 20,
   },
   {
@@ -23,7 +23,7 @@ export const DEFAULT_CATALOG_RULES: CatalogRule[] = [
   },
   {
     name: 'build',
-    match: [/(^|[@/.-])(vite|webpack|rollup|rolldown|rspack|esbuild|tsup|tsdown|unbuild|unplugin)($|[@/.-])/],
+    match: [/(^|[@/.-])(vite|vitejs|webpack|rollup|rolldown|rspack|esbuild|tsup|tsdown|unbuild|unplugin)($|[@/.-])/],
     priority: 20,
   },
   {
