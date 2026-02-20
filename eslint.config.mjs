@@ -1,9 +1,6 @@
-import antfu from '@antfu/eslint-config'
+import { defineConfig } from '@octohash/eslint-config'
 
-export default antfu({
-  rules: {
-    'pnpm/yaml-enforce-settings': 'off',
-  },
+export default defineConfig({
   ignores: [
     '**/test/fixtures/**',
   ],
