@@ -22,7 +22,7 @@ pnpm add -D pncat
 - <samp><b>↩️ Revert</b></samp> - Move cataloged dependencies back to `package.json`
 
 <p align='center'>
-<img src='./assets/help.png' />
+<img src='./assets/help.png' alt="help" />
 </p>
 
 ## Usage
@@ -40,7 +40,7 @@ pncat conf
 Initializes your workspace with an optimized config file. It analyzes current workspace dependencies and generates tailored rules for clearer project structure.
 
 <p align='center'>
-<img src='./assets/init.png' width='600' />
+<img src='./assets/init.png' alt="init" width='600' />
 </p>
 
 ### Detect
@@ -56,7 +56,7 @@ pncat find
 Scans your workspace and lists dependencies that can be moved to catalogs.
 
 <p align='center'>
-<img src='./assets/detect.png' width='600' />
+<img src='./assets/detect.png' alt="detect" width='600' />
 </p>
 
 ### Migrate
@@ -77,7 +77,7 @@ Groups dependencies by rules (for example lint, test, utils) and updates both wo
 Default rules are in `src/rules.ts`. To customize them, create `pncat.config.ts` in the project root.
 
 <p align='center'>
-<img src='./assets/migrate.png' width='600' />
+<img src='./assets/migrate.png' alt="migrate" width='600' />
 </p>
 
 ### Add
@@ -94,7 +94,7 @@ Adds dependencies with interactive prompts and catalog support (credit to [@antf
 Use `--catalog <name>` to target a catalog. If omitted, pncat assigns dependencies based on your catalog rules.
 
 <p align='center'>
-<img src='./assets/add.png' width='600' />
+<img src='./assets/add.png' alt="add" width='600' />
 </p>
 
 ### Remove
@@ -113,7 +113,7 @@ Shows which catalog group uses the dependency. After confirmation, removes it fr
 To remove a dependency across the monorepo, use `pnpm remove dep -r` or `pnpm remove dep --recursive`.
 
 <p align='center'>
-<img src='./assets/remove.png' width='600' />
+<img src='./assets/remove.png' alt="remove" width='600' />
 </p>
 
 ### Clean
@@ -128,7 +128,7 @@ pncat prune
 Finds unused catalog dependencies and removes them from workspace catalog config.
 
 <p align='center'>
-<img src='./assets/clean.png' width='600' />
+<img src='./assets/clean.png' alt="clean" width='600' />
 </p>
 
 ### Revert
@@ -143,7 +143,7 @@ pncat undo
 Moves cataloged dependencies back to `package.json`. Useful during monorepo restructuring or migration.
 
 <p align='center'>
-<img src='./assets/revert.png' width='600' />
+<img src='./assets/revert.png' alt="revert" width='600' />
 </p>
 
 You can also revert specific dependencies:
@@ -156,7 +156,7 @@ pncat undo dep
 ```
 
 <p align='center'>
-<img src='./assets/revert-d.png' width='600' />
+<img src='./assets/revert-d.png' alt="revert-dep" width='600' />
 </p>
 
 ## Configuration
