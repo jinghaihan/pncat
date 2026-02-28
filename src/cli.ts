@@ -20,7 +20,7 @@ import { MODE_ALIASES, MODE_CHOICES, NAME, VERSION } from './constants'
 const cli: CAC = cac(NAME)
 
 cli
-  .command('[mode]', 'A unified cli tool that enhances package managers catalogs feature')
+  .command('[...args]', 'A unified cli tool that enhances package managers catalogs feature')
   .option('--cwd <cwd>', 'specify the current working directory')
   .option('--catalog [name]', 'Install from a specific catalog, auto detect if not provided')
   .option('--recursive, -r', 'Recursively search for package.json in subdirectories')
@@ -33,7 +33,7 @@ cli
   .option('--verbose', 'Show complete catalogs instead of only the diff')
   .option('--post-run <hooks>', 'Hook to run after command completion')
   .allowUnknownOptions()
-  .action((mode: RangeMode, options: Partial<CommandOptions>) => runCliAction(mode, options).catch(handleCliError))
+  .action((args: [RangeMode], options: Partial<CommandOptions>) => runCliAction(args[0], options).catch(handleCliError))
 
 cli.help()
 cli.version(VERSION)
