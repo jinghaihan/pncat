@@ -6,6 +6,9 @@ interface DiffHighlightOptions {
   verbose?: boolean
 }
 
+const NON_WHITESPACE_RE = /\S/
+const VALUE_SUFFIX_RE = /:\s*(.+)/
+
 export function diffHighlight(original: string, updated: string, options: DiffHighlightOptions = {}): string {
   const { indentSize = 2, verbose = false } = options
   const changed = diffLines(original, updated, {
@@ -15,7 +18,7 @@ export function diffHighlight(original: string, updated: string, options: DiffHi
   const diffs: { content: string, type: 'added' | 'removed' | 'unchanged' }[] = []
   for (const part of changed) {
     const lines = part.value.split('\n')
-    if (lines[lines.length - 1] === '')
+    if (lines.at(-1) === '')
       lines.pop()
 
     for (const line of lines) {
@@ -39,7 +42,7 @@ export function diffHighlight(original: string, updated: string, options: DiffHi
       continue
     }
 
-    const currentIndent = line.content.search(/\S/)
+    const currentIndent = line.content.search(NON_WHITESPACE_RE)
     const indentLevel = Math.floor(currentIndent / indentSize)
     const parentIndices: number[] = []
 
@@ -49,7 +52,7 @@ export function diffHighlight(original: string, updated: string, options: DiffHi
       if (prevLine.content.trim() === '')
         continue
 
-      const prevIndent = prevLine.content.search(/\S/)
+      const prevIndent = prevLine.content.search(NON_WHITESPACE_RE)
       const prevIndentLevel = Math.floor(prevIndent / indentSize)
       if (prevIndentLevel < indentLevel) {
         parentIndices.unshift(i)
@@ -131,7 +134,7 @@ function highlightLine(content: string, indentSize: number, highlightRoot = fals
   if (content.trim() === '')
     return content
 
-  const currentIndent = content.search(/\S/)
+  const currentIndent = content.search(NON_WHITESPACE_RE)
   const indentLevel = Math.floor(currentIndent / indentSize)
   const colonIndex = content.indexOf(':')
   if (colonIndex === -1)
@@ -141,7 +144,7 @@ function highlightLine(content: string, indentSize: number, highlightRoot = fals
   const afterColon = content.substring(colonIndex)
   const rootStyle = highlightRoot ? c.cyan : c.reset
 
-  const versionMatch = afterColon.match(/:\s*(.+)/)
+  const versionMatch = afterColon.match(VALUE_SUFFIX_RE)
   const hasValue = !!(versionMatch && versionMatch[1].trim())
 
   if (indentLevel <= 1) {
@@ -157,7 +160,7 @@ function isDependencyEntryLine(content: string, indentSize: number): boolean {
   if (content.trim() === '')
     return false
 
-  const currentIndent = content.search(/\S/)
+  const currentIndent = content.search(NON_WHITESPACE_RE)
   const indentLevel = Math.floor(currentIndent / indentSize)
   if (indentLevel < 2)
     return false
@@ -166,6 +169,6 @@ function isDependencyEntryLine(content: string, indentSize: number): boolean {
 
   const colonIndex = content.indexOf(':')
   const afterColon = content.substring(colonIndex)
-  const versionMatch = afterColon.match(/:\s*(.+)/)
+  const versionMatch = afterColon.match(VALUE_SUFFIX_RE)
   return !!(versionMatch && versionMatch[1].trim())
 }

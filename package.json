@@ -2,7 +2,7 @@
   "name": "pncat",
   "type": "module",
   "version": "0.10.4",
-  "packageManager": "pnpm@10.30.3",
+  "packageManager": "pnpm@10.32.1",
   "description": "A unified cli tool that enhances package managers catalogs feature.",
   "author": "jinghaihan",
   "license": "MIT",
@@ -65,6 +65,7 @@
   "devDependencies": {
     "tsdown": "catalog:build",
     "bumpp": "catalog:dev",
+    "nano-staged": "catalog:dev",
     "simple-git-hooks": "catalog:dev",
     "taze": "catalog:dev",
     "tsx": "catalog:dev",
@@ -83,7 +84,6 @@
     "ufo": "catalog:inlined",
     "@octohash/eslint-config": "catalog:lint",
     "eslint": "catalog:lint",
-    "lint-staged": "catalog:lint",
     "@vitest/coverage-v8": "catalog:test",
     "vitest": "catalog:test",
     "@types/node": "catalog:types",
@@ -93,9 +93,9 @@
     "pncat": "workspace:*"
   },
   "simple-git-hooks": {
-    "pre-commit": "pnpm lint-staged"
+    "pre-commit": "pnpm nano-staged"
   },
-  "lint-staged": {
+  "nano-staged": {
     "*": "eslint --fix"
   }
 }

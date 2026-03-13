@@ -133,7 +133,7 @@ async function selectSpecifier(
   catalogName: string,
   options: CatalogOptions,
 ): Promise<string> {
-  const sorted = specifiers.slice().sort((a, b) => {
+  const sorted = specifiers.toSorted((a, b) => {
     const versionA = cleanSpec(a, options)
     const versionB = cleanSpec(b, options)
 

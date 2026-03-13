@@ -7,9 +7,11 @@ const RANGE_ASTERISK_WILDCARD_RE = /^\*(?:\.\*)*$/
 const RANGE_PRERELEASE_RE = /^(?:\d+\.){1,2}\d+-[a-z0-9.-]+$/i
 const RANGE_ANY_WILDCARD_TOKEN_RE = /(?:^|\.)(?:x|\*)(?:$|\.)/
 const NPM_ALIAS_RE = /^npm:(?:@[^/\s]+\/)?[^@\s]+@(.+)$/
+const ESCAPE_REGEXP_RE = /[.+?^${}()|[\]\\]/g
+const GLOB_WILDCARD_RE = /\*+/g
 
 function escapeRegExp(input: string) {
-  return input.replace(/[.+?^${}()|[\]\\]/g, '\\$&') // $& means the whole matched string
+  return input.replace(ESCAPE_REGEXP_RE, '\\$&') // $& means the whole matched string
 }
 
 function filterToRegex(value: string): RegExp {
@@ -20,7 +22,7 @@ function filterToRegex(value: string): RegExp {
     return new RegExp(pattern, flags)
   }
 
-  return new RegExp(`^${escapeRegExp(value).replace(/\*+/g, '.*?')}$`)
+  return new RegExp(`^${escapeRegExp(value).replace(GLOB_WILDCARD_RE, '.*?')}$`)
 }
 
 function parseFilter(value?: string | string[], defaultValue = true): (name: string) => boolean {
