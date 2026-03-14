@@ -1,4 +1,18 @@
-import type { CatalogOptions } from '@/types'
+import type { CatalogOptions, DepType } from '@/types'
+
+export const CLI_DEP_FIELD_ALIASES: Record<DepType, readonly string[]> = {
+  'dependencies': ['prod'],
+  'devDependencies': ['dev', 'dev-dependencies'],
+  'peerDependencies': ['peer', 'peer-dependencies'],
+  'optionalDependencies': ['optional', 'optional-dependencies'],
+  'pnpm.overrides': ['pnpm-overrides'],
+  'resolutions': ['resolution'],
+  'overrides': ['override'],
+  'pnpm-workspace': [],
+  'yarn-workspace': [],
+  'bun-workspace': [],
+  'vlt-workspace': [],
+}
 
 export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
   mode: 'detect',

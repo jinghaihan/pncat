@@ -65,4 +65,63 @@ describe('resolveConfig', () => {
     const config = await resolveConfig(input)
     expect('catalog' in config).toBe(false)
   })
+
+  it('resolves cli dep field aliases into depFields', async () => {
+    const config = await resolveConfig({
+      cwd: getFixtureCwd('pnpm'),
+      depFields: 'prod,dev,resolutions,overrides,pnpm-overrides',
+    })
+
+    expect(config.depFields).toMatchObject({
+      'dependencies': true,
+      'devDependencies': true,
+      'peerDependencies': false,
+      'optionalDependencies': false,
+      'resolutions': true,
+      'overrides': true,
+      'pnpm.overrides': true,
+    })
+  })
+
+  it('excludes cli dep fields from the resolved selection', async () => {
+    const config = await resolveConfig({
+      cwd: getFixtureCwd('pnpm'),
+      excludeDepFields: 'peer,optional,resolutions,overrides,pnpm-overrides',
+    })
+
+    expect(config.depFields).toMatchObject({
+      'dependencies': true,
+      'devDependencies': true,
+      'peerDependencies': false,
+      'optionalDependencies': false,
+      'resolutions': false,
+      'overrides': false,
+      'pnpm.overrides': false,
+    })
+  })
+
+  it('applies excludeDepFields after depFields selection', async () => {
+    const config = await resolveConfig({
+      cwd: getFixtureCwd('pnpm'),
+      depFields: 'resolutions,overrides,pnpm-overrides',
+      excludeDepFields: 'pnpm-overrides',
+    })
+
+    expect(config.depFields).toMatchObject({
+      'dependencies': false,
+      'devDependencies': false,
+      'peerDependencies': false,
+      'optionalDependencies': false,
+      'resolutions': true,
+      'overrides': true,
+      'pnpm.overrides': false,
+    })
+  })
+
+  it('throws on invalid cli dep field values', async () => {
+    await expect(resolveConfig({
+      cwd: getFixtureCwd('pnpm'),
+      depFields: 'prod,wat',
+    })).rejects.toThrowError('invalid dep fields: wat')
+  })
 })

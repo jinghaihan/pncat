@@ -28,6 +28,8 @@ cli
   .option('--anon', 'Group dependencies in default catalog')
   .option('--include, -n <deps>', 'Only included dependencies will be checked for catalog')
   .option('--exclude, -x <deps>', 'Exclude dependencies to be checked, will override --include options')
+  .option('--dep-fields <fields>', 'set dependency fields (prod, dev, peer, optional, resolutions, overrides, pnpm-overrides)')
+  .option('--exclude-dep-fields <fields>', 'exclude dependency fields from the current selection')
   .option('--ignore-paths <paths>', 'Ignore paths for search package.json')
   .option('--yes', 'Skip prompt confirmation')
   .option('--install', 'Run install after command')

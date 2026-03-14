@@ -17,6 +17,8 @@ export interface CommandOptions {
   anon?: boolean
   force?: boolean
   catalog?: string
+  depFields?: DepFieldOptions | string | string[]
+  excludeDepFields?: string | string[]
   yes?: boolean
   install?: boolean
   verbose?: boolean
@@ -28,13 +30,13 @@ export interface ConfigOptions {
   exclude?: string | string[]
   ignorePaths?: string | string[]
   ignoreOtherWorkspaces?: boolean
-  depFields?: DepFieldOptions
   allowedProtocols?: string[]
   saveExact?: boolean
   postRun?: string | HookFunction | Array<string | HookFunction>
 }
 
 export interface CatalogOptions extends CommandOptions, ConfigOptions {
+  depFields?: DepFieldOptions
   catalogRules?: CatalogRule[]
   specifierOptions?: SpecifierOptions
 }
