@@ -4,6 +4,10 @@ import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '@/constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 
 export function inferCatalogName(dep: Omit<RawDep, 'catalogName'>, options: CatalogOptions): string {
+  // use default catalog when `options.anon` is true
+  if (options.anon)
+    return 'default'
+
   for (const rule of options.catalogRules ?? []) {
     const { name, match, specifierRules } = rule
 

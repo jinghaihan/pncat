@@ -17,6 +17,7 @@ export default defineConfig({
         'semver',
         'tildify',
         'ufo',
+        'yaml',
       ],
     },
   ]),

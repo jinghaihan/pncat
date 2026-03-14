@@ -14,6 +14,7 @@ export interface CommandOptions {
   cwd?: string
   mode?: RangeMode
   recursive?: boolean
+  anon?: boolean
   force?: boolean
   catalog?: string
   yes?: boolean

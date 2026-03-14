@@ -25,6 +25,7 @@ cli
   .option('--catalog [name]', 'Install from a specific catalog, auto detect if not provided')
   .option('--recursive, -r', 'Recursively search for package.json in subdirectories')
   .option('--force, -f', 'Force cataloging according to rules, ignoring original configurations')
+  .option('--anon', 'Group dependencies in default catalog')
   .option('--include, -n <deps>', 'Only included dependencies will be checked for catalog')
   .option('--exclude, -x <deps>', 'Exclude dependencies to be checked, will override --include options')
   .option('--ignore-paths <paths>', 'Ignore paths for search package.json')
