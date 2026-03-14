@@ -82,6 +82,7 @@
     "semver": "catalog:inlined",
     "tildify": "catalog:inlined",
     "ufo": "catalog:inlined",
+    "yaml": "catalog:inlined",
     "@octohash/eslint-config": "catalog:lint",
     "eslint": "catalog:lint",
     "@vitest/coverage-v8": "catalog:test",

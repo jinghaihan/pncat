@@ -27,10 +27,4 @@ export const DEFAULT_CATALOG_OPTIONS: CatalogOptions = {
   install: true,
 }
 
-export const DEFAULT_IGNORE_PATHS = [
-  '**/node_modules/**',
-  '**/dist/**',
-  '**/public/**',
-  '**/fixture/**',
-  '**/fixtures/**',
-]
+export const DEFAULT_IGNORE_PATHS = ['**/node_modules/**']

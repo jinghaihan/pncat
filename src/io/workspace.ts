@@ -6,6 +6,9 @@ import { dirname, join, resolve } from 'pathe'
 import { glob } from 'tinyglobby'
 import { DEFAULT_IGNORE_PATHS, PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { getCwd } from '@/utils'
+import { findWorkspacePatterns } from './workspace-patterns'
+
+const TRAILING_SLASH_RE = /\/+$/
 
 export async function detectWorkspaceRoot(
   agent: PackageManager = 'pnpm',
@@ -19,32 +22,17 @@ export async function detectWorkspaceRoot(
 
 export async function findPackageJsonPaths(options: CatalogOptions): Promise<string[]> {
   const { agent = 'pnpm' } = options
+  const { hasWorkspaceConfig, patterns } = await findWorkspacePatterns(options)
 
-  let packagePaths = await collectPackageJsonPaths(options)
+  let packagePaths = !options.recursive
+    ? ['package.json']
+    : hasWorkspaceConfig
+      ? await globPackageJsonPaths(patternsToPackageJsonGlobs(patterns), options)
+      : await globPackageJsonPaths(['**/package.json'], options)
   if (options.ignoreOtherWorkspaces)
     packagePaths = await filterOtherWorkspacePaths(packagePaths, options)
 
-  const filename = PACKAGE_MANAGER_CONFIG[agent].filename
-  const paths = existsSync(join(getCwd(options), filename))
-    ? [filename, ...packagePaths]
-    : packagePaths
-
-  return Array.from(new Set(paths))
-}
-
-async function collectPackageJsonPaths(options: CatalogOptions): Promise<string[]> {
-  if (!options.recursive)
-    return ['package.json']
-
-  const packagePaths = await glob(`**/package.json`, {
-    ignore: DEFAULT_IGNORE_PATHS.concat(options.ignorePaths || []),
-    cwd: options.cwd,
-    onlyFiles: true,
-    dot: false,
-    expandDirectories: false,
-  })
-  packagePaths.sort((a, b) => a.localeCompare(b))
-  return packagePaths
+  return buildWorkspacePaths(agent, options, packagePaths)
 }
 
 async function filterOtherWorkspacePaths(packagePaths: string[], options: CatalogOptions): Promise<string[]> {
@@ -80,4 +68,50 @@ async function isOutOfCurrentWorkspace(
 
   const workspaceFile = await findUp(workspaceFilename, { cwd: absolute, stopAt: cwd })
   return !!(workspaceFile && dirname(workspaceFile) !== cwd)
+}
+
+async function globPackageJsonPaths(patterns: string[], options: CatalogOptions): Promise<string[]> {
+  if (patterns.length === 0)
+    return []
+
+  const packagePaths = await glob(patterns, {
+    ignore: DEFAULT_IGNORE_PATHS.concat(options.ignorePaths || []),
+    cwd: getCwd(options),
+    onlyFiles: true,
+    dot: false,
+    expandDirectories: false,
+  })
+  packagePaths.sort((a, b) => a.localeCompare(b))
+  return packagePaths
+}
+
+function buildWorkspacePaths(
+  agent: PackageManager,
+  options: CatalogOptions,
+  packagePaths: string[],
+): string[] {
+  const cwd = getCwd(options)
+  const workspacePaths = existsSync(join(cwd, PACKAGE_MANAGER_CONFIG[agent].filename))
+    ? [PACKAGE_MANAGER_CONFIG[agent].filename]
+    : []
+  const rootPackagePath = existsSync(join(cwd, 'package.json'))
+    ? ['package.json']
+    : []
+
+  return Array.from(new Set([...workspacePaths, ...rootPackagePath, ...packagePaths]))
+}
+
+function patternsToPackageJsonGlobs(patterns: string[]): string[] {
+  return patterns.map((pattern) => {
+    const isNegativePattern = pattern.startsWith('!')
+    const rawPattern = isNegativePattern ? pattern.slice(1) : pattern
+    const normalizedPattern = rawPattern.replace(TRAILING_SLASH_RE, '') || '.'
+    const packageJsonPattern = normalizedPattern === '.'
+      ? 'package.json'
+      : normalizedPattern.endsWith('/package.json') || normalizedPattern === 'package.json'
+        ? normalizedPattern
+        : `${normalizedPattern}/package.json`
+
+    return isNegativePattern ? `!${packageJsonPattern}` : packageJsonPattern
+  })
 }

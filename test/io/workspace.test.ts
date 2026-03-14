@@ -20,6 +20,13 @@ describe('findPackageJsonPaths', () => {
     }
   })
 
+  it('excludes package.json files outside configured workspace patterns', async () => {
+    for (const agent of PACKAGE_MANAGERS) {
+      const paths = await findPackageJsonPaths(createFixtureOptions(agent))
+      expect(paths).not.toContain('tools/pkg/package.json')
+    }
+  })
+
   it('keeps bun sub-packages when ignoreOtherWorkspaces is enabled', async () => {
     const paths = await findPackageJsonPaths(createFixtureOptions('bun', { ignoreOtherWorkspaces: true }))
     expect(paths).toContain('packages/app/package.json')
