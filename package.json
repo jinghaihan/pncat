@@ -2,7 +2,7 @@
   "name": "pncat",
   "type": "module",
   "version": "0.11.0",
-  "packageManager": "pnpm@10.32.1",
+  "packageManager": "pnpm@10.33.0",
   "description": "A unified cli tool that enhances package managers catalogs feature.",
   "author": "jinghaihan",
   "license": "MIT",
@@ -94,13 +94,13 @@
     "*": "eslint --fix"
   },
   "inlinedDependencies": {
-    "diff": "8.0.3",
-    "tildify": "3.0.0",
+    "@antfu/utils": "9.3.0",
+    "deepmerge": "4.3.1",
     "detect-indent": "7.0.2",
-    "semver-es": "0.1.0",
+    "diff": "8.0.4",
     "fast-npm-meta": "1.4.2",
     "get-npm-meta": "0.1.0",
-    "@antfu/utils": "9.3.0",
-    "deepmerge": "4.3.1"
+    "semver-es": "0.1.0",
+    "tildify": "3.0.0"
   }
 }
