@@ -8,7 +8,7 @@ import type {
 } from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { gt } from 'semver'
+import { gt } from 'semver-es'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { cleanSpec, inferCatalogName, toCatalogSpecifier } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'

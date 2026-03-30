@@ -1,5 +1,5 @@
 import type { CatalogIndex, CatalogOptions, DepType, RawDep, WorkspaceSchema } from '@/types'
-import { satisfies } from 'semver'
+import { satisfies } from 'semver-es'
 import { DEPS_TYPE_CATALOG_MAP, PACKAGE_MANAGERS } from '@/constants'
 import { cleanSpec, mostSpecificRule } from './specifier'
 

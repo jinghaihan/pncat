@@ -19,7 +19,7 @@ catalogs:
     npm-package-arg: ^13.0.2
     npm-registry-fetch: ^19.1.1
     p-retry: ^7.1.1
-    semver: ^7.7.4
+    semver-es: ^0.1.0
     tildify: ^3.0.0
     ufo: ^1.6.3
     yaml: ^2.8.2
@@ -44,7 +44,6 @@ catalogs:
     '@types/node': ^25.5.0
     '@types/npm-package-arg': ^6.1.4
     '@types/npm-registry-fetch': ^8.0.9
-    '@types/semver': ^7.7.1
 onlyBuiltDependencies:
   - esbuild
   - simple-git-hooks

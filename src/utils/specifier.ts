@@ -1,5 +1,5 @@
 import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
-import { clean, coerce, gt, minVersion, subset, valid } from 'semver'
+import { clean, coerce, gt, minVersion, subset, valid } from 'semver-es'
 
 export function parseSpec(spec: string): ParsedSpec {
   const { name, specifier } = splitPackageSpec(spec.trim())

@@ -14,7 +14,7 @@ export default defineConfig({
         'npm-package-arg',
         'npm-registry-fetch',
         'p-retry',
-        'semver',
+        'semver-es',
         'tildify',
         'ufo',
         'yaml',

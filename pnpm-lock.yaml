@@ -56,9 +56,9 @@ catalogs:
     p-retry:
       specifier: ^7.1.1
       version: 7.1.1
-    semver:
-      specifier: ^7.7.4
-      version: 7.7.4
+    semver-es:
+      specifier: ^0.1.0
+      version: 0.1.0
     tildify:
       specifier: ^3.0.0
       version: 3.0.0
@@ -123,9 +123,6 @@ catalogs:
     '@types/npm-registry-fetch':
       specifier: ^8.0.9
       version: 8.0.9
-    '@types/semver':
-      specifier: ^7.7.1
-      version: 7.7.1
 
 importers:
 
@@ -180,9 +177,6 @@ importers:
       '@types/npm-registry-fetch':
         specifier: catalog:types
         version: 8.0.9
-      '@types/semver':
-        specifier: catalog:types
-        version: 7.7.1
       '@vitest/coverage-v8':
         specifier: catalog:test
         version: 4.1.0(vitest@4.1.0(@types/node@25.5.0)(vite@7.1.2(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.2)))
@@ -219,9 +213,9 @@ importers:
       pncat:
         specifier: workspace:*
         version: 'link:'
-      semver:
+      semver-es:
         specifier: catalog:inlined
-        version: 7.7.4
+        version: 0.1.0
       simple-git-hooks:
         specifier: catalog:dev
         version: 2.13.1
@@ -1155,9 +1149,6 @@ packages:
 
   '@types/npmlog@7.0.0':
     resolution: {integrity: sha512-hJWbrKFvxKyWwSUXjZMYTINsSOY6IclhvGOZ97M8ac2tmR9hMwmTnYaMdpGhvju9ctWLTPhCS+eLfQNluiEjQQ==}
-
-  '@types/semver@7.7.1':
-    resolution: {integrity: sha512-FmgJfu+MOcQ370SD0ev7EI8TlCAfKYU+B4m5T3yXc1CiRN94g/SZPtsCkk506aUDtlMnFZvasDwHHUcZUEaYuA==}
 
   '@types/ssri@7.1.5':
     resolution: {integrity: sha512-odD/56S3B51liILSk5aXJlnYt99S6Rt9EFDDqGtJM26rKHApHcwyU/UoYHrzKkdkHMAIquGWCuHtQTbes+FRQw==}
@@ -2680,6 +2671,9 @@ packages:
     resolution: {integrity: sha512-3A6sD0WYP7+QrjbfNA2FN3FsOaGGFoekCVgTyypy53gPxhbkCIjtO6YWgdrfM+n/8sI8JeXZOIxsHjMTNxQ4nQ==}
     engines: {node: ^14.0.0 || >=16.0.0}
 
+  semver-es@0.1.0:
+    resolution: {integrity: sha512-ugjCvvVx7kMsK2VC/M2aclMEet0XaqpXlm8bt/tJGIRxxgWJq8laZjIoEHnjhwf72gXD5rIXP3WsIMABcsZgLg==}
+
   semver@7.7.4:
     resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
     engines: {node: '>=10'}
@@ -3786,8 +3780,6 @@ snapshots:
   '@types/npmlog@7.0.0':
     dependencies:
       '@types/node': 25.5.0
-
-  '@types/semver@7.7.1': {}
 
   '@types/ssri@7.1.5':
     dependencies:
@@ -5684,6 +5676,8 @@ snapshots:
       '@eslint-community/regexpp': 4.12.2
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
+
+  semver-es@0.1.0: {}
 
   semver@7.7.4: {}
 
