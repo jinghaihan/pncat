@@ -99,7 +99,7 @@
     "detect-indent": "7.0.2",
     "diff": "8.0.4",
     "fast-npm-meta": "1.4.2",
-    "get-npm-meta": "0.1.0",
+    "get-npm-meta": "0.1.1",
     "semver-es": "0.1.0",
     "tildify": "3.0.0"
   }

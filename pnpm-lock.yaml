@@ -42,8 +42,8 @@ catalogs:
       specifier: ^8.0.4
       version: 8.0.4
     get-npm-meta:
-      specifier: ^0.1.0
-      version: 0.1.0
+      specifier: ^0.1.1
+      version: 0.1.1
     semver-es:
       specifier: ^0.1.0
       version: 0.1.0
@@ -179,7 +179,7 @@ importers:
         version: 10.1.0(jiti@2.6.1)
       get-npm-meta:
         specifier: catalog:inlined
-        version: 0.1.0
+        version: 0.1.1
       nano-staged:
         specifier: catalog:dev
         version: 0.9.0
@@ -1784,8 +1784,8 @@ packages:
     resolution: {integrity: sha512-9fSjSaos/fRIVIp+xSJlE6lfwhES7LNtKaCBIamHsjr2na1BiABJPo0mOjjz8GJDURarmCPGqaiVg5mfjb98CQ==}
     engines: {node: '>= 0.4'}
 
-  get-npm-meta@0.1.0:
-    resolution: {integrity: sha512-k5p0xx82isBAWnCZ6y/jm1qu2loO/K5li8DKSoNSyCGsl/sd9zwsnweLsEt7zlSO1vRZYiQYtInyAH60xwUZYA==}
+  get-npm-meta@0.1.1:
+    resolution: {integrity: sha512-YoFCXyeCTXHK2ppdKlDnMP5JQEyYC4Ey/vwT3sGu9xLe8YUJyyIrZSKzkVsTg0255W/xBXD1h68OxhbNjxRsgQ==}
 
   get-proto@1.0.1:
     resolution: {integrity: sha512-sTSfBjoXBp89JvIKIefqw7U2CCebsc74kiY6awiGogKtoSGbgjYE/G/+l9sF3MWFPNc9IcoOC4ODfKHfxFmp0g==}
@@ -4112,6 +4112,10 @@ snapshots:
     optionalDependencies:
       picomatch: 4.0.3
 
+  fdir@6.5.0(picomatch@4.0.4):
+    optionalDependencies:
+      picomatch: 4.0.4
+
   file-entry-cache@8.0.0:
     dependencies:
       flat-cache: 4.0.1
@@ -4165,7 +4169,7 @@ snapshots:
       hasown: 2.0.2
       math-intrinsics: 1.1.0
 
-  get-npm-meta@0.1.0:
+  get-npm-meta@0.1.1:
     dependencies:
       fast-npm-meta: 1.4.2
 
@@ -5074,8 +5078,8 @@ snapshots:
   vite@7.1.2(@types/node@25.5.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:
       esbuild: 0.25.9
-      fdir: 6.5.0(picomatch@4.0.3)
-      picomatch: 4.0.3
+      fdir: 6.5.0(picomatch@4.0.4)
+      picomatch: 4.0.4
       postcss: 8.5.6
       rollup: 4.47.1
       tinyglobby: 0.2.15

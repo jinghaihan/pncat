@@ -1,5 +1,4 @@
 import { defineConfig } from 'tsdown'
-import { semverAliasPlugin } from './build/semver'
 
 export default defineConfig({
   entry: [
@@ -12,9 +11,6 @@ export default defineConfig({
   deps: {
     onlyBundle: false,
   },
-  plugins: [
-    semverAliasPlugin(),
-  ],
   exports: true,
   clean: true,
 })
