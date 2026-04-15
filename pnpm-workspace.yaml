@@ -1,42 +1,42 @@
 packages: []
 catalogs:
   build:
-    tsdown: ^0.21.7
+    tsdown: ^0.21.8
   dev:
     bumpp: ^11.0.1
-    nano-staged: ^0.9.0
+    nano-staged: ^1.0.2
     simple-git-hooks: ^2.13.1
-    taze: ^19.10.0
+    taze: ^19.11.0
     tsx: ^4.21.0
     typescript: ^6.0.2
   inlined:
     '@antfu/utils': ^9.3.0
     deepmerge: ^4.3.1
     detect-indent: ^7.0.2
-    diff: ^8.0.4
-    get-npm-meta: ^0.1.1
-    semver-es: ^0.1.0
+    diff: ^9.0.0
+    get-npm-meta: ^0.1.2
+    semver-es: ^0.1.1
     tildify: ^3.0.0
     yaml: ^2.8.3
   lint:
-    '@octohash/eslint-config': ^0.2.9
-    eslint: ^10.1.0
+    '@octohash/eslint-config': ^0.3.1
+    eslint: ^10.2.0
   prod:
-    '@clack/prompts': ^1.1.0
+    '@clack/prompts': ^1.2.0
     ansis: ^4.2.0
     cac: ^7.0.0
     find-up: ^8.0.0
     package-manager-detector: ^1.6.0
     pathe: ^2.0.3
     pnpm-workspace-yaml: ^1.6.0
-    tinyexec: ^1.0.2
-    tinyglobby: ^0.2.15
+    tinyexec: ^1.1.1
+    tinyglobby: ^0.2.16
     unconfig: ^7.5.0
   test:
-    '@vitest/coverage-v8': ^4.1.2
-    vitest: ^4.1.2
+    '@vitest/coverage-v8': ^4.1.4
+    vitest: ^4.1.4
   types:
-    '@types/node': ^25.5.0
+    '@types/node': ^25.6.0
     '@types/npm-package-arg': ^6.1.4
     '@types/npm-registry-fetch': ^8.0.9
 onlyBuiltDependencies:
