@@ -10,6 +10,8 @@ export type CatalogIndex = Map<string, CatalogEntry[]>
 
 export interface CatalogHandler {
   readonly options: CatalogOptions
+  cloneState: () => unknown
+  restoreState: (state: unknown) => void
   findWorkspaceFile: () => Promise<string | undefined>
   ensureWorkspace: () => Promise<void>
   toJSON: () => Promise<WorkspaceSchema>

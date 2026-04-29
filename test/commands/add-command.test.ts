@@ -1,11 +1,35 @@
 import { readFile, writeFile } from 'node:fs/promises'
 import process from 'node:process'
+import * as p from '@clack/prompts'
 import { join } from 'pathe'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { addCommand } from '@/commands/add'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import { readJsonFile } from '@/io'
 import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
+
+vi.mock('@clack/prompts', async () => {
+  const actual = await vi.importActual<typeof import('@clack/prompts')>('@clack/prompts')
+  return {
+    ...actual,
+    confirm: vi.fn(),
+    isCancel: vi.fn(),
+    multiselect: vi.fn(),
+    note: vi.fn(),
+    outro: vi.fn(),
+    text: vi.fn(),
+    log: {
+      ...actual.log,
+      info: vi.fn(),
+      warn: vi.fn(),
+    },
+  }
+})
+
+const confirmMock = vi.mocked(p.confirm)
+const isCancelMock = vi.mocked(p.isCancel)
+const multiselectMock = vi.mocked(p.multiselect)
+const textMock = vi.mocked(p.text)
 
 const SCENARIO = 'command-add'
 const ROOT = getFixtureScenarioPath(SCENARIO)
@@ -55,6 +79,12 @@ async function restoreScenarioFiles(): Promise<void> {
 }
 
 beforeEach(async () => {
+  vi.clearAllMocks()
+  confirmMock.mockResolvedValue(true)
+  isCancelMock.mockReturnValue(false)
+  multiselectMock.mockResolvedValue([PACKAGE_JSON_PATH])
+  textMock.mockResolvedValue('prod')
+
   await restoreScenarioFiles()
 })
 
@@ -110,5 +140,32 @@ describe('addCommand', () => {
     expect(rootPkg.dependencies?.['lodash-es']).toBeUndefined()
     expect(appPkg.dependencies?.['lodash-es']).toBe('catalog:prod')
     cwdSpy.mockRestore()
+  })
+
+  it('lets denied add changes adjust dependency catalogs and confirm again', async () => {
+    process.argv = ['node', 'pncat', 'add', 'react@^18.3.1', 'vue@^3.5.0']
+    multiselectMock
+      .mockResolvedValueOnce([PACKAGE_JSON_PATH])
+      .mockResolvedValueOnce([0, 1])
+    confirmMock
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true)
+    textMock.mockResolvedValueOnce('ui')
+
+    await addCommand(createFixtureScenarioOptions(SCENARIO, {
+      yes: false,
+      install: false,
+      verbose: false,
+    }))
+
+    const pkg = await readJsonFile<Record<string, any>>(PACKAGE_JSON_PATH)
+    expect(pkg.dependencies?.react).toBe('catalog:ui')
+    expect(pkg.dependencies?.vue).toBe('catalog:ui')
+
+    const workspaceYaml = await readFile(WORKSPACE_PATH, 'utf-8')
+    expect(workspaceYaml).toContain('ui:')
+    expect(workspaceYaml).toContain('react: ^18.3.1')
+    expect(workspaceYaml).toContain('vue: ^3.5.0')
+    expect(workspaceYaml).not.toContain('prod:')
   })
 })

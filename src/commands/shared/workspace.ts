@@ -1,4 +1,4 @@
-import type { CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
+import type { CatalogHandler, CatalogOptions, PackageJson, PackageJsonMeta } from '@/types'
 import type { WorkspaceManager } from '@/workspace-manager'
 import { existsSync } from 'node:fs'
 import { readFile, writeFile } from 'node:fs/promises'
@@ -20,12 +20,13 @@ interface ConfirmationOptions extends Pick<CatalogOptions, 'yes' | 'verbose'> {
   confirmMessage?: string
   completeMessage?: string
   showDiff?: boolean
+  onDeny?: () => Promise<void> | void
 }
 
 export async function confirmWorkspaceChanges(
   modifier: () => Promise<void>,
   options: ConfirmationOptions,
-): Promise<'applied' | 'noop'> {
+) {
   const {
     workspace,
     updatedPackages,
@@ -35,11 +36,13 @@ export async function confirmWorkspaceChanges(
     confirmMessage = 'continue?',
     completeMessage,
     showDiff = true,
+    onDeny,
   } = options
 
   const catalogOptions = workspace.getOptions()
   const filename = PACKAGE_MANAGER_CONFIG[catalogOptions.agent || 'pnpm'].filename
   const rawContent = await workspace.catalog.toString()
+  const catalogState = workspace.catalog.cloneState()
 
   await modifier()
 
@@ -70,15 +73,21 @@ export async function confirmWorkspaceChanges(
     const workspacePath = await workspace.catalog.getWorkspacePath()
     p.note(c.reset(diff), c.dim(tildify(workspacePath)))
 
-    if (!yes)
-      await confirmOrAbort(confirmMessage)
+    if (!yes) {
+      const shouldApply = await confirmOrDeny(confirmMessage, workspace.catalog, catalogState, onDeny)
+      if (!shouldApply)
+        return
+    }
   }
   else {
     for (const packageDiff of packageDiffs)
       p.note(c.reset(packageDiff.diff), c.dim(tildify(packageDiff.filepath)))
 
-    if (hasUpdatedPackages && !yes)
-      await confirmOrAbort(confirmMessage)
+    if (hasUpdatedPackages && !yes) {
+      const shouldApply = await confirmOrDeny(confirmMessage, workspace.catalog, catalogState, onDeny)
+      if (!shouldApply)
+        return
+    }
   }
 
   if (updatedPackages)
@@ -206,8 +215,26 @@ async function stringifyPackageJSON(pkgJson: PackageJson, filepath: string): Pro
   return `${JSON.stringify(cleaned, null, indent)}\n`
 }
 
-async function confirmOrAbort(message: string): Promise<void> {
+async function confirmOrDeny(
+  message: string,
+  catalog: CatalogHandler,
+  catalogState: unknown,
+  onDeny?: () => Promise<void> | void,
+): Promise<boolean> {
   const confirmed = await p.confirm({ message })
-  if (p.isCancel(confirmed) || !confirmed)
+  if (p.isCancel(confirmed)) {
+    catalog.restoreState(catalogState)
     throw createCommandError(COMMAND_ERROR_CODES.ABORT)
+  }
+
+  if (confirmed)
+    return true
+
+  catalog.restoreState(catalogState)
+  if (onDeny) {
+    await onDeny()
+    return false
+  }
+
+  throw createCommandError(COMMAND_ERROR_CODES.ABORT)
 }

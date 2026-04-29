@@ -27,6 +27,16 @@ export class YamlCatalog implements CatalogHandler {
     this.agent = agent
   }
 
+  cloneState(): string | null {
+    return this.workspaceYaml?.toString() ?? null
+  }
+
+  restoreState(state: unknown): void {
+    this.workspaceYaml = typeof state === 'string'
+      ? parsePnpmWorkspaceYaml(state)
+      : null
+  }
+
   static async loadWorkspace(
     relative: string,
     options: CatalogOptions,

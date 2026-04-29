@@ -78,6 +78,17 @@ beforeEach(async () => {
 })
 
 function toWorkspace(value: unknown): WorkspaceManager {
+  const workspace = value as {
+    catalog?: {
+      cloneState?: () => unknown
+      restoreState?: (state: unknown) => void
+    }
+  }
+  if (workspace.catalog) {
+    workspace.catalog.cloneState ??= vi.fn(() => undefined)
+    workspace.catalog.restoreState ??= vi.fn()
+  }
+
   return value as WorkspaceManager
 }
 
@@ -281,6 +292,34 @@ describe('confirmWorkspaceChanges', () => {
     })).rejects.toMatchObject({
       code: COMMAND_ERROR_CODES.ABORT,
     })
+  })
+
+  it('runs deny hook instead of aborting when diff confirmation is rejected', async () => {
+    confirmMock.mockResolvedValue(false)
+    const onDeny = vi.fn(async () => {})
+    const writeWorkspace = vi.fn(async () => {})
+    const workspace = {
+      getOptions: () => createFixtureScenarioOptions(SCENARIO, { yes: false, install: false }),
+      getCwd: () => ROOT,
+      catalog: {
+        toString: vi.fn()
+          .mockResolvedValueOnce(WORKSPACE_BASELINE)
+          .mockResolvedValueOnce(`${WORKSPACE_BASELINE}catalogs:\n  test:\n    vitest: ^4.0.0\n`),
+        updateWorkspaceOverrides: vi.fn(async () => {}),
+        getWorkspacePath: vi.fn(async () => WORKSPACE_PATH),
+        writeWorkspace,
+      },
+    }
+
+    await confirmWorkspaceChanges(async () => {}, {
+      workspace: toWorkspace(workspace),
+      yes: false,
+      showDiff: true,
+      onDeny,
+    })
+
+    expect(onDeny).toHaveBeenCalledTimes(1)
+    expect(writeWorkspace).not.toHaveBeenCalled()
   })
 
   it('applies workspace changes when updatedPackages is an empty object', async () => {

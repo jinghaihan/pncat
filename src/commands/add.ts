@@ -1,6 +1,7 @@
 import type {
   CatalogIndex,
   CatalogOptions,
+  PackageJsonDepSource,
   PackageJsonMeta,
   ParsedSpec,
   RawDep,
@@ -18,6 +19,7 @@ import {
   getLatestVersion,
   inferCatalogName,
   isCatalogSpecifier,
+  parseCatalogSpecifier,
   parseSpec,
   toCatalogSpecifier,
 } from '@/utils'
@@ -60,48 +62,14 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
   })
 
   const depSource = getDepSource(isDev, isOptional, isPeer)
-  const updatedPackages: Record<string, PackageJsonMeta> = {}
-  for (const targetPackage of targetPackages) {
-    const updatedPackage = structuredClone(targetPackage)
-    const deps = ensurePackageJsonDeps(updatedPackage.raw, depSource)
-
-    for (const dep of dependencies) {
-      for (const field of COMMON_DEPS_FIELDS) {
-        if (depSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
-          continue
-
-        if (updatedPackage.raw[field]?.[dep.name])
-          delete updatedPackage.raw[field][dep.name]
-      }
-
-      deps[dep.name] = dep.catalogName ? toCatalogSpecifier(dep.catalogName) : dep.specifier || '^0.0.0'
-    }
-
-    updatedPackages[updatedPackage.filepath] = updatedPackage
-  }
-
-  await confirmWorkspaceChanges(
-    async () => {
-      for (const dep of dependencies)
-        await workspace.catalog.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
-    },
-    {
-      workspace,
-      updatedPackages: Object.fromEntries(
-        Object.values(updatedPackages).map(pkg => [
-          pkg.filepath,
-          {
-            ...pkg,
-            relative: relative(workspaceCwd, pkg.filepath) || 'package.json',
-          },
-        ]),
-      ),
-      yes: options.yes,
-      verbose: options.verbose,
-      bailout: false,
-      completeMessage: 'add complete',
-    },
-  )
+  await confirmAddChanges({
+    workspace,
+    workspaceCwd,
+    targetPackages,
+    dependencies,
+    depSource,
+    options,
+  })
 }
 
 export async function resolveAdd(context: ResolverContext): Promise<ResolverResult> {
@@ -137,6 +105,136 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
     isOptional,
     dependencies: parsedDeps.map(dep => toRawDependency(dep, source, options)),
   }
+}
+
+async function confirmAddChanges(context: {
+  workspace: WorkspaceManager
+  workspaceCwd: string
+  targetPackages: PackageJsonMeta[]
+  dependencies: RawDep[]
+  depSource: PackageJsonDepSource
+  options: CatalogOptions
+}): Promise<void> {
+  const {
+    workspace,
+    workspaceCwd,
+    targetPackages,
+    dependencies,
+    depSource,
+    options,
+  } = context
+  const updatedPackages = createUpdatedPackages({
+    targetPackages,
+    dependencies,
+    depSource,
+    workspaceCwd,
+  })
+
+  await confirmWorkspaceChanges(
+    async () => {
+      for (const dep of dependencies)
+        await workspace.catalog.setPackage(dep.catalogName, dep.name, dep.specifier || '^0.0.0')
+    },
+    {
+      workspace,
+      updatedPackages,
+      yes: options.yes,
+      verbose: options.verbose,
+      bailout: false,
+      completeMessage: 'add complete',
+      onDeny: async () => {
+        await promptAdjustCatalogs(dependencies)
+        await confirmAddChanges(context)
+      },
+    },
+  )
+}
+
+function createUpdatedPackages(context: {
+  targetPackages: PackageJsonMeta[]
+  dependencies: RawDep[]
+  depSource: PackageJsonDepSource
+  workspaceCwd: string
+}): Record<string, PackageJsonMeta> {
+  const {
+    targetPackages,
+    dependencies,
+    depSource,
+    workspaceCwd,
+  } = context
+  const updatedPackages: Record<string, PackageJsonMeta> = {}
+  for (const targetPackage of targetPackages) {
+    const updatedPackage = structuredClone(targetPackage)
+    const deps = ensurePackageJsonDeps(updatedPackage.raw, depSource)
+
+    for (const dep of dependencies) {
+      for (const field of COMMON_DEPS_FIELDS) {
+        if (depSource === 'devDependencies' && ['peerDependencies', 'optionalDependencies'].includes(field))
+          continue
+
+        if (updatedPackage.raw[field]?.[dep.name])
+          delete updatedPackage.raw[field][dep.name]
+      }
+
+      deps[dep.name] = dep.catalogName ? toCatalogSpecifier(dep.catalogName) : dep.specifier || '^0.0.0'
+    }
+
+    updatedPackages[updatedPackage.filepath] = {
+      ...updatedPackage,
+      relative: relative(workspaceCwd, updatedPackage.filepath) || 'package.json',
+    }
+  }
+
+  return updatedPackages
+}
+
+async function promptAdjustCatalogs(dependencies: RawDep[]): Promise<void> {
+  const selectedIndexes = await selectCatalogDependencies(dependencies)
+  const defaultCatalogName = dependencies[selectedIndexes[0]].catalogName
+  const input = await p.text({
+    message: 'enter target catalog name',
+    initialValue: defaultCatalogName,
+  })
+
+  if (p.isCancel(input))
+    throw createCommandError(COMMAND_ERROR_CODES.ABORT)
+
+  const catalogName = normalizeCatalogName(String(input))
+  if (!catalogName)
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'catalog name is required, aborting')
+
+  for (const index of selectedIndexes)
+    dependencies[index].catalogName = catalogName
+}
+
+async function selectCatalogDependencies(dependencies: RawDep[]): Promise<number[]> {
+  if (dependencies.length === 1)
+    return [0]
+
+  const selected = await p.multiselect({
+    message: 'select dependencies to move',
+    options: dependencies.map((dep, index) => ({
+      label: dep.name,
+      value: index,
+      hint: `${toCatalogSpecifier(dep.catalogName)} ${dep.specifier}`,
+    })),
+  })
+
+  if (p.isCancel(selected))
+    throw createCommandError(COMMAND_ERROR_CODES.ABORT)
+
+  if (selected.length === 0)
+    throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'no dependencies selected, aborting')
+
+  return selected
+}
+
+function normalizeCatalogName(input: string): string {
+  const catalogName = input.trim()
+  if (!isCatalogSpecifier(catalogName))
+    return catalogName
+
+  return parseCatalogSpecifier(catalogName)
 }
 
 async function resolveDependencySpec(

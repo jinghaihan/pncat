@@ -16,6 +16,14 @@ export class JsonCatalog implements CatalogHandler {
     this.agent = agent
   }
 
+  cloneState(): WorkspaceSchema | null {
+    return cloneDeep(this.workspaceJson)
+  }
+
+  restoreState(state: unknown): void {
+    this.workspaceJson = state ? cloneDeep(state as WorkspaceSchema) : null
+  }
+
   async findWorkspaceFile(): Promise<string | undefined> {
     const filename = PACKAGE_MANAGER_CONFIG[this.agent].filename
     return await findUp(filename, { cwd: getCwd(this.options) })
