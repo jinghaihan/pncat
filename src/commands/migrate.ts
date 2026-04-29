@@ -12,15 +12,71 @@ import { gt } from 'semver-es'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { cleanSpec, inferCatalogName, toCatalogSpecifier } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
-import { COMMAND_ERROR_CODES, confirmWorkspaceChanges, createCommandError, ensureWorkspaceFile } from './shared'
+import {
+  COMMAND_ERROR_CODES,
+  confirmWorkspaceChanges,
+  createCommandError,
+  ensureWorkspaceFile,
+  promptAdjustCatalogs,
+} from './shared'
 
 export async function migrateCommand(options: CatalogOptions): Promise<void> {
   const workspace = new WorkspaceManager(options)
   await ensureWorkspaceFile(workspace)
 
-  const { dependencies = [], updatedPackages = {} } = await resolveMigrate({
+  const { dependencies = [] } = await resolveMigrate({
     options,
     workspace,
+  })
+
+  await confirmMigrateChanges({
+    workspace,
+    dependencies,
+    options,
+  })
+}
+
+export async function resolveMigrate(context: ResolverContext): Promise<ResolverResult> {
+  const { options, workspace } = context
+  await workspace.loadPackages()
+  const workspaceCatalogIndex = await workspace.getCatalogIndex()
+
+  const groupedDeps = new Map<string, Map<string, RawDep[]>>()
+
+  for (const pkg of workspace.listCatalogTargetPackages()) {
+    for (const dep of pkg.deps) {
+      if (!dep.catalogable)
+        continue
+
+      const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
+      addDependency(groupedDeps, resolvedDep)
+    }
+  }
+
+  const dependencies = await resolveConflicts(groupedDeps, options)
+
+  preserveWorkspaceDeps(dependencies, workspaceCatalogIndex, options)
+
+  return {
+    dependencies,
+    updatedPackages: await createMigrateUpdatedPackages({
+      workspace,
+      dependencies,
+      options,
+    }),
+  }
+}
+
+async function confirmMigrateChanges(context: {
+  workspace: WorkspaceManager
+  dependencies: RawDep[]
+  options: CatalogOptions
+}): Promise<void> {
+  const { workspace, dependencies, options } = context
+  const updatedPackages = await createMigrateUpdatedPackages({
+    workspace,
+    dependencies,
+    options,
   })
 
   await confirmWorkspaceChanges(
@@ -34,39 +90,68 @@ export async function migrateCommand(options: CatalogOptions): Promise<void> {
       verbose: options.verbose,
       bailout: true,
       completeMessage: 'migrate complete',
+      onDeny: async () => {
+        await promptAdjustCatalogs(dependencies)
+        await confirmMigrateChanges(context)
+      },
     },
   )
 }
 
-export async function resolveMigrate(context: ResolverContext): Promise<ResolverResult> {
-  const { options, workspace } = context
-  await workspace.loadPackages()
-  const workspaceCatalogIndex = await workspace.getCatalogIndex()
-
-  const groupedDeps = new Map<string, Map<string, RawDep[]>>()
+async function createMigrateUpdatedPackages(context: {
+  workspace: WorkspaceManager
+  dependencies: RawDep[]
+  options: CatalogOptions
+}): Promise<Record<string, PackageJsonMeta>> {
+  const { workspace, dependencies, options } = context
+  const catalogIndex = await workspace.getCatalogIndex()
+  const dependenciesByName = groupDependenciesByName(dependencies)
   const updatedPackages = new Map<string, PackageJsonMeta>()
 
-  for (const pkg of workspace.listCatalogTargetPackages()) {
+  for (const pkg of workspace.listProjectPackages()) {
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue
 
-      const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
-      addDependency(groupedDeps, resolvedDep)
+      const targetDep = resolveMigrateTargetDep(
+        workspace.resolveCatalogDep(dep, catalogIndex, !!options.force),
+        dependenciesByName.get(dep.name) || [],
+      )
+      if (!targetDep)
+        continue
 
-      if (resolvedDep.update && pkg.type === 'package.json')
-        workspace.setDepSpecifier(updatedPackages, pkg, resolvedDep, toCatalogSpecifier(resolvedDep.catalogName))
+      const specifier = toCatalogSpecifier(targetDep.catalogName)
+      if (dep.specifier === specifier)
+        continue
+
+      workspace.setDepSpecifier(updatedPackages, pkg, dep, specifier)
     }
   }
 
-  const dependencies = await resolveConflicts(groupedDeps, options)
+  return Object.fromEntries(updatedPackages.entries())
+}
 
-  preserveWorkspaceDeps(dependencies, workspaceCatalogIndex, options)
+function groupDependenciesByName(dependencies: RawDep[]): Map<string, RawDep[]> {
+  const result = new Map<string, RawDep[]>()
 
-  return {
-    dependencies,
-    updatedPackages: Object.fromEntries(updatedPackages.entries()),
-  }
+  for (const dep of dependencies)
+    result.set(dep.name, [...(result.get(dep.name) || []), dep])
+
+  return result
+}
+
+function resolveMigrateTargetDep(resolvedDep: RawDep, dependencies: RawDep[]): RawDep | undefined {
+  if (dependencies.length <= 1)
+    return dependencies[0]
+
+  return dependencies.find(dep =>
+    dep.catalogName === resolvedDep.catalogName
+    && dep.specifier === resolvedDep.specifier,
+  ) || dependencies.find(dep =>
+    dep.catalogName === resolvedDep.catalogName,
+  ) || dependencies.find(dep =>
+    dep.specifier === resolvedDep.specifier,
+  )
 }
 
 function addDependency(groupedDeps: Map<string, Map<string, RawDep[]>>, dep: RawDep): void {

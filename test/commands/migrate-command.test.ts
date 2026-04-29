@@ -1,9 +1,32 @@
 import { readFile, writeFile } from 'node:fs/promises'
+import * as p from '@clack/prompts'
 import { join } from 'pathe'
-import { afterAll, beforeEach, describe, expect, it } from 'vitest'
+import { afterAll, beforeEach, describe, expect, it, vi } from 'vitest'
 import { migrateCommand } from '@/commands/migrate'
 import { readJsonFile } from '@/io'
 import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
+
+vi.mock('@clack/prompts', async () => {
+  const actual = await vi.importActual<typeof import('@clack/prompts')>('@clack/prompts')
+  return {
+    ...actual,
+    confirm: vi.fn(),
+    isCancel: vi.fn(),
+    multiselect: vi.fn(),
+    note: vi.fn(),
+    outro: vi.fn(),
+    text: vi.fn(),
+    log: {
+      ...actual.log,
+      info: vi.fn(),
+      warn: vi.fn(),
+    },
+  }
+})
+
+const confirmMock = vi.mocked(p.confirm)
+const isCancelMock = vi.mocked(p.isCancel)
+const textMock = vi.mocked(p.text)
 
 const SCENARIO = 'command-migrate'
 const ROOT = getFixtureScenarioPath(SCENARIO)
@@ -48,6 +71,11 @@ overrides:
 `
 
 beforeEach(async () => {
+  vi.clearAllMocks()
+  confirmMock.mockResolvedValue(true)
+  isCancelMock.mockReturnValue(false)
+  textMock.mockResolvedValue('ui')
+
   await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
   await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
   await writeFile(OVERRIDES_PACKAGE_JSON_PATH, OVERRIDES_PACKAGE_JSON_BASELINE, 'utf-8')
@@ -90,5 +118,25 @@ describe('migrateCommand', () => {
     expect(workspaceYaml).toContain('react: ^18.2.0')
     expect(workspaceYaml).toContain('overrides:')
     expect(workspaceYaml).toMatch(/react: catalog:[a-z0-9-]+/)
+  })
+
+  it('lets denied migrate changes adjust dependency catalogs and confirm again', async () => {
+    confirmMock
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true)
+
+    await migrateCommand(createFixtureScenarioOptions(SCENARIO, {
+      yes: false,
+      install: false,
+      verbose: false,
+    }))
+
+    const pkg = await readJsonFile<Record<string, any>>(PACKAGE_JSON_PATH)
+    expect(pkg.dependencies?.react).toBe('catalog:ui')
+
+    const workspaceYaml = await readFile(WORKSPACE_PATH, 'utf-8')
+    expect(workspaceYaml).toContain('ui:')
+    expect(workspaceYaml).toContain('react: ^18.3.1')
+    expect(workspaceYaml).not.toContain('prod:')
   })
 })
