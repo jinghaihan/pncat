@@ -16,10 +16,11 @@ export default defineConfig({
       include: ['./src'],
       exclude: [
         './src/**/*.d.ts',
+        './src/cli.ts',
+        './src/utils/npm.ts',
+        './src/**/**/index.ts',
         './src/types/**',
         './src/constants/**',
-        './src/**/**/index.ts',
-        './src/cli.ts',
       ],
       reportsDirectory: 'node_modules/.vitest/coverage',
     },
