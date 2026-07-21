@@ -15,8 +15,8 @@ catalogs:
     detect-indent: ^7.0.2
     diff: ^9.0.0
     get-npm-meta: ^0.1.2
-    semver-es: ^0.1.1
     tildify: ^3.0.0
+    verkit: ^0.1.2
     yaml: ^2.8.3
   lint:
     '@octohash/eslint-config': ^0.3.2

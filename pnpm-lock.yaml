@@ -44,12 +44,12 @@ catalogs:
     get-npm-meta:
       specifier: ^0.1.2
       version: 0.1.2
-    semver-es:
-      specifier: ^0.1.1
-      version: 0.1.1
     tildify:
       specifier: ^3.0.0
       version: 3.0.0
+    verkit:
+      specifier: ^0.1.2
+      version: 0.1.2
     yaml:
       specifier: ^2.8.3
       version: 2.8.3
@@ -186,9 +186,6 @@ importers:
       pncat:
         specifier: workspace:*
         version: 'link:'
-      semver-es:
-        specifier: catalog:inlined
-        version: 0.1.1
       simple-git-hooks:
         specifier: catalog:dev
         version: 2.13.1
@@ -207,6 +204,9 @@ importers:
       typescript:
         specifier: catalog:dev
         version: 6.0.3
+      verkit:
+        specifier: catalog:inlined
+        version: 0.1.2
       vitest:
         specifier: catalog:test
         version: 4.1.5(@types/node@25.6.0)(@vitest/coverage-v8@4.1.5)(vite@7.1.2(@types/node@25.6.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3))
@@ -2345,9 +2345,6 @@ packages:
     resolution: {integrity: sha512-3A6sD0WYP7+QrjbfNA2FN3FsOaGGFoekCVgTyypy53gPxhbkCIjtO6YWgdrfM+n/8sI8JeXZOIxsHjMTNxQ4nQ==}
     engines: {node: ^14.0.0 || >=16.0.0}
 
-  semver-es@0.1.1:
-    resolution: {integrity: sha512-EqJ7FSA1KH6SmsaNxZnoDVJOwCTD0DhBlDLsTl2+cMRXtKSvxIRU6fYE/Je9JU7e3Tbrq8S4mphU56F4/kOQ7A==}
-
   semver@7.7.4:
     resolution: {integrity: sha512-vFKC2IEtQnVhpT78h1Yp8wzwrf8CM+MzKMHGJZfBtzhZNycRFnXsHk6E5TxIkkMsgNS7mdX3AGB7x2QM2di4lA==}
     engines: {node: '>=10'}
@@ -2553,6 +2550,10 @@ packages:
 
   util-deprecate@1.0.2:
     resolution: {integrity: sha512-EPD5q1uXyFxJpCrLnCc1nHnq3gOa6DZBocAIiI2TaSCA7VCJ1UJDMagCzIkXNsUYfD1daK//LTEQ8xiIbrHtcw==}
+
+  verkit@0.1.2:
+    resolution: {integrity: sha512-WqkT8n3hqizuCu71W3bUzf5fjBmkbXcudsehe/NbxA8PgqoKnSOY5K0Ba2ckg1qaRaSpSz7as/n9K1R9JXjQKg==}
+    engines: {node: '>=18.12.0'}
 
   vite@7.1.2:
     resolution: {integrity: sha512-J0SQBPlQiEXAF7tajiH+rUooJPo0l8KQgyg4/aMunNtrOa7bwuZJsJbDWzeljqQpgftxuq5yNJxQ91O9ts29UQ==}
@@ -4954,8 +4955,6 @@ snapshots:
       refa: 0.12.1
       regexp-ast-analysis: 0.7.1
 
-  semver-es@0.1.1: {}
-
   semver@7.7.4: {}
 
   shebang-command@2.0.0:
@@ -5151,6 +5150,8 @@ snapshots:
       punycode: 2.3.1
 
   util-deprecate@1.0.2: {}
+
+  verkit@0.1.2: {}
 
   vite@7.1.2(@types/node@25.6.0)(jiti@2.6.1)(tsx@4.21.0)(yaml@2.8.3):
     dependencies:

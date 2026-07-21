@@ -8,7 +8,7 @@ import type {
 } from '@/types'
 import * as p from '@clack/prompts'
 import c from 'ansis'
-import { gt } from 'semver-es'
+import { isGreater } from 'verkit'
 import { PACKAGE_MANAGER_CONFIG } from '@/constants'
 import { cleanSpec, inferCatalogName, toCatalogSpecifier } from '@/utils'
 import { WorkspaceManager } from '@/workspace-manager'
@@ -225,7 +225,7 @@ async function selectSpecifier(
     if (versionA && versionB) {
       if (versionA === versionB)
         return 0
-      return gt(versionA, versionB) ? -1 : 1
+      return isGreater(versionA, versionB) ? -1 : 1
     }
 
     return a.localeCompare(b)

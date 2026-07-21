@@ -76,8 +76,8 @@
     "detect-indent": "catalog:inlined",
     "diff": "catalog:inlined",
     "get-npm-meta": "catalog:inlined",
-    "semver-es": "catalog:inlined",
     "tildify": "catalog:inlined",
+    "verkit": "catalog:inlined",
     "yaml": "catalog:inlined",
     "@octohash/eslint-config": "catalog:lint",
     "eslint": "catalog:lint",
@@ -101,7 +101,7 @@
     "diff": "8.0.4",
     "fast-npm-meta": "1.4.2",
     "get-npm-meta": "0.1.1",
-    "semver-es": "0.1.0",
-    "tildify": "3.0.0"
+    "tildify": "3.0.0",
+    "verkit": "0.1.2"
   }
 }

@@ -1,5 +1,5 @@
 import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
-import { clean, coerce, gt, minVersion, subset, valid } from 'semver-es'
+import { clean, coerce, findMinimumForRange, isGreater, isRangeSubset } from 'verkit'
 
 export function parseSpec(spec: string): ParsedSpec {
   const { name, specifier } = splitPackageSpec(spec.trim())
@@ -12,13 +12,12 @@ export function cleanSpec(spec: string, options?: CatalogOptions): string | null
     return null
 
   const normalized = clean(spec)
-  const validVersion = valid(normalized)
-  if (validVersion)
-    return validVersion
+  if (normalized)
+    return normalized
 
   const coerced = coerce(spec)
   if (coerced)
-    return coerced.version
+    return coerced
 
   return null
 }
@@ -28,17 +27,17 @@ export function mostSpecificRule(rules: SpecifierRule[]): SpecifierRule {
     throw new Error('Requires at least one rule')
 
   return rules.reduce((best, current) => {
-    if (subset(current.specifier, best.specifier))
+    if (isRangeSubset(current.specifier, best.specifier))
       return current
 
-    if (subset(best.specifier, current.specifier))
+    if (isRangeSubset(best.specifier, current.specifier))
       return best
 
-    const currentMin = minVersion(current.specifier)
-    const bestMin = minVersion(best.specifier)
+    const currentMin = findMinimumForRange(current.specifier)
+    const bestMin = findMinimumForRange(best.specifier)
 
     if (currentMin && bestMin)
-      return gt(bestMin, currentMin) ? best : current
+      return isGreater(bestMin, currentMin) ? best : current
 
     return best
   })
