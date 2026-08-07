@@ -2,7 +2,7 @@
   "name": "pncat",
   "type": "module",
   "version": "0.13.0",
-  "packageManager": "pnpm@11.15.1",
+  "packageManager": "pnpm@11.20.0",
   "description": "A unified cli tool that enhances package managers catalogs feature.",
   "author": "jinghaihan",
   "license": "MIT",
@@ -84,8 +84,6 @@
     "@vitest/coverage-v8": "catalog:test",
     "vitest": "catalog:test",
     "@types/node": "catalog:types",
-    "@types/npm-package-arg": "catalog:types",
-    "@types/npm-registry-fetch": "catalog:types",
     "pncat": "workspace:*"
   },
   "simple-git-hooks": {
