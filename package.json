@@ -41,7 +41,7 @@
   ],
   "scripts": {
     "pncat": "tsx ./src/cli.ts",
-    "build": "tsdown --config-loader unrun",
+    "build": "tsdown",
     "deps": "taze major -I",
     "lint": "eslint",
     "typecheck": "tsc --noEmit",
