@@ -1,0 +1,7 @@
+{
+  "name": "fixture-migrate-catalog-conflicts-command-app",
+  "private": true,
+  "dependencies": {
+    "@devframes/hub": "catalog:prod"
+  }
+}

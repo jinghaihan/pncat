@@ -1,0 +1,7 @@
+{
+  "name": "fixture-migrate-catalog-conflicts",
+  "private": true,
+  "devDependencies": {
+    "@devframes/hub": "^0.9.7"
+  }
+}

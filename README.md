@@ -74,6 +74,8 @@ pncat m
 
 Groups dependencies by rules (for example lint, test, utils) and updates both workspace catalog config and related `package.json` files.
 
+When a dependency is assigned to multiple catalogs, you must select one target catalog. If the combined entries have different version specifiers, you must select a specifier as well. Both conflict prompts remain interactive with `--yes`; it only skips the final confirmation to apply migration changes. Dependency fields in each `package.json` remain unchanged.
+
 Default rules are in `src/rules.ts`. To customize them, create `pncat.config.ts` in the project root.
 
 <p align='center'>

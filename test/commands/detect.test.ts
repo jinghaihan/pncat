@@ -4,15 +4,11 @@ import c from 'ansis'
 import { join } from 'pathe'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { detectCommand } from '@/commands/detect'
-import { createFixtureScenarioOptions, getFixtureScenarioPath } from '../_shared'
+import { createFixtureOptions, createFixtureScenarioOptions, getFixturePath, getFixtureScenarioPath } from '../_shared'
 
 const ROOT = getFixtureScenarioPath('command-detect')
 const PACKAGE_JSON_PATH = join(ROOT, 'package.json')
 const WORKSPACE_PATH = join(ROOT, 'pnpm-workspace.yaml')
-
-const OVERRIDES_ROOT = getFixtureScenarioPath('command-migrate-overrides-only')
-const OVERRIDES_PACKAGE_JSON_PATH = join(OVERRIDES_ROOT, 'package.json')
-const OVERRIDES_WORKSPACE_PATH = join(OVERRIDES_ROOT, 'pnpm-workspace.yaml')
 
 const PACKAGE_JSON_BASELINE = `{
   "name": "fixture-command-detect",
@@ -31,22 +27,9 @@ const WORKSPACE_BASELINE = `packages:
   - packages/*
 `
 
-const OVERRIDES_PACKAGE_JSON_BASELINE = `{
-  "name": "fixture-command-migrate-overrides-only",
-  "version": "0.0.0",
-  "private": true,
-  "workspaces": [
-    "packages/*"
-  ]
-}
-`
-
-const OVERRIDES_WORKSPACE_BASELINE = `packages: []
-overrides:
-  react: ^18.2.0
-`
-
 vi.mock('@clack/prompts', () => ({
+  select: vi.fn(),
+  isCancel: vi.fn(),
   note: vi.fn(),
   outro: vi.fn(),
   log: {
@@ -57,10 +40,10 @@ vi.mock('@clack/prompts', () => ({
 describe('detectCommand', () => {
   beforeEach(async () => {
     vi.clearAllMocks()
+    vi.mocked(p.select).mockResolvedValue('prod')
+    vi.mocked(p.isCancel).mockReturnValue(false)
     await writeFile(PACKAGE_JSON_PATH, PACKAGE_JSON_BASELINE, 'utf-8')
     await writeFile(WORKSPACE_PATH, WORKSPACE_BASELINE, 'utf-8')
-    await writeFile(OVERRIDES_PACKAGE_JSON_PATH, OVERRIDES_PACKAGE_JSON_BASELINE, 'utf-8')
-    await writeFile(OVERRIDES_WORKSPACE_PATH, OVERRIDES_WORKSPACE_BASELINE, 'utf-8')
   })
 
   it('prints detected changes and migration hint', async () => {
@@ -125,7 +108,8 @@ describe('detectCommand', () => {
   })
 
   it('renders pnpm-workspace overrides package when workspace overrides need migration', async () => {
-    await detectCommand(createFixtureScenarioOptions('command-migrate-overrides-only', {
+    await detectCommand(createFixtureOptions('pnpm', {
+      cwd: getFixturePath('pnpm', 'detect-overrides-only'),
       install: false,
       verbose: false,
     }))

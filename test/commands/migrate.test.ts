@@ -4,12 +4,12 @@ import type {
   RawDep,
   WorkspaceSchema,
 } from '@/types'
-import type { WorkspaceManager } from '@/workspace-manager'
 import * as p from '@clack/prompts'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveMigrate } from '@/commands/migrate'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
-import { createFixtureOptions } from '../_shared'
+import { WorkspaceManager } from '@/workspace-manager'
+import { createFixtureOptions, getFixturePath } from '../_shared'
 
 vi.mock('@clack/prompts', () => ({
   select: vi.fn(),
@@ -323,7 +323,7 @@ describe('resolveMigrate', () => {
     })).rejects.toThrowError('Unable to resolve catalog specifier for react')
   })
 
-  it('prompts for conflict resolution when multiple specifiers exist', async () => {
+  it.each([false, true])('prompts for version conflicts with yes=%s', async (yes) => {
     const depA: RawDep = {
       name: 'react',
       specifier: '^18.2.0',
@@ -344,7 +344,7 @@ describe('resolveMigrate', () => {
       createPackage(depA, 'app-a'),
       createPackage(depB, 'app-b'),
     ], {})
-    const options: CatalogOptions = createFixtureOptions('pnpm', { yes: false })
+    const options: CatalogOptions = createFixtureOptions('pnpm', { yes })
 
     const result = await resolveMigrate({
       options,
@@ -358,6 +358,119 @@ describe('resolveMigrate', () => {
         update: true,
       },
     ])
+  })
+
+  it.each([false, true])('prompts for catalog conflicts and rewrites references with yes=%s', async (yes) => {
+    const cwd = getFixturePath('pnpm', 'migrate-catalog-conflicts')
+    const options = createFixtureOptions('pnpm', { cwd, yes, force: true })
+    selectMock.mockResolvedValue('prod')
+
+    const result = await resolveMigrate({ options, workspace: new WorkspaceManager(options) })
+
+    expect(selectMock).toHaveBeenCalledTimes(1)
+    expect(selectMock).toHaveBeenCalledWith(expect.objectContaining({
+      message: '@devframes/hub is assigned to multiple catalogs, select the target catalog',
+      options: [
+        { label: 'catalog:dev', value: 'dev', hint: '^0.9.7' },
+        { label: 'catalog:prod', value: 'prod', hint: '^0.9.7' },
+      ],
+    }))
+    expect(result.dependencies).toHaveLength(1)
+    expect(result.dependencies?.[0]).toMatchObject({ name: '@devframes/hub', catalogName: 'prod', specifier: '^0.9.7' })
+    expect(result.updatedPackages?.[`${cwd}/package.json`].raw.devDependencies?.['@devframes/hub']).toBe('catalog:prod')
+    expect(result.updatedPackages?.[`${cwd}/package.json`].raw.dependencies).toBeUndefined()
+    expect(result.updatedPackages?.[`${cwd}/packages/app/package.json`].raw.dependencies?.['@devframes/hub']).toBe('catalog:prod')
+  })
+
+  it('uses the selected dev catalog without moving runtime dependencies', async () => {
+    const cwd = getFixturePath('pnpm', 'migrate-catalog-conflicts')
+    const options = createFixtureOptions('pnpm', { cwd, yes: true, force: true })
+    selectMock.mockResolvedValue('dev')
+
+    const result = await resolveMigrate({ options, workspace: new WorkspaceManager(options) })
+
+    expect(selectMock).toHaveBeenCalledTimes(1)
+    expect(result.dependencies?.map(dep => dep.catalogName)).toEqual(['dev'])
+    expect(result.updatedPackages?.[`${cwd}/package.json`].raw.devDependencies?.['@devframes/hub']).toBe('catalog:dev')
+    expect(result.updatedPackages?.[`${cwd}/packages/app/package.json`].raw.dependencies?.['@devframes/hub']).toBe('catalog:dev')
+    expect(result.updatedPackages?.[`${cwd}/packages/app/package.json`].raw.devDependencies).toBeUndefined()
+  })
+
+  it.each(['', 'unknown'])('rejects a non-candidate catalog (%j) even with yes enabled', async (catalog) => {
+    const options = createFixtureOptions('pnpm', {
+      cwd: getFixturePath('pnpm', 'migrate-catalog-conflicts'),
+      yes: true,
+    })
+    selectMock.mockResolvedValue(catalog)
+
+    await expect(resolveMigrate({ options, workspace: new WorkspaceManager(options) }))
+      .rejects
+      .toMatchObject({ code: COMMAND_ERROR_CODES.INVALID_INPUT })
+  })
+
+  it('aborts catalog conflict resolution on cancellation even with yes enabled', async () => {
+    const options = createFixtureOptions('pnpm', {
+      cwd: getFixturePath('pnpm', 'migrate-catalog-conflicts'),
+      yes: true,
+      force: true,
+    })
+    isCancelMock.mockReturnValue(true)
+
+    await expect(resolveMigrate({ options, workspace: new WorkspaceManager(options) }))
+      .rejects
+      .toMatchObject({ code: COMMAND_ERROR_CODES.ABORT })
+  })
+
+  it.each([false, true])('resolves cross-catalog versions after choosing the target with yes=%s', async (yes) => {
+    const prod: RawDep = {
+      name: 'react',
+      specifier: '^18.3.1',
+      source: 'dependencies',
+      parents: [],
+      catalogable: true,
+      catalogName: 'prod',
+      isCatalog: false,
+    }
+    const dev = { ...prod, catalogName: 'dev', specifier: '^19.0.0' }
+    const workspace = createWorkspace([createPackage(prod, 'app-a'), createPackage(dev, 'app-b')], {})
+    selectMock.mockResolvedValueOnce('prod').mockResolvedValueOnce('^19.0.0')
+
+    const result = await resolveMigrate({ options: createFixtureOptions('pnpm', { yes }), workspace })
+
+    expect(selectMock).toHaveBeenCalledTimes(2)
+    expect(selectMock).toHaveBeenNthCalledWith(2, expect.objectContaining({ message: 'select specifier for react (prod)' }))
+    expect(result.dependencies).toHaveLength(1)
+    expect(result.dependencies?.[0]).toMatchObject({ catalogName: 'prod', specifier: '^19.0.0' })
+    expect(result.updatedPackages?.['/repo/packages/app-a/package.json'].raw.dependencies?.react).toBe('catalog:prod')
+    expect(result.updatedPackages?.['/repo/packages/app-b/package.json'].raw.dependencies?.react).toBe('catalog:prod')
+  })
+
+  it('resolves conflicting unreferenced workspace catalogs before generating output', async () => {
+    const workspace = createWorkspace([], {
+      catalog: { react: '^18.3.1' },
+      catalogs: { frontend: { react: '^19.0.0' } },
+    })
+    selectMock.mockResolvedValueOnce('default').mockResolvedValueOnce('^19.0.0')
+
+    const result = await resolveMigrate({ options: createFixtureOptions('pnpm', { yes: true }), workspace })
+
+    expect(selectMock).toHaveBeenCalledTimes(2)
+    expect(result.dependencies).toHaveLength(1)
+    expect(result.dependencies?.[0]).toMatchObject({ name: 'react', catalogName: 'default', specifier: '^19.0.0' })
+  })
+
+  it('does not prompt for a single resolved catalog', async () => {
+    const options = createFixtureOptions('pnpm', {
+      cwd: getFixturePath('pnpm', 'migrate-catalog-conflicts'),
+      yes: true,
+      catalogRules: [{ name: 'runtime', match: '@devframes/hub' }],
+    })
+
+    const result = await resolveMigrate({ options, workspace: new WorkspaceManager(options) })
+
+    expect(selectMock).not.toHaveBeenCalled()
+    expect(result.dependencies).toHaveLength(1)
+    expect(result.dependencies?.[0].catalogName).toBe('runtime')
   })
 
   it('throws when conflict selection is canceled', async () => {

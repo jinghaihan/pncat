@@ -41,21 +41,24 @@ export async function resolveMigrate(context: ResolverContext): Promise<Resolver
   await workspace.loadPackages()
   const workspaceCatalogIndex = await workspace.getCatalogIndex()
 
-  const groupedDeps = new Map<string, Map<string, RawDep[]>>()
+  const candidates: RawDep[] = []
 
   for (const pkg of workspace.listCatalogTargetPackages()) {
     for (const dep of pkg.deps) {
       if (!dep.catalogable)
         continue
 
-      const resolvedDep = workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force)
-      addDependency(groupedDeps, resolvedDep)
+      candidates.push(workspace.resolveCatalogDep(dep, workspaceCatalogIndex, !!options.force))
     }
   }
 
-  const dependencies = await resolveConflicts(groupedDeps, options)
+  preserveWorkspaceDeps(candidates, workspaceCatalogIndex, options)
 
-  preserveWorkspaceDeps(dependencies, workspaceCatalogIndex, options)
+  const groupedDeps = new Map<string, Map<string, RawDep[]>>()
+  for (const dep of candidates)
+    addDependency(groupedDeps, dep)
+
+  const dependencies = await resolveConflicts(groupedDeps, options)
 
   return {
     dependencies,
@@ -170,6 +173,7 @@ async function resolveConflicts(
   options: CatalogOptions,
 ): Promise<RawDep[]> {
   const dependencies: RawDep[] = []
+  await resolveCatalogConflicts(groupedDeps)
   const conflictCount = countConflicts(groupedDeps)
 
   if (conflictCount > 0)
@@ -190,6 +194,35 @@ async function resolveConflicts(
   }
 
   return dependencies
+}
+
+async function resolveCatalogConflicts(groupedDeps: Map<string, Map<string, RawDep[]>>): Promise<void> {
+  for (const [depName, catalogDeps] of groupedDeps) {
+    if (catalogDeps.size <= 1)
+      continue
+
+    const selected = await p.select({
+      message: `${depName} is assigned to multiple catalogs, select the target catalog`,
+      options: [...catalogDeps].sort(([left], [right]) => left.localeCompare(right)).map(([catalogName, deps]) => ({
+        label: toCatalogSpecifier(catalogName),
+        value: catalogName,
+        hint: [...new Set(deps.map(dep => dep.specifier))].join(', '),
+      })),
+    })
+
+    if (p.isCancel(selected))
+      throw createCommandError(COMMAND_ERROR_CODES.ABORT)
+
+    if (!catalogDeps.has(selected))
+      throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'a target catalog must be selected, aborting')
+
+    const merged = [...catalogDeps.values()].flat().map(dep => ({
+      ...dep,
+      catalogName: selected,
+      update: dep.update || dep.catalogName !== selected,
+    }))
+    groupedDeps.set(depName, new Map([[selected, merged]]))
+  }
 }
 
 function selectPreferredDependency(deps: RawDep[], matcher?: (dep: RawDep) => boolean): RawDep {
