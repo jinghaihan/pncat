@@ -44,6 +44,17 @@ describe('cleanSpec', () => {
     expect(cleanSpec('^1.2.3')).toBe('1.2.3')
     expect(cleanSpec('not-a-version')).toBeNull()
   })
+
+  it.each([
+    ['^1.2.3', '1.2.3'],
+    ['~2.3.4', '2.3.4'],
+    ['>=3.4.5', '3.4.5'],
+    ['1.2', '1.2.0'],
+  ])('normalizes coerced %s to the string %s', (input, expected) => {
+    const result = cleanSpec(input)
+    expect(typeof result).toBe('string')
+    expect(result).toBe(expected)
+  })
 })
 
 describe('mostSpecificRule', () => {

@@ -1,5 +1,5 @@
 import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
-import { clean, coerce, findMinimumForRange, isGreater, isRangeSubset } from 'verkit'
+import { clean, coerce, findMinimumForRange, isGreater, isRangeSubset, normalize } from 'verkit'
 
 export function parseSpec(spec: string): ParsedSpec {
   const { name, specifier } = splitPackageSpec(spec.trim())
@@ -17,7 +17,7 @@ export function cleanSpec(spec: string, options?: CatalogOptions): string | null
 
   const coerced = coerce(spec)
   if (coerced)
-    return coerced
+    return normalize(coerced)
 
   return null
 }
