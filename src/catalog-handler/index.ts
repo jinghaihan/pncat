@@ -4,7 +4,7 @@ import { PnpmCatalog } from './pnpm-workspace'
 import { VltCatalog } from './vlt-workspace'
 import { YarnCatalog } from './yarn-workspace'
 
-/// keep-sorted
+/** / keep-sorted */
 export const catalogHandlers = {
   bun: BunCatalog,
   pnpm: PnpmCatalog,

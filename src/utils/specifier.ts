@@ -1,5 +1,5 @@
 import type { CatalogOptions, ParsedSpec, SpecifierRule } from '@/types'
-import { clean, coerce, findMinimumForRange, isGreater, isRangeSubset, normalize } from 'verkit'
+import { clean, coerce, findMinimumForRange, isGreaterThan, isRangeSubset, normalize } from 'verkit'
 
 export function parseSpec(spec: string): ParsedSpec {
   const { name, specifier } = splitPackageSpec(spec.trim())
@@ -37,7 +37,7 @@ export function mostSpecificRule(rules: SpecifierRule[]): SpecifierRule {
     const bestMin = findMinimumForRange(best.specifier)
 
     if (currentMin && bestMin)
-      return isGreater(bestMin, currentMin) ? best : current
+      return isGreaterThan(bestMin, currentMin) ? best : current
 
     return best
   })
