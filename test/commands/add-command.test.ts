@@ -68,7 +68,10 @@ catalogs:
 const APP_PACKAGE_JSON_BASELINE = `{
   "name": "app-command-add",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "react": "catalog:"
+  }
 }
 `
 
@@ -140,6 +143,33 @@ describe('addCommand', () => {
     expect(rootPkg.dependencies?.['lodash-es']).toBeUndefined()
     expect(appPkg.dependencies?.['lodash-es']).toBe('catalog:prod')
     cwdSpy.mockRestore()
+  })
+
+  it('updates the selected package catalog when changing the dependency field', async () => {
+    process.argv = ['node', 'pncat', 'add', 'react@^17.0.2', '-D']
+    multiselectMock.mockResolvedValueOnce([APP_PACKAGE_JSON_PATH])
+
+    await addCommand(createFixtureScenarioOptions(SCENARIO, { install: false }))
+
+    const pkg = await readJsonFile<Record<string, any>>(APP_PACKAGE_JSON_PATH)
+    expect(pkg.dependencies?.react).toBeUndefined()
+    expect(pkg.devDependencies?.react).toBe('catalog:')
+    expect(await readFile(PACKAGE_JSON_PATH, 'utf-8')).toBe(PACKAGE_JSON_BASELINE)
+    expect(await readFile(WORKSPACE_PATH, 'utf-8')).toBe(WORKSPACE_BASELINE.replace('react: ^17.0.0', 'react: ^17.0.2'))
+    expect(confirmMock).toHaveBeenCalledExactlyOnceWith({ message: 'continue?' })
+  })
+
+  it('requires a catalog when selected packages reference different groups', async () => {
+    process.argv = ['node', 'pncat', 'add', 'react@^19.0.0', '-D']
+    multiselectMock.mockResolvedValueOnce([PACKAGE_JSON_PATH, APP_PACKAGE_JSON_PATH])
+
+    await expect(addCommand(createFixtureScenarioOptions(SCENARIO, { install: false }))).rejects.toMatchObject({
+      code: COMMAND_ERROR_CODES.INVALID_INPUT,
+      message: 'react is in multiple catalogs, specify one with --catalog <name>',
+    })
+
+    expect(confirmMock).not.toHaveBeenCalled()
+    expect(await readFile(WORKSPACE_PATH, 'utf-8')).toBe(WORKSPACE_BASELINE)
   })
 
   it('lets denied add changes adjust dependency catalogs and confirm again', async () => {

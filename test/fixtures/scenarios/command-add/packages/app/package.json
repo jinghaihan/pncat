@@ -1,5 +1,8 @@
 {
   "name": "app-command-add",
   "version": "0.0.0",
-  "private": true
+  "private": true,
+  "dependencies": {
+    "react": "catalog:"
+  }
 }

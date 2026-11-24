@@ -1,5 +1,5 @@
 import type {
-  CatalogIndex,
+  CatalogEntry,
   CatalogOptions,
   PackageJsonDepSource,
   PackageJsonMeta,
@@ -36,11 +36,19 @@ import {
 
 export async function addCommand(options: CatalogOptions): Promise<void> {
   const args = process.argv.slice(3)
-  if (args.length === 0)
+  if (parseCommandOptions(args, options).deps.length === 0)
     throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, 'no dependencies provided, aborting')
 
   const workspace = new WorkspaceManager(options)
   await ensureWorkspaceFile(workspace)
+  await workspace.loadPackages()
+  const targetPackages = await selectTargetProjectPackages({
+    projectPackages: workspace.listProjectPackages(),
+    currentPackagePath: workspace.resolveTargetProjectPackagePath(process.cwd()),
+    promptMessage: `please select ${c.yellow('package.json')} files where dependencies will be added`,
+    yes: options.yes,
+  })
+
   const {
     isDev = false,
     isPeer = false,
@@ -50,22 +58,13 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
     args,
     options,
     workspace,
-  })
-  const workspaceCwd = workspace.getCwd()
-  const projectPackages = workspace.listProjectPackages()
-
-  const currentPackagePath = workspace.resolveTargetProjectPackagePath(process.cwd())
-  const targetPackages = await selectTargetProjectPackages({
-    projectPackages,
-    currentPackagePath,
-    promptMessage: `please select ${c.yellow('package.json')} files where dependencies will be added`,
-    yes: options.yes,
+    targetPackages,
   })
 
   const depSource = getDepSource(isDev, isOptional, isPeer)
   await confirmAddChanges({
     workspace,
-    workspaceCwd,
+    workspaceCwd: workspace.getCwd(),
     targetPackages,
     dependencies,
     depSource,
@@ -73,7 +72,7 @@ export async function addCommand(options: CatalogOptions): Promise<void> {
   })
 }
 
-export async function resolveAdd(context: ResolverContext): Promise<ResolverResult> {
+export async function resolveAdd(context: ResolverContext & { targetPackages?: PackageJsonMeta[] }): Promise<ResolverResult> {
   const { args = [], options, workspace } = context
   await workspace.loadPackages()
 
@@ -89,7 +88,7 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
   const catalogIndex = await workspace.getCatalogIndex()
   const projectPackages = workspace.listProjectPackages()
   const workspacePackageNames = projectPackages.map(pkg => pkg.name)
-  const standalonePackage = projectPackages.length === 1 ? projectPackages[0] : undefined
+  const targetPackages = context.targetPackages ?? projectPackages
   const source = getDepSource(isDev, isOptional, isPeer)
 
   for (const dep of parsedDeps) {
@@ -98,8 +97,8 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
       source,
       isExact,
       workspacePackageNames,
-      catalogIndex,
-      standalonePackage,
+      catalogs: catalogIndex.get(dep.name) ?? [],
+      targetPackages,
     })
   }
 
@@ -199,40 +198,19 @@ async function resolveDependencySpec(
     source: ReturnType<typeof getDepSource>
     isExact: boolean
     workspacePackageNames: string[]
-    catalogIndex: CatalogIndex
-    standalonePackage?: PackageJsonMeta
+    catalogs: CatalogEntry[]
+    targetPackages: PackageJsonMeta[]
   },
 ): Promise<void> {
-  const { options, source, isExact, workspacePackageNames, catalogIndex, standalonePackage } = context
+  const { options, source, isExact, workspacePackageNames, catalogs, targetPackages } = context
+  dep.catalogName ||= options.catalog || resolveExistingCatalogName(dep.name, source, catalogs, targetPackages)
 
-  if (!dep.specifier && workspacePackageNames.includes(dep.name)) {
+  if (!dep.specifier && catalogs.length > 0) {
+    dep.specifier = (catalogs.find(item => item.catalogName === dep.catalogName) ?? catalogs[0]).specifier
+  }
+
+  if (!dep.specifier && workspacePackageNames.includes(dep.name))
     dep.specifier = 'workspace:*'
-    dep.specifierSource = 'workspace'
-  }
-
-  if (options.catalog)
-    dep.catalogName ||= options.catalog
-
-  if (dep.specifier)
-    dep.specifierSource ||= 'user'
-
-  const catalogs = catalogIndex.get(dep.name) || []
-  if (dep.specifierSource === 'user' && standalonePackage && !dep.catalogName) {
-    const currentSpecifier = standalonePackage.raw[source]?.[dep.name]
-    const currentCatalog = currentSpecifier && isCatalogSpecifier(currentSpecifier)
-      ? catalogs.find(item => item.catalogName === parseCatalogSpecifier(currentSpecifier))
-      : undefined
-
-    dep.catalogName = currentCatalog?.catalogName || (catalogs.length === 1 ? catalogs[0].catalogName : undefined)
-  }
-
-  if (!dep.specifier) {
-    if (catalogs[0]) {
-      dep.catalogName = dep.catalogName || catalogs[0].catalogName
-      dep.specifier = catalogs.find(item => item.catalogName === dep.catalogName)?.specifier || catalogs[0].specifier
-      dep.specifierSource = 'catalog'
-    }
-  }
 
   if (!dep.specifier) {
     const spinner = p.spinner({ indicator: 'dots' })
@@ -245,12 +223,48 @@ async function resolveDependencySpec(
     }
 
     dep.specifier = isExact ? version : `^${version}`
-    dep.specifierSource = 'npm'
     spinner.stop(`${c.dim('resolved')} ${c.cyan(dep.name)}${c.dim(`@${c.green(dep.specifier)}`)}`)
   }
 
   if (!dep.catalogName)
     dep.catalogName = inferCatalogName(toRawDependency(dep, source, options), options)
+}
+
+function resolveExistingCatalogName(
+  name: string,
+  source: PackageJsonDepSource,
+  catalogs: CatalogEntry[],
+  targetPackages: PackageJsonMeta[],
+): string | undefined {
+  const catalogNames = new Set(catalogs.map(entry => entry.catalogName))
+  if (catalogNames.size <= 1)
+    return catalogs[0]?.catalogName
+
+  const referenced = new Set<string>()
+  for (const { raw } of targetPackages) {
+    const currentSpecifier = raw[source]?.[name]
+    if (currentSpecifier && isCatalogSpecifier(currentSpecifier)) {
+      const currentCatalog = parseCatalogSpecifier(currentSpecifier)
+      if (catalogNames.has(currentCatalog)) {
+        referenced.add(currentCatalog)
+        continue
+      }
+    }
+
+    for (const field of COMMON_DEPS_FIELDS) {
+      const specifier = raw[field]?.[name]
+      if (specifier && isCatalogSpecifier(specifier)) {
+        const catalogName = parseCatalogSpecifier(specifier)
+        if (catalogNames.has(catalogName))
+          referenced.add(catalogName)
+      }
+    }
+  }
+
+  if (referenced.size === 1)
+    return [...referenced][0]
+
+  throw createCommandError(COMMAND_ERROR_CODES.INVALID_INPUT, `${name} is in multiple catalogs, specify one with --catalog <name>`)
 }
 
 function toRawDependency(

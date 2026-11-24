@@ -139,6 +139,38 @@ describe('resolveAdd', () => {
     ])
   })
 
+  it('uses the only existing catalog for a dependency added to a new workspace package', async () => {
+    const app = createPackage('app')
+    const workspace = createWorkspace([app, createPackage('docs')], new Map([
+      ['react', [{ catalogName: 'prod', specifier: '^18.3.1' }]],
+    ]))
+
+    const result = await resolveAdd({
+      args: ['react@^19.0.0', '-D'],
+      options: createFixtureOptions('pnpm'),
+      workspace,
+      targetPackages: [app],
+    })
+
+    expect(result.dependencies?.[0]).toMatchObject({ catalogName: 'prod', specifier: '^19.0.0' })
+  })
+
+  it('uses an explicit catalog over a package’s existing reference', async () => {
+    const app = createPackage('app')
+    app.raw.dependencies = { react: 'catalog:prod' }
+    const workspace = createWorkspace([app], new Map([
+      ['react', [{ catalogName: 'prod', specifier: '^18.3.1' }, { catalogName: 'dev', specifier: '^19.0.0' }]],
+    ]))
+
+    const result = await resolveAdd({
+      args: ['react', '-D'],
+      options: createFixtureOptions('pnpm', { catalog: 'dev' }),
+      workspace,
+    })
+
+    expect(result.dependencies?.[0]).toMatchObject({ catalogName: 'dev', specifier: '^19.0.0' })
+  })
+
   it('respects save-dev and save-exact flags from command args', async () => {
     const workspace = createWorkspace([createPackage('app')], new Map())
     const options: CatalogOptions = createFixtureOptions('pnpm')
