@@ -6,4 +6,8 @@ export default defineConfig({
   ignores: [
     '**/test/fixtures/**',
   ],
+}, {
+  rules: {
+    'antfu/reasonable-newline': 'off',
+  },
 })
