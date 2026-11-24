@@ -1,0 +1,10 @@
+{
+  "name": "add-single-project",
+  "private": true,
+  "dependencies": {
+    "picocolors": "catalog:prod"
+  },
+  "devDependencies": {
+    "kleur": "catalog:tooling"
+  }
+}

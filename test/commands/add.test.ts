@@ -1,10 +1,10 @@
 import type { CatalogOptions, PackageJsonMeta } from '@/types'
-import type { WorkspaceManager } from '@/workspace-manager'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { resolveAdd } from '@/commands/add'
 import { COMMAND_ERROR_CODES } from '@/commands/shared'
 import * as utils from '@/utils'
-import { createFixtureOptions } from '../_shared'
+import { WorkspaceManager } from '@/workspace-manager'
+import { createFixtureOptions, getFixturePath } from '../_shared'
 
 vi.mock('@/utils', async () => {
   const actual = await vi.importActual<typeof import('@/utils')>('@/utils')
@@ -78,6 +78,24 @@ describe('resolveAdd', () => {
         isCatalog: false,
       },
     ])
+  })
+
+  it.each([
+    ['picocolors', 'prod'],
+    ['kleur', 'tooling'],
+  ])('updates the existing single-project catalog for %s', async (name, catalogName) => {
+    const options = createFixtureOptions('pnpm', { cwd: getFixturePath('pnpm', 'add-single-project') })
+    const workspace = new WorkspaceManager(options)
+
+    const result = await resolveAdd({ args: [`${name}@5.0.0`, '-D'], options, workspace })
+
+    expect(result.dependencies?.[0]).toMatchObject({
+      name,
+      specifier: '5.0.0',
+      source: 'devDependencies',
+      catalogName,
+    })
+    expect(getLatestVersionMock).not.toHaveBeenCalled()
   })
 
   it('assigns workspace protocol for local packages without explicit specifier', async () => {

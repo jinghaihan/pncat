@@ -1,0 +1,6 @@
+catalogs:
+  prod:
+    kleur: ^3.0.0
+    picocolors: ^1.0.0
+  tooling:
+    kleur: ^4.0.0

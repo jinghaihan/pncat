@@ -19,6 +19,7 @@ import {
   getLatestVersion,
   inferCatalogName,
   isCatalogSpecifier,
+  parseCatalogSpecifier,
   parseSpec,
   toCatalogSpecifier,
 } from '@/utils'
@@ -86,7 +87,9 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
     .map(dep => parseSpec(dep))
 
   const catalogIndex = await workspace.getCatalogIndex()
-  const workspacePackageNames = workspace.listProjectPackages().map(pkg => pkg.name)
+  const projectPackages = workspace.listProjectPackages()
+  const workspacePackageNames = projectPackages.map(pkg => pkg.name)
+  const standalonePackage = projectPackages.length === 1 ? projectPackages[0] : undefined
   const source = getDepSource(isDev, isOptional, isPeer)
 
   for (const dep of parsedDeps) {
@@ -96,6 +99,7 @@ export async function resolveAdd(context: ResolverContext): Promise<ResolverResu
       isExact,
       workspacePackageNames,
       catalogIndex,
+      standalonePackage,
     })
   }
 
@@ -196,9 +200,10 @@ async function resolveDependencySpec(
     isExact: boolean
     workspacePackageNames: string[]
     catalogIndex: CatalogIndex
+    standalonePackage?: PackageJsonMeta
   },
 ): Promise<void> {
-  const { options, source, isExact, workspacePackageNames, catalogIndex } = context
+  const { options, source, isExact, workspacePackageNames, catalogIndex, standalonePackage } = context
 
   if (!dep.specifier && workspacePackageNames.includes(dep.name)) {
     dep.specifier = 'workspace:*'
@@ -211,8 +216,17 @@ async function resolveDependencySpec(
   if (dep.specifier)
     dep.specifierSource ||= 'user'
 
+  const catalogs = catalogIndex.get(dep.name) || []
+  if (dep.specifierSource === 'user' && standalonePackage && !dep.catalogName) {
+    const currentSpecifier = standalonePackage.raw[source]?.[dep.name]
+    const currentCatalog = currentSpecifier && isCatalogSpecifier(currentSpecifier)
+      ? catalogs.find(item => item.catalogName === parseCatalogSpecifier(currentSpecifier))
+      : undefined
+
+    dep.catalogName = currentCatalog?.catalogName || (catalogs.length === 1 ? catalogs[0].catalogName : undefined)
+  }
+
   if (!dep.specifier) {
-    const catalogs = catalogIndex.get(dep.name) || []
     if (catalogs[0]) {
       dep.catalogName = dep.catalogName || catalogs[0].catalogName
       dep.specifier = catalogs.find(item => item.catalogName === dep.catalogName)?.specifier || catalogs[0].specifier
